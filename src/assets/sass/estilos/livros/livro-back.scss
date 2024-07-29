@@ -1,0 +1,65 @@
+.backBook{
+    width: 200px;
+    height: 300px;
+    float:left;
+    position: relative;
+    background: $white;
+    box-sizing: border-box;
+    padding: 10px;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    transform: rotateY(180deg);
+    backface-visibility: hidden;
+    box-shadow: 2px 2px 2px $light-sombra;
+    &__top {
+        color: $font-color2;
+        height: 97px;
+        .titulo{
+            text-transform: uppercase;
+            color: $font-color1;
+            font-weight: 800;
+        }
+        .autor {
+            margin-top: 5px;
+            font-size: $f-medium;
+        }
+    }
+    p {
+        font-size: $f-normal;
+        height: 141px;
+        overflow: auto;
+        margin: 10px 0;
+        color: $font-color2;
+        text-align: left;
+        padding-right: 3px;
+        &::-webkit-scrollbar{width: 3px;}
+        &::-webkit-scrollbar-button{display: none;}
+        &::-webkit-scrollbar-track-piece{display: none;}
+        &::-webkit-scrollbar-thumb{background-color: $p-color;}
+        .is--active{
+            &__focus{
+                background-color: $p-dark;
+            }
+        }
+    }
+    &__bottom {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 32px;
+        margin: 0 -10px;
+        button {
+            width: 50%;
+            height: 100%;
+            border: none;
+            text-transform: uppercase;
+            color: $white;
+            cursor: pointer;
+            background: $p-color;
+            &:hover{
+                background: $gray-dark;
+            }
+        }
+    }
+}

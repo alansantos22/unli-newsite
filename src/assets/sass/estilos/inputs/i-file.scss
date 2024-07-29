@@ -1,0 +1,21 @@
+.input-file1{
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 42px;
+    margin-top: 10px;
+    color: $white;
+    padding: 10px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    background: $font-color1;
+    // border-bottom-right-radius: 0.25em;
+    // border-top-right-radius: 0.25em;
+    // transition: $muitoRapido;
+    width: 30%;
+    &:hover{
+        box-shadow: 0 3px 0 0 $s-color, 0 4px 8px 0 $p-dark, 0 6px 10px 0 rgba(0,0,0,.5);            
+        background-image: linear-gradient(to right, $p-color, $p-dark);
+    }
+}

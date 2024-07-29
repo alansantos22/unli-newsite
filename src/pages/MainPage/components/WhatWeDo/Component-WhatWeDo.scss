@@ -1,0 +1,99 @@
+@import "@/assets/sass/settings/__base.scss";
+@import "@/assets/sass/settings/_animation";
+
+.containerWhatWeDo{
+    width: 100%;
+    min-height: 70vh;
+    padding: 80px 0;
+    background-image: radial-gradient(ellipse at bottom, #1B2735 20%, #090A0F 100%);
+    flex-direction: column;
+    h2{
+        font-family: $Bebas;
+        color: $white;
+        font-size: 5rem;
+        letter-spacing: 10px;
+        text-align: center;
+        @media screen and (max-width: $mobile){
+            font-size: 3rem;
+            padding: 0 30px;
+        }
+    }
+    .columns{
+        display: none;
+        margin-top: 100px;
+        flex-wrap: wrap;
+        width: 100%;
+        max-width: 1600px;
+        .column{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 550px;
+            padding-top: 20px;
+            margin: 20px 0;
+            h5{
+                font-family: $Bebas;
+                font-size: 3rem;
+                color: $p-color;
+                text-align: center;
+                margin-bottom: 30px;
+                letter-spacing: 2px;
+            }
+            ul{
+                color: $white;
+                list-style: none;
+                text-align: center;
+                li{
+                    position: relative;
+                    padding: 10px 0;
+                    font-size: $f-xs;
+                    &::before{
+                        content: "";
+                        
+                    }
+                }
+            }
+            &1{
+                width: 40%;
+            }
+            &2{
+                width: 60%;
+            }
+            @media screen and (max-width: $mobile){
+                width: 100%;
+                padding: 0 20px;
+            }
+        }
+        .img{
+            &1{
+                background-image: url("~@img/whatWeDo/web.png");
+                background-position: center center;
+                background-size: cover;
+                @media screen and (max-width: $mobile){
+                    display: none;
+                }
+            }
+            &2{
+                background-image: url("~@img/whatWeDo/truck.jpg");
+                background-position: center center;
+                background-size: cover;
+                @media screen and (max-width: $mobile){
+                    display: none;
+                }
+            }
+            &3{
+                background-image: url("~@img/whatWeDo/goIslandLobby.png");
+                background-position: center center;
+                background-size: cover;
+                @media screen and (max-width: $mobile){
+                    display: none;
+                }
+            }
+        }
+        &.scroll{
+            display: flex;
+            animation: $lightIn $rapido linear;
+        }
+    }
+}

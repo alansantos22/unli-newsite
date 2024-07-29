@@ -1,0 +1,50 @@
+.centralizar{
+    margin: 0 auto;
+}
+
+.ft-left{
+    float:left;
+}
+
+.ft-right{
+    float:right;
+}
+.right0{
+    position: absolute;
+    right: 0;
+}
+.right10{
+    position: absolute;
+    right: 10px;
+}
+.right20{
+    position: absolute;
+    right: 20px;
+}
+.right30{
+    position: absolute;
+    right: 30px;
+}
+.left0{
+    position: absolute;
+    right: 0;
+}
+.left10{
+    position: absolute;
+    right: 10px;
+}
+.left20{
+    position: absolute;
+    right: 20px;
+}
+.left30{
+    position: absolute;
+    right: 30px;
+}
+
+.allCenter{
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+}

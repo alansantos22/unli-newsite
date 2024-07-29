@@ -1,0 +1,113 @@
+@import "@/assets/sass/settings/__base.scss";
+
+.containerContact{
+    width: 100%;
+    height: 900px;
+    overflow: hidden;
+    position: relative;
+    background-color: $white;
+    @media screen and (max-width: $mobile){
+        padding: 50px 20px;
+        height: auto;
+        background-color: $gray-darkness;
+    }
+    .box{
+        max-width: 1000px;
+        display: flex;
+        z-index: 2;
+        align-items: center;
+        @media screen and (max-width: $mobile){
+            flex-direction: column;
+        }
+        h2{
+            color: $gray-darkness;
+            font-family: $Bebas;
+            font-size: 5rem;
+            letter-spacing: 10px;
+            text-align: left;
+            padding-right: 50px;
+            height: fit-content;
+            @media screen and (max-width: $mobile){
+                font-size: 3rem;
+                text-align: center;
+                padding: 0 20px 20px;
+            }
+            strong{
+                font-family: $Bebas;
+                color: $t-color;
+            }
+        }
+        form{
+            padding: 30px;
+            box-shadow: 3px 3px 9px rgba(0,0,0,.3);
+            background-color: $white;
+            h3{
+                font-size: 2rem;
+                font-family: $Bebas;
+                letter-spacing: 4px;
+                color: $gray-darkness;
+                padding: 20px 0;
+                text-align: center;
+            }
+            .inputBox{
+                width: 450px;
+                display: flex;
+                flex-direction: column;
+                margin: 20px 0 40px;
+                @media screen and (max-width: $mobile){
+                    width: 300px;
+                }
+                label{
+                    margin-bottom: 10px;
+                    color: $gray-darkness;
+                }
+                input{
+                    border: none;
+                    border-bottom: solid 1px $gray;
+                    padding: 8px 10px;
+                    transition: $muitoRapido;
+                    &:focus{
+                        border-width: 5px;
+                        transition: $muitoRapido;
+                        border-color: $t-color;
+                    }
+                }
+                textarea{
+                    border: none;
+                    border-bottom: solid 1px $gray;
+                    padding: 8px 10px;
+                    transition: $muitoRapido;
+                    resize: none;
+                    &:focus{
+                        border-width: 5px;
+                        transition: $muitoRapido;
+                        border-color: $t-color;
+                    }
+                }
+            }
+        }
+    }
+    .border{
+        position: absolute;
+        top: 0;
+        right: 0;
+        background-color: $gray-darkness;
+        width: 30%;
+        height: 100%;
+        @media screen and (max-width: $mobile){
+            display: none;
+        }
+    }
+    .button3{
+        width: 100%;
+        height: 40px;
+        color: $white;
+        background-color: $gray-darkness;
+        border: none;
+        cursor: pointer;
+        transition: .2s;
+        &:hover{
+            background-color: $gray-dark;
+        }
+    }
+}

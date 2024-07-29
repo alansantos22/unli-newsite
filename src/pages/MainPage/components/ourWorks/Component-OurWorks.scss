@@ -1,0 +1,191 @@
+@import "@/assets/sass/settings/__base.scss";
+
+.containerOurWorks{
+    width: 100%;
+    height: 954px;
+    background-color: $white;
+    flex-direction: column;
+    @media screen and (max-width: $mobile){
+        padding: 70px 0;
+        height: 1600px;
+        justify-content: center;
+        align-items: center;
+    }
+    h2{
+        font-family: $Bebas;
+        color: $gray-darkness;
+        font-size: 5rem;
+        letter-spacing: 10px;
+        margin-bottom: 30px;
+        text-align: center;
+        padding: 20px;
+        @media screen and (max-width: $mobile){
+            font-size: 3rem;
+        }
+    }
+    .groupTelao{
+        height: calc(100% - 250px);
+        width: 100%;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        animation: $show $muitoRapido linear;
+        .telao{
+            min-width: 700px;
+            width: calc(100% - 200px);
+            max-width: 1200px;
+            height: 100%;
+            position: relative;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            .backgroundTelao{
+                width: 100%;
+                height: 100%;
+            }
+            .category{
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                padding: 20px;
+                width: 200px;
+                text-align: center;
+                color: $white;
+                font-weight: bold;
+                animation: $show $muitoRapido linear;
+                &.web3{
+                    background: $t-color;
+                }
+                &.jogos{
+                    background: #8e44ad;
+                }
+                &.gameficação{
+                    background: #27ae60;
+                }
+                &.vr{
+                    background: #c0392b;
+                }
+                &.modelagem_3d{
+                    background: $p-color;
+                }
+                &.realidade_aumentada{
+                    background: #e67e22;
+                }
+            }
+            .subtitle{
+                position: absolute;
+                bottom: 0;
+                color: $white;
+                padding: 20px;
+                background: rgba(0,0,0,.4);
+                line-height: 30px;
+                font-size: $f-big;
+                animation: $show $muitoRapido linear;
+            }
+        }
+        &.scroll{
+            display: flex;
+        }
+        @media screen and (max-width: $mobile){
+            padding: 70px 0;
+            flex-direction: column;
+            .telao{
+                min-width: 0px;
+                width: calc(100%);
+                .subtitle{
+                    display: none;
+                }
+            }
+        }
+    }
+    .dm-none-flex{
+        padding: 20px;
+        font-size: 1.25rem;
+        height: 500px;
+        background: rgba(0,0,0,.4);
+        color: $white;
+        overflow: hidden;
+    }
+    ul{
+        .workCard{
+            font-weight: bold;
+            width: 300px;
+            height: 88px;
+            justify-content: space-between;
+            padding: 0 5px;
+            align-items: center;
+            border-bottom: solid 1px $gray;
+            border-top: solid 1px $gray;
+            border-right: solid 5px $gray;
+            border-right-width: 5px;
+            transition: $muitoRapido;
+            background-color: $white;
+            &:hover{
+                border-right-width: 20px;
+                transition: $muitoRapido;
+                cursor: pointer;
+            }
+            &.active{
+                color: $white;
+                transition: $muitoRapido;
+                border-bottom: none;
+                border-top: none;
+                &.web3{
+                    background: $t-color;
+                }
+                &.jogos{
+                    background: #8e44ad;
+                }
+                &.gameficação{
+                    background: #27ae60;
+                }
+                &.vr{
+                    background: #c0392b;
+                }
+                &.modelagem_3d{
+                    background: $p-color;
+                }
+                &.realidade_aumentada{
+                    background: #e67e22;
+                }
+            }
+            &.web3{
+                border-right-color: $t-color;
+            }
+            &.jogos{
+                border-right-color: #8e44ad;
+            }
+            &.gameficação{
+                border-right-color: #27ae60;
+            }
+            &.vr{
+                border-right-color: #c0392b;
+            }
+            &.modelagem_3d{
+                border-right-color: $p-color;
+            }
+            &.realidade_aumentada{
+                border-right-color: #e67e22;
+            }
+            &Image{
+                width: 100px;
+                height: calc(100% - 20px);
+                background-position: center center;
+                background-size: cover;
+            }
+        }
+        @media screen and (max-width: $mobile){
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            .workCard{
+                width: 50%;
+                &Image{
+                    display: none;
+                }
+            }
+        }
+    }
+}

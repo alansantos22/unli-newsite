@@ -1,0 +1,36 @@
+.align-v{
+    display: flex;
+    align-items: center;
+}
+.align-h{
+    display: flex;
+    justify-content: center;
+}
+.ligado-hover{
+    background-image: linear-gradient(to right, $p-color, $p-dark);
+    // box-shadow: 0 3px 0 0 $s-color, 0 4px 10px 0 #f39c12, 0 6px 12px 0 rgba(0,0,0,.5);
+    box-shadow: 2px 4px 4px 0 rgba(0, 0, 0, 0.5);
+    color: $white;
+    cursor: pointer;
+}
+
+@mixin mobileNoneFlex {
+    display: flex;
+    @media screen and (max-width: $mobile){
+        display: none;
+    }
+}
+
+@mixin desktopNoneFlex {
+    display: none;
+    @media screen and (max-width: $mobile){
+        display: flex;
+    }
+}
+
+@mixin desktopNoneBlock {
+    display: none;
+    @media screen and (max-width: $mobile){
+        display: block;
+    }
+}

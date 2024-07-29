@@ -1,0 +1,111 @@
+.d-flex{
+    &-cont{
+        &-center{
+            display: flex;
+            justify-content: center;
+        }
+        &-evenly{
+            display: flex;
+            justify-content: space-evenly;
+        }
+        &-around{
+            display: flex;
+            justify-content: space-around;
+        }
+        &-between{
+            display: flex;
+            justify-content: space-between;
+        }
+    }
+    &-dir{
+        &-col{
+            display: flex;
+            flex-direction: column !important;
+        }
+        &-row{
+            display: flex;
+            flex-direction: row !important;
+        }
+    }
+}
+.dR-flex{
+    display: flex;
+    @media screen and (max-width:$mobile){
+        flex-direction: column;
+        align-items: center;
+    }
+    &-cont{
+        &-center{
+            display: flex;
+            justify-content: center;
+            @media screen and (max-width:$mobile){
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+        &-evenly{
+            display: flex;
+            justify-content: space-evenly;
+            @media screen and (max-width:$mobile){
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+        &-around{
+            display: flex;
+            justify-content: space-around;
+            @media screen and (max-width:$mobile){
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+        &-between{
+            display: flex;
+            justify-content: space-between;
+            @media screen and (max-width:$mobile){
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    }
+    &--ali{
+        &-center{
+            display: flex;
+            align-items: center;
+        }
+        @media screen and (max-width:$mobile){
+            flex-direction: column;
+        }
+    }
+}
+
+//Sem display flex
+
+.flex{
+    &-align{
+        &-center{
+            align-items: center;
+        }
+    }
+    &-justify{
+        &-center{
+            justify-content: center;
+        }
+        &-evenly{
+            justify-content: space-evenly;
+        }
+        &-around{
+            justify-content: space-around;
+        }
+        &-between{
+            justify-content: space-between;
+        }
+        &-left{
+            justify-content: left;
+        }
+        &-right{
+            justify-content: right;
+        }
+    }
+
+}

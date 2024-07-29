@@ -1,0 +1,12 @@
+@import "@/assets/sass/settings/_base";
+
+footer{
+    width: 100%;
+    background: $gray-dark;
+    padding: 20px;
+    text-align: center;
+    p{
+        color: $white;
+        font-size: $f-xs;
+    }
+}

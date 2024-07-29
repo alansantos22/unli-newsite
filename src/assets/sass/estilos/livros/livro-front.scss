@@ -1,0 +1,22 @@
+.frontBook{
+    width: 200px;
+    height: 300px;
+    cursor: pointer;
+    background: $white;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: rotateY(0deg);
+    backface-visibility: hidden;
+    &:hover{
+        box-shadow: 2px 2px 2px $light-sombra;
+        background: $p-dark;
+    }
+    img{
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 200px;
+        height: 300px;
+    }
+}

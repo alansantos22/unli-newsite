@@ -1,0 +1,40 @@
+.d-{
+    &flex{
+        display: flex !important;
+    }
+    &inline{
+        display: inline !important;
+    }
+    &block{
+        display: block !important;
+    }
+    &none{
+        display: none !important;
+    }
+}
+//Aparecer apenas no mobile
+.dm-none{
+    display: none !important;
+    @media screen and (max-width: $mobile){
+        display: block !important;
+    }
+}
+.dm-none-flex{
+    display: none !important;
+    @media screen and (max-width: $mobile){
+        display: flex !important;
+    }
+}
+//Aparecer apenas desktop
+.dd-none{
+    display: block !important;
+    @media screen and (max-width: $mobile){
+        display: none !important;
+    }
+}
+.dd-none-flex{
+    display: flex !important;
+    @media screen and (max-width: $mobile){
+        display: none !important;
+    }
+}

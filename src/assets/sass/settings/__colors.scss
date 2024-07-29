@@ -1,0 +1,67 @@
+// Principais cores do site
+$p-color: #3498db;
+$p-dark: #2980b9;
+$s-color: #e67e22;
+$s-dark: #d35400;
+$t-color: #f1c40f;
+
+$black: #000;
+$gray: #ccc;
+$white: #fff;
+$gray-dark:#333;
+$gray-light:#ced4da;
+$gray-darkness: #222;
+$gray-lightness: #efefef;
+
+//Efeito luz
+$bg-image-efect-light: linear-gradient(to right, $p-color, $p-dark);
+
+// Cores principais fontes
+$font-color1: #555;
+$font-color2: #999;
+
+// Cores principais sombras
+$sombra: rgba(0,0,0,0.9);
+$light-sombra: rgba(0,0,0,0.4);
+
+//Background Main
+$bg-main: #67BDC7;
+
+//Sub-menu color
+$subMenu-color:rgba(51, 51, 51, 0.9);
+
+// Inputs
+$i-color: #f1c40f;
+$i-hoverColor: #d6ae0c;
+
+// Botões
+$btn-color: $p-color;
+$btn-hoverColor: #d6ae0c;
+$btn-bg-image-hover: $bg-image-efect-light;
+
+// Login
+$bg-container: rgba(0, 0, 0, .2);
+$bg-container-hover: rgba(0, 0, 0, .4);
+
+//has-erro
+$has-erro-color: #f00;
+
+//Header
+$header-background: transparent;
+$header-font-color: $white;
+$header-font-color-hover: $p-dark;
+
+//Section
+$span-section-background: $white;
+$section-background: $gray-lightness;
+$section-border-color: $gray-light;
+
+//Footer
+$footer-background: $p-dark;
+
+//Templates Colors
+$template-background: $white;
+
+//Product Page
+$value: #16a085;
+$desconto: #c0392b;

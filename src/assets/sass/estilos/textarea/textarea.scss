@@ -1,0 +1,19 @@
+.x-textarea1 {
+    width: 100%;
+    margin-top: 40px;
+    resize: none;
+    border: none;
+    color: #999;
+    padding: 15px;
+    box-sizing: border-box;
+    font-size: 14px;
+    outline: none;
+    &:hover{
+        color: $p-dark;
+        transition: $muitoRapido;
+    }
+    &:active, &:focus{
+        box-shadow: 3px 3px 6px rgba(0,0,0,.2);
+        transition: $muitoRapido;
+    }
+}

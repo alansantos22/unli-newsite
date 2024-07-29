@@ -1,0 +1,59 @@
+@import "@/assets/sass/settings/__base.scss";
+
+.containerAboutUs{
+    width: 100%;
+    min-height: 70vh;
+    background-color: $gray-darkness;
+    flex-direction: column;
+    @media screen and (max-width: $mobile){
+        padding: 70px 0;
+    }
+    h2{
+        font-family: $Bebas;
+        color: $white;
+        font-size: 5rem;
+        letter-spacing: 10px;
+        text-align: center;
+        @media screen and (max-width: $mobile){
+            font-size: 3rem;
+            margin-bottom: -70px;
+        }
+    }
+    .columns{
+        margin-top: 100px;
+        display: none;
+        .column{
+            width: 360px;
+            margin: 0 20px;
+            h5{
+                font-family: $Bebas;
+                font-size: 2rem;
+                color: $p-color;
+                text-align: center;
+                margin-bottom: 30px;
+                letter-spacing: 2px;
+            }
+            p{
+                color: $white;
+                font-size: $f-xs;
+                line-height: 40px;
+                text-indent:1em;
+                text-align: justify;
+                strong{
+                    color: $p-color;
+                }
+            }
+        }
+        &.scroll{
+            animation: $bounce $rapido linear;
+            display: flex;
+        }
+        @media screen and (max-width: $mobile){
+            flex-direction: column;
+            .column{
+                padding: 50px 25px;
+                margin: 0;
+            }
+        }
+    }
+}

@@ -1,0 +1,21 @@
+@import "./livro-front.scss";
+@import "./livro-back.scss";
+
+.book{
+    margin: 20px;
+    display: flex;
+    flex-direction: row;
+    width: 200px;
+    height: 300px;
+    float: left;
+    position: relative;
+    perspective: 1000px;
+    &:hover > .frontBook{
+        transform: rotateY(-180deg);
+        transition: all $muitoRapido linear;
+    }
+    &:hover > .backBook{
+        transform: rotateY(0deg);
+        transition: all $muitoRapido linear;
+    }
+}

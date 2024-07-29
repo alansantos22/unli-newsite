@@ -1,0 +1,125 @@
+.background-disrupt{
+    background-image: radial-gradient(ellipse at bottom, #1B2735 20%, #090A0F 100%);
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    overflow:hidden;
+  }
+  
+//New Stars
+@function multiple-box-shadow ($n) {
+  $value: '#{random(2000)}px #{random(2000)}px #FFF';
+  @for $i from 2 through $n {
+    $value: '#{$value} , #{random(2000)}px #{random(2000)}px #FFF';
+  }
+
+  @return unquote($value);
+}
+
+$shadows-small:  multiple-box-shadow(300);
+$shadows-medium: multiple-box-shadow(200);
+$shadows-big:    multiple-box-shadow(100);
+    
+.stars {
+  width: 1px;
+  height: 1px;
+  background: transparent;
+  box-shadow: $shadows-small;
+  animation: animStar2 60s linear infinite;
+  position: absolute;
+  &:before {
+    content: " ";
+    position: absolute;
+    left: 2000px;
+    width: 1px;
+    height: 1px;
+    background: transparent;
+    box-shadow: $shadows-small;
+  }
+  &:after {
+    content: " ";
+    position: absolute;
+    right: 2000px;
+    width: 1px;
+    height: 1px;
+    background: transparent;
+    box-shadow: $shadows-small;
+  }
+}
+
+.stars2{
+  width: 2px;
+  height: 2px;
+  background: transparent;
+  box-shadow: $shadows-medium;
+  animation: animStar2 60s linear infinite;
+  position: absolute;
+  &:before{
+    content: " ";
+    position: absolute;
+    left: 2000px;
+    width: 2px;
+    height: 2px;
+    background: transparent;
+    box-shadow: $shadows-medium;
+  }
+  &:after{
+    content: " ";
+    position: absolute;
+    right: 2000px;
+    width: 2px;
+    height: 2px;
+    background: transparent;
+    box-shadow: $shadows-medium;
+  }
+}
+    
+.stars3{
+  width: 3px;
+  height: 3px;
+  background: transparent;
+  box-shadow: $shadows-big;
+  animation: animStar2 60s linear infinite;
+  position: absolute;
+  &:after{
+    content: " ";
+    position: absolute;
+    left: 2000px;
+    width: 3px;
+    height: 3px;
+    background: transparent;
+    box-shadow: $shadows-big;
+  }
+  &:after{
+    content: " ";
+    position: absolute;
+    right: 2000px;
+    width: 3px;
+    height: 3px;
+    background: transparent;
+    box-shadow: $shadows-big;
+  }
+}
+    
+@keyframes animStar {
+  0% {
+    transform: translateX(0px);
+    opacity: 0;
+  }
+  50%,60% {
+    opacity: 1;
+  }
+  100%{
+    transform: translateX(-2000px);
+    opacity: 0;
+  }
+}
+
+@keyframes animStar2 {
+  0% {
+    transform: translateX(0px);
+  }
+  100%{
+    transform: translateX(-2000px);
+  }
+}

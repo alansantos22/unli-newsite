@@ -1,0 +1,25 @@
+.x-select1{    
+    -webkit-appearance: listbox;
+    border: none;
+    background: transparent;
+    color: $font-color2;
+    margin-top: 20px;
+    border-bottom: solid 1px $font-color2;
+    padding: 0 0 10px;
+    width: 100%;
+    // background-image: url("../img/seta-down.png");
+    background-position: 98% 0px;
+    background-size: 25px 25px;
+    background-repeat: no-repeat;
+    outline: none;
+    cursor: pointer;
+    padding-left: 10px;
+    text-transform: uppercase;
+    &:hover{
+        color: $p-color;
+        border-color: $p-color;
+    }
+    option{
+        color:$font-color1;
+    }
+}

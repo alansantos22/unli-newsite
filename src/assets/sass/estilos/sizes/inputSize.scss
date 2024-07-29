@@ -1,0 +1,54 @@
+.i{
+    &--micro{
+        width: 9%;
+        margin: 0 .5%;
+    }
+    &--small25{
+        width: 24%;
+        margin: 0 .5%;
+    }
+    &--small33{
+        width: 32%;
+        margin: 0 .5%;
+    }
+    &--medium{
+        width: 49%;
+        margin: 0 .5%;
+    }
+    &--large{
+        width: 74%;
+        margin: 0 .5%;
+    }
+    &--full{
+        width: 99%;
+        margin: 0 .5%;
+    }
+}
+@media screen and (max-width:$mobile){
+    .i{
+        &--micro{
+            width: 100%;
+            margin: 0 0%;
+        }
+        &--small25{
+            width: 100%;
+            margin: 0 0%;
+        }
+        &--small33{
+            width: 100%;
+            margin: 0 0%;
+        }
+        &--medium{
+            width: 100%;
+            margin: 0 0%;
+        }
+        &--large{
+            width: 100%;
+            margin: 0 0%;
+        }
+        &--full{
+            width: 100%;
+            margin: 0 0%;
+        }
+    }
+}
