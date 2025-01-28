@@ -13,7 +13,7 @@
     }
     h2{
         font-family: $Bebas;
-        color: $gray-darkness;
+        color: $p-color;
         font-size: 5rem;
         letter-spacing: 10px;
         margin-bottom: 30px;
@@ -66,7 +66,7 @@
                     background: #c0392b;
                 }
                 &.modelagem_3d{
-                    background: $p-color;
+                    background: $s-dark;
                 }
                 &.realidade_aumentada{
                     background: #e67e22;
@@ -81,6 +81,7 @@
                 line-height: 30px;
                 font-size: $f-big;
                 animation: $show $muitoRapido linear;
+                width: 100%;
             }
         }
         &.scroll{
@@ -143,7 +144,7 @@
                     background: #c0392b;
                 }
                 &.modelagem_3d{
-                    background: $p-color;
+                    background: $s-dark;
                 }
                 &.realidade_aumentada{
                     background: #e67e22;
@@ -162,7 +163,7 @@
                 border-right-color: #c0392b;
             }
             &.modelagem_3d{
-                border-right-color: $p-color;
+                border-right-color: $s-dark;
             }
             &.realidade_aumentada{
                 border-right-color: #e67e22;

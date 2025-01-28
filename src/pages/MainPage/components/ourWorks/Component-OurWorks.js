@@ -46,10 +46,10 @@ export default {
                         subtitle: "Raio X é um conceito de tecnologia que desenvolvemos para a Descomplique Eventos, onde as pessoas andam com a tela e ela interage com o banner de fundo, apresentando informações referentes a posição que ela está"
                     },
                     {
-                        image: "pioner.jpg",
-                        name: "Pioneer",
+                        image: "gorila.jpeg",
+                        name: "Mascote Ponte Preta",
                         category: "Realidade_Aumentada",
-                        subtitle: "Trabalho de gameficação realizado por nossos parceiros da Grave Yardgirl 3d. Realidade aumentada feita para promover o produto da Pioneer"
+                        subtitle: "AR desenvolvido para apresentar novos projetos com o mascote para o Museu do Ponte Preta"
                     }
                 ],
                 current: {

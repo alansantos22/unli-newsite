@@ -1,8 +1,9 @@
 import Vuex from 'vuex'
 
-// import resourcesModule from "./Modules/resources/resources";
+import GeneralModule from './general/General.js'
 
 export default new Vuex.Store({
     modules: {
+        GeneralModule
     }
 })

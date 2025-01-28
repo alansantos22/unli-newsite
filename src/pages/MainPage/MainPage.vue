@@ -1,9 +1,11 @@
 <template>
     <div class="containerMainPage">
         <BannerComponent />
+        <ClientsComponent />
         <AboutUsComponent id="aboutUs"/>
         <OurWorksComponent id="ourWorks" />
         <WhatWeDoComponent id="whatWeDo" />
+        <CommentsComponent />
         <WhoIAmComponent id="whoIAm"/>
         <ContactComponent id="contact"/>
     </div>

@@ -4,6 +4,8 @@ import OurWorksComponent from "./components/ourWorks/OurWorks.vue";
 import WhatWeDoComponent from "./components/WhatWeDo/WhatWeDo.vue";
 import WhoIAmComponent from "./components/whoIAm/WhoIAm.vue";
 import ContactComponent from "./components/contact/ContactForm.vue";
+import ClientsComponent from "./components/clients/Clients.vue";
+import CommentsComponent from "./components/comments/Comments.vue";
 
 export default {
     components: {
@@ -12,6 +14,8 @@ export default {
         OurWorksComponent,
         WhatWeDoComponent,
         WhoIAmComponent,
-        ContactComponent
+        ContactComponent,
+        ClientsComponent,
+        CommentsComponent
     }   
 }

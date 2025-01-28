@@ -1,0 +1,45 @@
+@import "@/assets/sass/settings/__base.scss";
+
+.containerClients{
+    width: 100%;
+    height: auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    h3{
+        font-size: $f-superXS;
+        color: $font-color1;
+        margin-right: 40px;
+        max-width: 350px;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        height: 200px;
+    }
+    hr{
+        height: 120px;
+        border: solid 2px $font-color1;
+        @media screen and (max-width: 1709px){
+            display: none;
+        }
+    }
+    ul{
+        list-style: none;
+        display: flex;
+        align-items: center;
+        padding: 0 50px;
+        flex-wrap: wrap;
+        justify-content: center;
+        li{
+            margin: 0 40px;
+            img{
+                max-width: 120px;
+                max-height: 120px;
+            }
+        }
+        &.addBorderRadius{
+            border-radius: 20px;
+        }
+    }
+}

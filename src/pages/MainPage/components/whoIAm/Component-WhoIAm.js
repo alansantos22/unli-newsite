@@ -1,4 +1,9 @@
 export default {
+    computed: {
+        showInterview() {
+            return this.$store.state.GeneralModule.showInterview;
+        }
+    },
     methods:{
         writerMachineEffect() {
             var i = 0;

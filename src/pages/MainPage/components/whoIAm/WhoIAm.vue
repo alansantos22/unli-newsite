@@ -2,7 +2,7 @@
     <div class="containerWhoIAm allCenter">
         <h2>Quer conhecer mais?</h2>
         <span>Veja a <strong>entrevista</strong> completa do nosso <strong>CEO</strong> <strong>Alan Reis</strong> no <strong>Flow Games</strong>, durante a <strong>BGS</strong></span>
-        <div class="iframe"></div>
+        <video controls="controls" v-if="showInterview"><source src="~@/assets/videos/flowgamesAlanReis.mp4" /></video>
     </div>
 </template>
 

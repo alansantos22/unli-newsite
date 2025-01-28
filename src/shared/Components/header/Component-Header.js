@@ -18,10 +18,9 @@ export default {
         }
     },
     mounted() {
+        const el = this;
         let viewportHeight = window.innerHeight;
         let calcViewportHeight = viewportHeight / 100 * 30;
-        let iframeYoutube = `<iframe src="https://www.youtube.com/embed/JkTkHzMdsww?si=mx8AxJ3Re4b-hZyk" title="YouTube video player"
-        frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
         let active = false;
         window.onscroll = function() {
             if (document.body.scrollTop > (viewportHeight/2) || document.documentElement.scrollTop > (viewportHeight/2)) {
@@ -30,16 +29,16 @@ export default {
                 document.querySelector("header").classList.remove("scroll");
             }
             if (document.body.scrollTop > (viewportHeight - (calcViewportHeight)) || document.documentElement.scrollTop > (viewportHeight - (calcViewportHeight))) {
-                document.querySelector(".containerAboutUs .columns").classList.add("scroll");
+                document.querySelector(".containerAboutUs .lines").classList.add("scroll");
             }
             if (document.body.scrollTop > (viewportHeight - (calcViewportHeight) + 700) || document.documentElement.scrollTop > (viewportHeight - (calcViewportHeight) + 700)) {
                 document.querySelector(".groupTelao").classList.add("scroll");
             }
             if (document.body.scrollTop > (viewportHeight - (calcViewportHeight) + (700 + 954)) || document.documentElement.scrollTop > (viewportHeight - (calcViewportHeight) + (700 + 954))) {
-                document.querySelector(".containerWhatWeDo .columns").classList.add("scroll");
+                document.querySelector(".containerWhatWeDo").classList.add("scroll");
             }
             if (document.body.scrollTop > (viewportHeight - (calcViewportHeight) + (700 + 954)) || document.documentElement.scrollTop > (viewportHeight - (calcViewportHeight) + (700 + 954)) && active === false) {
-                document.querySelector(".containerWhoIAm .iframe").innerHTML = iframeYoutube;
+                el.$store.commit("changeShowInterview", true);
                 active = true;
             }
         };

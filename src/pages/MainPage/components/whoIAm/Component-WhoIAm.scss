@@ -11,7 +11,7 @@
         padding: 0 20px;
     }
     h2{
-        color: $gray-darkness;
+        color: $p-color;
         font-family: $Bebas;
         font-size: 5rem;
         letter-spacing: 10px;
@@ -33,7 +33,7 @@
             font-size: $f-medium;
         }
     }
-    iframe{
+    video{
         width: 1020px;
         height: 630px;
         @media screen and (max-width: $mobile){

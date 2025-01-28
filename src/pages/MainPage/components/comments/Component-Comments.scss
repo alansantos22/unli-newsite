@@ -1,0 +1,60 @@
+@import "@/assets/sass/settings/__base.scss";
+
+.containerComments{
+    // background-color: $p-dark;
+    display: flex;
+    align-items: center;
+    min-height: 550px;
+    @media screen and (max-width: $mobile){
+        height: 800px;
+    }
+    .unli-swiper{
+        max-width: 1200px;
+        height: 500px;
+        padding: 20px 30px;
+        @media screen and (max-width: $mobile){
+            height: 800px;
+        }
+        .swiper-slide{
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .comment{
+            line-height: 35px;
+            padding: 20px 30px;
+            font-size: $f-xs;
+            box-shadow: 3px 3px 6px rgba(0,0,0,.5);
+            min-height: 200px;
+            background-color: $p-color;
+            border-radius: 10px;
+            color: $white;
+            position: relative;
+        }
+        .description{
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: left;
+            width: 300px;
+            position: absolute;
+            box-shadow: 3px 3px 6px rgba(0,0,0,.5);
+            background-color: $white;
+            bottom: -60px;
+            left: 10px;
+            border-radius: 10px;
+            min-height: 80px;
+            // img{
+            //     height: 50px;
+            //     width: 55px;
+            //     border: solid 4px $p-dark;
+            //     border-radius: 50%;
+            //     margin-right: 15px;
+            // }
+            span{
+                line-height: 30px;
+                color: $p-dark;
+            }
+        }
+    }
+}
