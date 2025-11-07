@@ -1,6 +1,6 @@
 <template>
     <footer class="allCenter">
-        <p>© 2024 Direitos reservados a Unli Studios</p>
+        <p>© 2025 Direitos reservados a Unli Studios</p>
     </footer>
 </template>
 

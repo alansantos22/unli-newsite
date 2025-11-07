@@ -33,6 +33,14 @@
             font-size: $f-medium;
         }
     }
+    iframe{
+        width: 1020px;
+        height: 630px;
+        @media screen and (max-width: $mobile){
+            width: calc(1020px / 3.25);
+            height: calc(630px / 3.25);
+        }
+    }
     video{
         width: 1020px;
         height: 630px;

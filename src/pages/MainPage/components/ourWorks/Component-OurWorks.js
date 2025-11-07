@@ -28,16 +28,16 @@ export default {
                         subtitle: "Trabalho de gameficação, apresentado no Rock in Rio pela Suzano, para ativação de pessoas que estavam no evento, com um jogo voltado a reciclagem e consciência ambiental"
                     },
                     {
-                        image: "corona-virus-game.jpg",
-                        name: "Zona de contágio",
+                        image: "bobs-gameficacao.png",
+                        name: "Sistema de criação de eventos",
                         category: "Gameficação",
-                        subtitle: "Trabalho de gameficação realizado por nossos parceiros da Grave Yardgirl 3d, focado em ajudar pessoas a entenderem melhor como se prevenir da doença"
+                        subtitle: "Outro trabalho bem sucedido, onde criamos um sistema para criação de eventos gameficados, com quiz interativos, desafios e recompensas, onde foi um sucesso de engajamento e interação com o público"
                     },
                     {
-                        image: "hope-crane.jpg",
-                        name: "Hadley's Hope Crane",
-                        category: "Modelagem_3D",
-                        subtitle: "Trabalho de gameficação realizado por nossos parceiros da Grave Yardgirl 3d. Asset criado para VR, simulando um dia em Hadely's Hope, baseado no filme Aliens(1986)"
+                        image: "fishbay-print.png",
+                        name: "Fishbay",
+                        category: "Sites",
+                        subtitle: "Nosso lançamento mais recente, Fishbay é um game web browser, focado em criar um ambiente tranquilo e divertido"
                     },
                     {
                         image: "raiox.jpeg",
