@@ -1,6 +1,6 @@
 <template>
     <div class="containerClients allCenter">
-        <h3>Marcas que entregamos excelência</h3>
+        <h3>Algumas das marcas que entregamos excelência</h3>
         <hr>
         <ul>
             <li v-for="marca in marcas" :key="marca.name">

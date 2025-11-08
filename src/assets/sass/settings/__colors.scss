@@ -1,67 +1,142 @@
-// Principais cores do site
-$p-color: #e67e22;
-$p-dark: #d35400;
-$s-color: #3498db;
-$s-dark: #2980b9;
-$t-color: #f1c40f;
+// ==========================================
+// PALETA DE CORES PROFISSIONAL - UNLI STUDIO
+// Inspirado em: Mail Design, Influence Agency
+// ==========================================
 
-$black: #000;
-$gray: #ccc;
-$white: #fff;
-$gray-dark:#333;
-$gray-light:#ced4da;
-$gray-darkness: #222;
-$gray-lightness: #efefef;
+// Cores Primárias (Mantidas - Identidade da Marca)
+$p-color: #e67e22;        // Laranja vibrante principal
+$p-dark: #d35400;         // Laranja escuro
+$p-light: #f39c12;        // Laranja claro
+$p-lighter: #ffeaa7;      // Laranja muito claro
 
-//Efeito luz
-$bg-image-efect-light: linear-gradient(to right, $p-color, $p-dark);
+// Cores Neutras Ultra Modernas (Estilo Mail Design)
+$black: #0a0a0a;          // Preto profundo
+$gray-darkness: #1a1d23;  // Cinza quase preto com tom azulado
+$gray-dark: #2a2d35;      // Cinza escuro moderno
+$gray-medium: #5a5d6a;    // Cinza médio neutro
+$gray: #9095a1;           // Cinza claro
+$gray-light: #e5e7eb;     // Cinza muito claro
+$gray-lightness: #f3f4f6; // Cinza quase branco
+$white: #ffffff;          // Branco puro
 
-// Cores principais fontes
-$font-color1: #555;
-$font-color2: #999;
+// Cores de Destaque Premium (Accent Colors)
+$accent-blue: #4f7aff;    // Azul elétrico vibrante
+$accent-blue-dark: #3d5fd9;
+$accent-blue-light: #6b92ff;
+$accent-green: #00d084;   // Verde neon vibrante
+$accent-purple: #9d6cff;  // Roxo tech
+$accent-pink: #ff6ba9;    // Rosa vibrante
+$accent-yellow: #ffd93d;  // Amarelo brilhante
+$accent-cyan: #00d9ff;    // Ciano tech
 
-// Cores principais sombras
-$sombra: rgba(0,0,0,0.9);
-$light-sombra: rgba(0,0,0,0.4);
+// Cores Semânticas
+$success: #22c55e;
+$warning: #f59e0b;
+$error: #ef4444;
+$info: #06b6d4;
 
-//Background Main
-$bg-main: #67BDC7;
+// Gradientes Modernos
+$gradient-primary: linear-gradient(135deg, $p-color 0%, $p-dark 100%);
+$gradient-accent: linear-gradient(135deg, $accent-blue 0%, $accent-purple 100%);
+$gradient-dark: linear-gradient(135deg, $gray-darkness 0%, $gray-dark 100%);
+$gradient-light: linear-gradient(135deg, $white 0%, $gray-lightness 100%);
+$gradient-hero: linear-gradient(135deg, rgba($black, 0.8) 0%, rgba($gray-darkness, 0.9) 100%);
 
-//Sub-menu color
-$subMenu-color:rgba(51, 51, 51, 0.9);
+// Overlays e Sombras
+$overlay-dark: rgba(0, 0, 0, 0.7);
+$overlay-medium: rgba(0, 0, 0, 0.5);
+$overlay-light: rgba(0, 0, 0, 0.3);
+$overlay-subtle: rgba(0, 0, 0, 0.1);
 
-// Inputs
-$i-color: #f1c40f;
-$i-hoverColor: #d6ae0c;
+// Sombras Profissionais
+$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+$shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+$shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+$shadow-glow: 0 0 20px rgba($p-color, 0.3);
+$shadow-glow-strong: 0 0 30px rgba($p-color, 0.5);
 
-// Botões
-$btn-color: $p-color;
-$btn-hoverColor: #d6ae0c;
-$btn-bg-image-hover: $bg-image-efect-light;
+// Fontes
+$font-color-primary: $gray-darkness;
+$font-color-secondary: $gray-medium;
+$font-color-light: $gray;
+$font-color-white: $white;
+$font-color-accent: $p-color;
 
-// Login
-$bg-container: rgba(0, 0, 0, .2);
-$bg-container-hover: rgba(0, 0, 0, .4);
+// Legacy variables (for backward compatibility with old components)
+$font-color1: $gray-darkness;  // Usado em AboutUs, Clients
+$t-color: $p-color;             // Usado em Contact, OurWorks, Header
+$s-dark: $gray-dark;            // Usado em OurWorks
 
-//has-erro
-$has-erro-color: #f00;
+// Header Moderno
+$header-bg: rgba($white, 0.95);
+$header-bg-scroll: rgba($white, 0.98);
+$header-shadow: $shadow-md;
+$header-font-color: $gray-darkness;
+$header-font-hover: $p-color;
 
-//Header
-$header-background: transparent;
-$header-font-color: $white;
-$header-font-color-hover: $p-dark;
+// Botões Modernos
+$btn-primary-bg: $p-color;
+$btn-primary-hover: $p-dark;
+$btn-primary-gradient: $gradient-primary;
+$btn-secondary-bg: $gray-darkness;
+$btn-secondary-hover: $black;
+$btn-outline-border: 2px solid $p-color;
+$btn-shadow-hover: $shadow-xl;
 
-//Section
-$span-section-background: $white;
-$section-background: $gray-lightness;
-$section-border-color: $gray-light;
+// Cards e Containers
+$card-bg: $white;
+$card-bg-dark: $gray-darkness;
+$card-border: $gray-light;
+$card-shadow: $shadow-md;
+$card-shadow-hover: $shadow-xl;
+$card-radius: 1rem;
+$card-radius-lg: 1.5rem;
 
-//Footer
-$footer-background: $p-dark;
+// Inputs Modernos
+$input-bg: $white;
+$input-border: $gray-light;
+$input-focus-border: $p-color;
+$input-focus-shadow: 0 0 0 3px rgba($p-color, 0.1);
+$input-radius: 0.5rem;
 
-//Templates Colors
-$template-background: $white;
+// Seções
+$section-bg-light: $white;
+$section-bg-gray: $gray-lightness;
+$section-bg-dark: $gray-darkness;
+$section-spacing: 6rem;
+$section-spacing-mobile: 3rem;
 
-//Product Page
-$value: #16a085;
-$desconto: #c0392b;
+// Footer
+$footer-bg: $gray-darkness;
+$footer-color: $gray-light;
+$footer-link-hover: $p-color;
+
+// Animações
+$transition-fast: 0.15s ease-in-out;
+$transition-base: 0.3s ease-in-out;
+$transition-slow: 0.5s ease-in-out;
+$transition-bounce: 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+// Z-index Layers
+$z-dropdown: 1000;
+$z-sticky: 1020;
+$z-fixed: 1030;
+$z-modal-backdrop: 1040;
+$z-modal: 1050;
+$z-popover: 1060;
+$z-tooltip: 1070;
+
+// Breakpoints (para referência)
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;
+$breakpoint-xxl: 1400px;
+
+// Glass Morphism (Efeito Moderno)
+$glass-bg: rgba($white, 0.1);
+$glass-border: rgba($white, 0.2);
+$glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+$glass-backdrop: blur(8px);
