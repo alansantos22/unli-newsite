@@ -51,7 +51,7 @@
             <ul class="footer-list contact-list">
               <li>
                 <i class="fas fa-envelope"></i>
-                <a href="mailto:contato@unli.com.br" class="footer-link">contato@unli.com.br</a>
+                <a href="mailto:alanreis@unli.com.br" class="footer-link">alanreis@unli.com.br</a>
               </li>
               <li>
                 <i class="fab fa-whatsapp"></i>

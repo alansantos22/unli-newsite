@@ -449,7 +449,7 @@ export default {
 
     // Contact Data
     const contactData = [
-      { icon: 'fas fa-envelope', label: 'Email', value: 'contato@unli.com.br' },
+      { icon: 'fas fa-envelope', label: 'Email', value: 'alanreis@unli.com.br' },
       { icon: 'fab fa-whatsapp', label: 'WhatsApp', value: '+55 (11) 96835-4238' }
     ];
 
