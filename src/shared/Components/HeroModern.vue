@@ -34,7 +34,7 @@
         <!-- Stats -->
         <div class="hero-stats" v-if="stats.length > 0">
           <div class="stat-item" v-for="(stat, index) in stats" :key="index">
-            <div class="stat-value">{{ stat.value }}+</div>
+            <div class="stat-value">+{{ animatedStats[index] }}</div>
             <div class="stat-label">{{ stat.label }}</div>
           </div>
         </div>
@@ -77,6 +77,7 @@
 </template>
 
 <script>
+import { ref, watch, onMounted } from 'vue';
 import { useIntersectionObserver } from '@/core/composables/useIntersectionObserver';
 import LazyImage from '@/shared/Components/LazyImage.vue';
 
@@ -123,15 +124,70 @@ export default {
       ],
     },
   },
-  setup() {
+  setup(props) {
     const { targetRef, isVisible } = useIntersectionObserver({
       threshold: 0.1,
       triggerOnce: true,
     });
 
+    const animatedStats = ref(props.stats.map(() => '0'));
+
+    // Função para animar números
+    const animateValue = (index, start, end, duration) => {
+      // Extrair apenas números do valor
+      const numberMatch = String(end).match(/\d+/);
+      if (!numberMatch) {
+        animatedStats.value[index] = end;
+        return;
+      }
+
+      const targetNumber = parseInt(numberMatch[0]);
+      const prefix = String(end).split(numberMatch[0])[0] || '';
+      const suffix = String(end).split(numberMatch[0])[1] || '';
+      
+      const startTime = performance.now();
+      const startNumber = 0;
+
+      const animate = (currentTime) => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // Easing function (ease-out)
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        const current = Math.floor(startNumber + (targetNumber - startNumber) * easeOut);
+
+        animatedStats.value[index] = prefix + current.toLocaleString('pt-BR') + suffix;
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          animatedStats.value[index] = prefix + targetNumber.toLocaleString('pt-BR') + suffix;
+        }
+      };
+
+      requestAnimationFrame(animate);
+    };
+
+    // Iniciar animação quando ficar visível
+    watch(isVisible, (newValue) => {
+      if (newValue) {
+        props.stats.forEach((stat, index) => {
+          setTimeout(() => {
+            animateValue(index, 0, stat.value, 2000); // 2 segundos de animação
+          }, index * 200); // Delay escalonado
+        });
+      }
+    });
+
+    // Garantir que stats iniciem em 0
+    onMounted(() => {
+      animatedStats.value = props.stats.map(() => '0');
+    });
+
     return {
       targetRef,
       isVisible,
+      animatedStats,
     };
   },
 };
@@ -466,7 +522,7 @@ export default {
   &.blue {
     width: 150px;
     height: 150px;
-    background: $accent-blue;
+    background: $p-dark;
     bottom: 20%;
     left: 10%;
     animation-delay: 2s;
@@ -475,7 +531,7 @@ export default {
   &.purple {
     width: 120px;
     height: 120px;
-    background: $accent-purple;
+    background: $p-light;
     top: 60%;
     right: 25%;
     animation-delay: 4s;

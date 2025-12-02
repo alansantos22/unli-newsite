@@ -27,28 +27,8 @@
       data-scroll
     />
 
-    <!-- Sobre Nós / Benefícios -->
-    <section id="aboutUs" class="benefits-section" data-scroll>
-      <div class="benefits-container">
-        <div class="benefits-header">
-          <span class="section-badge">Vantagens</span>
-          <h2 class="section-title">Formas Criativas de Atrair Novos Clientes</h2>
-          <p class="section-description">
-            Através da <strong>gamificação</strong> de softwares e produtos, conectamos sua empresa e seu 
-            <strong>cliente</strong> de uma maneira simplificada e divertida
-          </p>
-        </div>
-
-        <div class="benefits-grid">
-          <div v-for="benefit in benefitsData" :key="benefit.title" class="benefit-card" data-stagger>
-            <div class="benefit-icon">
-              <i :class="benefit.icon"></i>
-            </div>
-            <h3 class="benefit-title">{{ benefit.title }}</h3>
-          </div>
-        </div>
-      </div>
-    </section>
+    <!-- Sobre Nós / Benefícios - GAME STYLE -->
+    <BenefitsGameSection id="aboutUs" :benefits="benefitsData" data-scroll />
 
     <!-- Nosso Trabalho / Portfólio -->
     <section id="ourWorks" class="portfolio-section" data-scroll>
@@ -152,17 +132,31 @@
           </div>
           <div class="cta-stats">
             <div class="cta-stat" data-stagger>
-              <i class="fas fa-users"></i>
-              <span>+15.000 Usuários Impactados</span>
+              <i class="fas fa-code"></i>
+              <span>Tecnologia + Game Design</span>
             </div>
             <div class="cta-stat" data-stagger>
-              <i class="fas fa-star"></i>
-              <span>100% Gameficação</span>
+              <i class="fas fa-rocket"></i>
+              <span>Do MVP ao Scale</span>
             </div>
           </div>
         </div>
       </div>
     </section>
+
+    <!-- Timeline do Processo -->
+    <TimelineSection
+      id="process"
+      variant="dark"
+      badge="Nosso Processo"
+      title="Do Problema ao <span style='color: #e67e22'>MVP Validado</span>"
+      description="Cada projeto é uma jornada. Veja como transformamos sua ideia em uma solução real, testada e pronta para crescer."
+      :steps="processSteps"
+      :keyBenefits="processBenefits"
+    />
+
+    <!-- Experience Preview Gamificada -->
+    <ExperiencePreview />
 
     <!-- Depoimentos -->
     <TestimonialsSection
@@ -214,10 +208,13 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import {
   HeroModern,
-  ContactSection
+  ContactSection,
+  BenefitsGameSection,
+  ExperiencePreview
 } from '@/shared/Components';
 import ClientsSection from '@/shared/Components/ClientsSection.vue';
 import TestimonialsSection from '@/shared/Components/TestimonialsSection.vue';
+import TimelineSection from '@/shared/Components/TimelineSection.vue';
 import { useScrollAnimation } from '@/core/composables/useScrollAnimation';
 
 export default {
@@ -226,7 +223,10 @@ export default {
     HeroModern,
     ClientsSection,
     TestimonialsSection,
-    ContactSection
+    TimelineSection,
+    ContactSection,
+    BenefitsGameSection,
+    ExperiencePreview
   },
   setup() {
     // Scroll Animations
@@ -249,7 +249,7 @@ export default {
         'Transforme Sua Empresa',
         'Com Gamificação'
       ],
-      description: 'Criamos experiências gamificadas que conectam sua marca aos clientes de forma inovadora e divertida. Da Web3 aos jogos multiplayer, desenvolvemos soluções que engajam e encantam.',
+      description: 'Desenvolvimento de software e gamificação com foco em resultado de negócio. Unimos tecnologia, game design e visão estratégica para criar soluções digitais que engajam usuários e geram retorno real.',
       images: [
         { 
           src: require('@/assets/img/workCards/parallelium.png'),
@@ -277,8 +277,8 @@ export default {
         }
       ],
       stats: [
-        { value: '5 Anos', label: 'de Experiência' },
-        { value: '15000', label: 'Usuários impactados' }
+        { value: '100000', label: 'usuários impactados' },
+        { value: '10', label: 'anos de experiência' }
       ],
       primaryButtonText: 'Iniciar Projeto',
       secondaryButtonText: 'Ver Portfólio'
@@ -297,28 +297,28 @@ export default {
     // Benefits Data
     const benefitsData = [
       {
-        icon: 'fas fa-shopping-cart',
+        icon: 'icons-cart',
         title: 'Maiores taxas de conversões de vendas'
       },
       {
-        icon: 'fas fa-chart-line',
+        icon: 'icons-growth',
         title: 'Aumento na geração de leads'
       },
       {
-        icon: 'fas fa-eye',
+        icon: 'icons-viralMarketing',
         title: 'Receba mais atenção dos seus usuários'
       },
       {
-        icon: 'fas fa-bullseye',
+        icon: 'icons-facilitySell',
         title: 'Aumento de adesão aos seus produtos'
       },
       {
-        icon: 'fas fa-gem',
-        title: 'Maior percepção de cuidado ao cliente'
+        icon: 'icons-newDigital',
+        title: 'Programas de indicação gamificados'
       },
       {
-        icon: 'fas fa-rocket',
-        title: 'Fique a frente de seus concorrentes'
+        icon: 'icons-work',
+        title: 'Experiências interativas em campanhas e eventos'
       }
     ];
 
@@ -444,6 +444,49 @@ export default {
           "Jogos mobile",
           "Jogos multiplayer"
         ]
+      }
+    ];
+
+    // Process Timeline Data
+    const processSteps = [
+      {
+        title: 'Conversa inicial e <span style="color: #e67e22">diagnóstico</span>',
+        description: 'Começamos com uma conversa aprofundada para entender seu contexto, desafios e objetivos de negócio. Mais do que "o que você quer construir", buscamos identificar qual problema precisa realmente ser resolvido.'
+      },
+      {
+        title: 'Imersão na <span style="color: #e67e22">empresa</span> e processos',
+        description: 'Estudamos sua empresa, produto, público, equipe e processos internos. Analisamos como as coisas funcionam hoje para propor uma solução que se encaixe na rotina e gere resultado prático.'
+      },
+      {
+        title: 'Desenho do <span style="color: #e67e22">MVP ideal</span>',
+        description: 'A partir do diagnóstico, estruturamos um MVP (Produto Mínimo Viável) que ataca diretamente a necessidade identificada. Apresentamos escopo, funcionalidades essenciais e estimativa de esforço.'
+      },
+      {
+        title: 'Desenvolvimento com <span style="color: #e67e22">acompanhamento</span>',
+        description: 'Mantemos um ciclo de acompanhamento contínuo. Alinhamos prioridades, mostramos entregas parciais e ajustamos o rumo rapidamente sempre que necessário.'
+      },
+      {
+        title: 'Lançamento e <span style="color: #e67e22">testes em campo</span>',
+        description: 'O MVP é testado junto com você e sua equipe. Observamos o uso real, colhemos feedbacks e identificamos o que funcionou melhor e quais oportunidades surgiram.'
+      },
+      {
+        title: 'Evolução <span style="color: #e67e22">guiada por dados</span>',
+        description: 'Com base nos testes e validações, priorizamos as próximas melhorias. Implementamos apenas o que comprovadamente gera valor, evitando desperdício. O projeto cresce de forma sustentável.'
+      }
+    ];
+
+    const processBenefits = [
+      {
+        icon: 'fas fa-rocket',
+        text: 'MVP rápido que valida sua ideia sem queimar orçamento'
+      },
+      {
+        icon: 'fas fa-chart-line',
+        text: 'Crescimento baseado em dados reais, não em achismos'
+      },
+      {
+        icon: 'fas fa-users',
+        text: 'Parceria contínua: crescemos junto com seu projeto'
       }
     ];
 
@@ -576,6 +619,8 @@ export default {
       currentProject,
       testimonialsData,
       servicesData,
+      processSteps,
+      processBenefits,
       contactData,
       scrollProgress,
       handleStartProject,

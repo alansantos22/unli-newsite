@@ -12,6 +12,9 @@ export { default as ServicesSection } from './ServicesSection.vue';
 export { default as ContactSection } from './ContactSection.vue';
 export { default as ModernButton } from './ModernButton.vue';
 export { default as TestimonialsSection } from './TestimonialsSection.vue';
+export { default as TimelineSection } from './TimelineSection.vue';
+export { default as BenefitsGameSection } from './BenefitsGameSection.vue';
+export { default as ExperiencePreview } from './ExperiencePreview.vue';
 
 // Uso:
-// import { HeroModern, LazyImage, ModernCard } from '@/shared/Components';
+// import { HeroModern, LazyImage, ModernCard, TimelineSection, BenefitsGameSection, ExperiencePreview } from '@/shared/Components';

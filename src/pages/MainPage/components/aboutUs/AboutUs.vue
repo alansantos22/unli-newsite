@@ -26,11 +26,11 @@
             </div>
             <div class="box">
                 <i class="icon icons-newDigital"></i>
-                <h5>Maior percepção de cuidado ao cliente</h5>
+                <h5>Programas de indicação gamificados</h5>
             </div>
             <div class="box">
                 <i class="icon icons-work"></i>
-                <h5>Fique a frente de seus concorrentes</h5>
+                <h5>Experiências interativas em campanhas e eventos</h5>
             </div>
         </div>
     </div>
