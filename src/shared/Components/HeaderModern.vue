@@ -18,7 +18,16 @@
       <nav class="nav-desktop">
         <ul class="nav-list">
           <li v-for="item in navItems" :key="item.href" class="nav-item">
+            <router-link 
+              v-if="item.isRoute"
+              :to="item.href" 
+              class="nav-link"
+              @click="handleNavClick"
+            >
+              {{ item.label }}
+            </router-link>
             <a 
+              v-else
               :href="item.href" 
               class="nav-link"
               @click="handleNavClick"
@@ -57,7 +66,16 @@
       <nav v-if="isMobileMenuOpen" class="nav-mobile">
         <ul class="mobile-nav-list">
           <li v-for="item in navItems" :key="item.href" class="mobile-nav-item">
+            <router-link 
+              v-if="item.isRoute"
+              :to="item.href" 
+              class="mobile-nav-link"
+              @click="closeMobileMenu"
+            >
+              {{ item.label }}
+            </router-link>
             <a 
+              v-else
               :href="item.href" 
               class="mobile-nav-link"
               @click="closeMobileMenu"
@@ -90,6 +108,7 @@ export default {
       { href: '#aboutUs', label: 'Quem Somos' },
       { href: '#ourWorks', label: 'Portfólio' },
       { href: '#whatWeDo', label: 'Serviços' },
+      { href: '/consultoria-gamificacao', label: 'Consultoria', isRoute: true },
       { href: '#contact', label: 'Contato' }
     ];
 

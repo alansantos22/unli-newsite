@@ -201,6 +201,15 @@
       submitText="Enviar Mensagem"
       @submit="handleContactSubmit"
     />
+
+    <!-- WhatsApp Flutuante -->
+    <a href="https://wa.me/5511968354238?text=Olá! Gostaria de saber mais sobre os serviços da Unli Studio" 
+       target="_blank" 
+       class="whatsapp-float"
+       title="Falar no WhatsApp">
+      <i class="fab fa-whatsapp"></i>
+      <span class="whatsapp-text">Falar Conosco</span>
+    </a>
   </div>
 </template>
 
@@ -1622,6 +1631,144 @@ export default {
   100% {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+// ==========================================
+// WHATSAPP FLOATING BUTTON
+// ==========================================
+
+.whatsapp-float {
+  position: fixed !important;
+  bottom: 30px !important;
+  right: 30px !important;
+  z-index: 1001 !important;
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #25d366, #128c7e);
+  color: white !important;
+  text-decoration: none;
+  padding: 15px 20px;
+  border-radius: 50px;
+  box-shadow: 0 6px 25px rgba(37, 211, 102, 0.4);
+  transition: all 0.3s ease;
+  animation: pulseWhatsapp 3s infinite;
+  font-weight: 600;
+  font-size: 16px;
+  opacity: 1 !important;
+  visibility: visible !important;
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 30px rgba(37, 211, 102, 0.6);
+    text-decoration: none;
+    color: white;
+  }
+
+  i {
+    font-size: 24px;
+    margin: 0;
+  }
+
+  .whatsapp-text {
+    white-space: nowrap;
+    font-weight: 600;
+  }
+}
+
+@keyframes pulseWhatsapp {
+  0%, 100% {
+    box-shadow: 0 6px 25px rgba(37, 211, 102, 0.4);
+  }
+  50% {
+    box-shadow: 0 8px 35px rgba(37, 211, 102, 0.6);
+  }
+}
+
+@media (max-width: 768px) {
+  .whatsapp-float {
+    bottom: 20px;
+    right: 15px;
+    padding: 12px 16px;
+    font-size: 14px;
+    
+    i {
+      font-size: 20px;
+    }
+    
+    .whatsapp-text {
+      display: none;
+    }
+  }
+}
+
+// ==========================================
+// WHATSAPP FLOATING BUTTON
+// ==========================================
+
+.whatsapp-float {
+  position: fixed !important;
+  bottom: 30px !important;
+  right: 30px !important;
+  z-index: 1001 !important;
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #25d366, #128c7e);
+  color: white !important;
+  text-decoration: none;
+  padding: 15px 20px;
+  border-radius: 50px;
+  box-shadow: 0 6px 25px rgba(37, 211, 102, 0.4);
+  transition: all 0.3s ease;
+  animation: pulseWhatsapp 3s infinite;
+  font-weight: 600;
+  font-size: 16px;
+  opacity: 1 !important;
+  visibility: visible !important;
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 30px rgba(37, 211, 102, 0.6);
+    text-decoration: none;
+    color: white;
+  }
+
+  i {
+    font-size: 24px;
+    margin: 0;
+  }
+
+  .whatsapp-text {
+    white-space: nowrap;
+    font-weight: 600;
+  }
+}
+
+@keyframes pulseWhatsapp {
+  0%, 100% {
+    box-shadow: 0 6px 25px rgba(37, 211, 102, 0.4);
+  }
+  50% {
+    box-shadow: 0 8px 35px rgba(37, 211, 102, 0.6);
+  }
+}
+
+@media (max-width: 768px) {
+  .whatsapp-float {
+    bottom: 20px;
+    right: 15px;
+    padding: 12px 16px;
+    font-size: 14px;
+    
+    i {
+      font-size: 20px;
+    }
+    
+    .whatsapp-text {
+      display: none;
+    }
   }
 }
 </style>

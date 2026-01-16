@@ -14,6 +14,7 @@
                 <li><a href="#aboutUs">Quem somos</a><b></b></li>
                 <li><a href="#ourWorks">Nosso Trabalho</a><b></b></li>
                 <li><a href="#whatWeDo">O que fazemos?</a><b></b></li>
+                <li><router-link to="/consultoria-gamificacao"><a>Consultoria</a></router-link><b></b></li>
                 <li><a href="#contact">Contato</a><b></b></li>
                 <!-- <li><a href="#roadmap">Portfolio</a><b></b></li> -->
                 <!-- <div class="medias d-flex">
@@ -29,6 +30,7 @@
                 <li @click="toogleMobile(), animationHamburguer()"><a href="#aboutUs">Quem somos</a><b></b></li>
                 <li @click="toogleMobile(), animationHamburguer()"><a href="#ourWorks">Nosso Trabalho</a><b></b></li>
                 <li @click="toogleMobile(), animationHamburguer()"><a href="#whatWeDo">O que fazemos?</a><b></b></li>
+                <li @click="toogleMobile(), animationHamburguer()"><router-link to="/consultoria-gamificacao"><a>Consultoria</a></router-link><b></b></li>
                 <li @click="toogleMobile(), animationHamburguer()"><a href="#contact">Contato</a><b></b></li>
                 <!-- <li @click="toogleMobile(), animationHamburguer()"><a href="#roadmap">Portfolio</a><b></b></li> -->
                 <!-- <li @click="toogleMobile(), animationHamburguer()"><a href="https://twitter.com/OParallelium" target="_blank"><i class="icon icons-twitter"></i></a></li>

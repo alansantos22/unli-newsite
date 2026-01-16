@@ -252,7 +252,7 @@ export default {
   position: relative;
 
   @media (max-width: $mobile) {
-    padding: 100px 0;
+    display: none;
   }
 }
 

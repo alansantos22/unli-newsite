@@ -18,5 +18,10 @@ export default [
         path: "/projeto/:id",
         name: "ProjectDetails",
         component: () => import("./pages/Portfolio/ProjectDetails.vue")
+    },
+    {
+        path: "/consultoria-gamificacao",
+        name: "ConsultoriaGamificacao",
+        component: () => import("./pages/ConsultoriaGamificacao/ConsultoriaGamificacao.vue")
     }
 ]
