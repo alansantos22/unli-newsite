@@ -15,6 +15,8 @@ export { default as TestimonialsSection } from './TestimonialsSection.vue';
 export { default as TimelineSection } from './TimelineSection.vue';
 export { default as BenefitsGameSection } from './BenefitsGameSection.vue';
 export { default as ExperiencePreview } from './ExperiencePreview.vue';
+export { default as PriceCalculator } from './PriceCalculator.vue';
+export { default as SiteConfigurator } from './SiteConfigurator.vue';
 
 // Uso:
-// import { HeroModern, LazyImage, ModernCard, TimelineSection, BenefitsGameSection, ExperiencePreview } from '@/shared/Components';
+// import { HeroModern, LazyImage, ModernCard, TimelineSection, BenefitsGameSection, ExperiencePreview, PriceCalculator, SiteConfigurator } from '@/shared/Components';

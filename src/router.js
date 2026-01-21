@@ -23,5 +23,10 @@ export default [
         path: "/consultoria-gamificacao",
         name: "ConsultoriaGamificacao",
         component: () => import("./pages/ConsultoriaGamificacao/ConsultoriaGamificacao.vue")
+    },
+    {
+        path: "/site-vitrine",
+        name: "SiteVitrine",
+        component: () => import("./pages/SiteVitrine/SiteVitrine.vue")
     }
 ]

@@ -1,6 +1,7 @@
 const ImageMinimizerPlugin = require('image-minimizer-webpack-plugin');
 const { defineConfig } = require('@vue/cli-service');
 const path = require('path');
+const webpack = require('webpack');
 
 module.exports = defineConfig({
   transpileDependencies: true,
@@ -33,6 +34,13 @@ module.exports = defineConfig({
             },
             },
         }),
+        // Definir variáveis de ambiente
+        new webpack.DefinePlugin({
+            'process.env': {
+                NODE_ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
+                VUE_APP_API_URL: JSON.stringify(process.env.VUE_APP_API_URL || '/api')
+            }
+        })
     ],
   }
 })

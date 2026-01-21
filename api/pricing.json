@@ -1,0 +1,63 @@
+{
+  "version": "1.0.0",
+  "currency": "BRL",
+  "products": {
+    "landing": {
+      "name": "Landing Page",
+      "base_price": 599,
+      "description": "Página única focada em conversão. Ideal para campanhas, anúncios ou produto/serviço específico.",
+      "allows_extra_pages": false
+    },
+    "site_complete": {
+      "name": "Site Completo",
+      "base_price": 619,
+      "description": "Site institucional com mais páginas além da principal (ex.: Sobre, Serviços, Portfólio). Ideal para presença completa da empresa.",
+      "allows_extra_pages": true
+    }
+  },
+  "page_addons": {
+    "about": {
+      "name": "Sobre Nós",
+      "price": 199
+    },
+    "services": {
+      "name": "Serviços",
+      "price": 249
+    },
+    "portfolio": {
+      "name": "Portfólio",
+      "price": 299
+    },
+    "faq": {
+      "name": "FAQ",
+      "price": 179
+    },
+    "contact": {
+      "name": "Contato",
+      "price": 149
+    }
+  },
+  "content_addons": {
+    "video": {
+      "name": "Vídeo",
+      "price": 79,
+      "allowed_uploads": ["video/*"],
+      "max_size_mb": 50
+    },
+    "pdf": {
+      "name": "PDF",
+      "price": 49,
+      "allowed_uploads": ["application/pdf"],
+      "max_size_mb": 10
+    }
+  },
+  "pricing_rules": {
+    "cash_discount_percent": 10,
+    "installments_12_markup_percent": 10,
+    "installments": 12
+  },
+  "limits": {
+    "extra_pages_max_for_checkout": 5,
+    "extra_pages_warning_threshold": 3
+  }
+}

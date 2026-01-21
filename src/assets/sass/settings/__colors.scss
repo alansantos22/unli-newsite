@@ -29,6 +29,9 @@ $accent-pink: #ff6ba9;    // Rosa vibrante
 $accent-yellow: #ffd93d;  // Amarelo brilhante
 $accent-cyan: #00d9ff;    // Ciano tech
 
+// Atalho para accent principal (usado em componentes)
+$accent: $accent-blue;
+
 // Cores Semânticas
 $success: #22c55e;
 $warning: #f59e0b;
