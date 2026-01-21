@@ -253,12 +253,16 @@
             <div class="info-content">
               <h4>Incluído no Plano:</h4>
               <ul>
-                <li><i class="fas fa-check"></i> Suporte de disponibilidade (site fora do ar)</li>
+                <li><i class="fas fa-check"></i> Suporte de disponibilidade</li>
                 <li><i class="fas fa-check"></i> Acesso exclusivo ao nosso sistema para alterações</li>
                 <li><i class="fas fa-check"></i> Domínio grátis (.com.br)</li>
                 <li><i class="fas fa-check"></i> Certificado SSL grátis (HTTPS)</li>
                 <li><i class="fas fa-check"></i> Otimização de SEO simples grátis</li>
                 <li><i class="fas fa-check"></i> Entrega em até 10 dias</li>
+                <li><i class="fas fa-check"></i> Hospedagem anual incluída</li>
+                <li><i class="fas fa-check"></i> Design feito também para celulares</li>
+                <li><i class="fas fa-check"></i> Botão WhatsApp integrado</li>
+                <li><i class="fas fa-check"></i> Otimização de velocidade</li>
               </ul>
             </div>
           </div>
@@ -434,7 +438,7 @@
                 <textarea 
                   v-model="briefing.page_contents[pageKey]"
                   rows="4"
-                  :placeholder="`Conteúdo para a página ${config.page_addons[pageKey].name}...`"
+                  :placeholder="`Descreva o conteúdo para a página ${config.page_addons[pageKey].name}...`"
                 ></textarea>
               </div>
             </div>
@@ -485,7 +489,7 @@
               <div class="summary-items">
                 <div class="summary-item">
                   <span>{{ currentProductName }}</span>
-                  <span>{{ formatPrice(basePrice) }}</span>
+                  <span>{{ formatMonthlyPrice(basePrice) }}</span>
                 </div>
                 <div 
                   v-for="pageKey in validSelectedPages"
@@ -493,7 +497,7 @@
                   class="summary-item"
                 >
                   <span>{{ config.page_addons[pageKey].name }}</span>
-                  <span>{{ formatPrice(config.page_addons[pageKey].price) }}</span>
+                  <span>{{ formatMonthlyPrice(config.page_addons[pageKey].price) }}</span>
                 </div>
                 <div 
                   v-for="(page, index) in customPages"
@@ -501,7 +505,7 @@
                   class="summary-item"
                 >
                   <span>Página Personalizada #{{ index + 1 }}</span>
-                  <span>{{ formatPrice(calculateCustomPageTotal(page)) }}</span>
+                  <span>{{ formatMonthlyPrice(calculateCustomPageTotal(page)) }}</span>
                 </div>
                 <div 
                   v-for="addonKey in validSelectedContentAddons"
@@ -509,29 +513,25 @@
                   class="summary-item"
                 >
                   <span>{{ config.content_addons[addonKey].name }}</span>
-                  <span>{{ formatPrice(config.content_addons[addonKey].price) }}</span>
+                  <span>{{ formatMonthlyPrice(config.content_addons[addonKey].price) }}</span>
                 </div>
               </div>
               <div class="summary-total">
-                <div class="total-row subtotal">
-                  <span>Subtotal</span>
-                  <span>{{ formatPrice(subtotal) }}</span>
-                </div>
                 <div class="total-row installments">
-                  <span>12x no cartão (+15%)</span>
+                  <span>12x no cartão</span>
                   <span class="highlight">12x de {{ formatPrice(installmentValue) }}</span>
                 </div>
                 <div class="total-row cash">
-                  <span>À vista</span>
+                  <span>À vista (<strong class="discount-badge">Desconto de 15%</strong>)</span>
                   <span class="highlight-success">{{ formatPrice(cashPrice) }}</span>
                 </div>
               </div>
             </div>
 
             <div class="step-navigation">
-              <button type="button" class="btn-back" @click="currentStep = 1">
-                <i class="fas fa-undo"></i>
-                Recomeçar
+              <button type="button" class="btn-back" @click="currentStep = 2">
+                <i class="fas fa-edit"></i>
+                Quero mudar alguma coisa
               </button>
               <button type="submit" class="btn-submit" :disabled="isSubmitting">
                 <i class="fas fa-check-circle"></i>
@@ -1180,7 +1180,10 @@ export default {
     },
 
     formatMonthlyPrice(annualValue) {
-      const monthly = annualValue / 12;
+      // Adiciona 15% (taxa do cartão) e divide por 12
+      // Assim o cliente vê o preço mensal parcelado desde o início
+      const withMarkup = annualValue * 1.15;
+      const monthly = withMarkup / 12;
       return `R$ ${monthly.toFixed(2).replace('.', ',')}/mês`;
     },
     
@@ -2607,6 +2610,13 @@ export default {
         padding: 16px;
         background: rgba($success, 0.1);
         border-radius: 12px;
+
+        .discount-badge {
+          color: $success;
+          font-weight: 900;
+          font-size: 1.05em;
+          letter-spacing: 0.3px;
+        }
 
         .highlight-success {
           font-size: 1.3rem;
