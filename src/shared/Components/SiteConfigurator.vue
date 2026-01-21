@@ -35,7 +35,7 @@
             Você poderá adicionar itens no próximo passo.
           </p>
 
-          <div class="product-cards">
+          <div v-if="config.products" class="product-cards">
             <div
               v-for="(product, key) in config.products"
               :key="key"
@@ -71,49 +71,146 @@
           </p>
 
           <!-- Páginas Adicionais (somente Site Completo) -->
-          <div v-if="selectedProduct === 'site_complete'" class="addon-section">
+          <div v-if="selectedProduct === 'site_complete' && config.page_addons" class="addon-section">
             <h3 class="section-title">
               <i class="fas fa-file-alt"></i>
-              Páginas Adicionais
+              Páginas Pré-Definidas
             </h3>
-            <div class="addon-grid">
-              <div
+            <div class="addon-checkboxes">
+              <label
                 v-for="(page, key) in config.page_addons"
                 :key="key"
-                class="addon-item"
+                class="checkbox-item"
               >
-                <div class="addon-info">
-                  <span class="addon-name">
-                    {{ page.name }}
-                    <span class="addon-tooltip">
-                      <i class="fas fa-info-circle"></i>
-                      <span class="tooltip-text">{{ getPageTooltip(key) }}</span>
+                <input
+                  type="checkbox"
+                  :value="key"
+                  v-model="selectedPages"
+                >
+                <div class="checkbox-content">
+                  <div class="checkbox-info">
+                    <span class="checkbox-name">
+                      {{ page.name }}
+                      <span class="addon-tooltip">
+                        <i class="fas fa-info-circle"></i>
+                        <span class="tooltip-text">{{ getPageTooltip(key) }}</span>
+                      </span>
                     </span>
-                  </span>
-                  <span class="addon-price">{{ formatPrice(page.price) }}</span>
+                    <span class="checkbox-price">+{{ formatMonthlyPrice(page.price) }}</span>
+                  </div>
+                  <div class="checkbox-mark">
+                    <i class="fas fa-check"></i>
+                  </div>
                 </div>
-                <div class="addon-counter">
-                  <button 
-                    class="counter-btn"
-                    :disabled="getPageCount(key) === 0"
-                    @click="decrementPage(key)"
-                  >
-                    <i class="fas fa-minus"></i>
-                  </button>
-                  <span class="counter-value">{{ getPageCount(key) }}</span>
-                  <button 
-                    class="counter-btn"
-                    @click="incrementPage(key)"
-                  >
-                    <i class="fas fa-plus"></i>
-                  </button>
+              </label>
+            </div>
+          </div>
+
+          <!-- Páginas Personalizadas -->
+          <div v-if="selectedProduct === 'site_complete'" class="addon-section">
+            <h3 class="section-title">
+              <i class="fas fa-pen-fancy"></i>
+              Páginas Personalizadas
+            </h3>
+            <p class="section-subtitle">
+              Crie páginas exclusivas para suas necessidades específicas
+            </p>
+
+            <div class="custom-page-counter">
+              <span class="counter-label">Quantas páginas personalizadas você precisa?</span>
+              <div class="counter-controls">
+                <button 
+                  class="counter-btn"
+                  :disabled="customPages.length === 0"
+                  @click="removeCustomPage"
+                >
+                  <i class="fas fa-minus"></i>
+                </button>
+                <span class="counter-value">{{ customPages.length }}</span>
+                <button 
+                  class="counter-btn"
+                  @click="addCustomPage"
+                >
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+              <span class="counter-price">+R$ 8,25/mês por página</span>
+            </div>
+
+            <!-- Box para cada página personalizada -->
+            <div
+              v-for="(page, index) in customPages"
+              :key="index"
+              class="custom-page-box"
+            >
+              <div class="custom-page-header">
+                <h4>Página Personalizada #{{ index + 1 }}</h4>
+                <button class="remove-page-btn" @click="removeCustomPageByIndex(index)">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+
+              <div class="custom-page-description">
+                <label>Descreva o que você quer nesta página:</label>
+                <textarea
+                  v-model="page.description"
+                  maxlength="500"
+                  placeholder="Ex: Página de produtos com galeria de fotos, descrições e botões de compra..."
+                  rows="4"
+                ></textarea>
+                <span class="char-count">{{ page.description.length }}/500 caracteres</span>
+              </div>
+
+              <div class="custom-page-resources">
+                <h5>Recursos para esta página:</h5>
+                <div class="resources-grid">
+                  <label class="resource-item">
+                    <input type="checkbox" v-model="page.resources.image">
+                    <div class="resource-content">
+                      <i class="fas fa-image"></i>
+                      <span class="resource-name">Imagens</span>
+                      <span class="resource-price">+R$ 0,83/mês</span>
+                    </div>
+                  </label>
+
+                  <label class="resource-item">
+                    <input type="checkbox" v-model="page.resources.video">
+                    <div class="resource-content">
+                      <i class="fas fa-video"></i>
+                      <span class="resource-name">Vídeo</span>
+                      <span class="resource-price">+R$ 1,00/mês</span>
+                    </div>
+                  </label>
+
+                  <label class="resource-item">
+                    <input type="checkbox" v-model="page.resources.carousel">
+                    <div class="resource-content">
+                      <i class="fas fa-images"></i>
+                      <span class="resource-name">Carrossel</span>
+                      <span class="resource-price">+R$ 1,67/mês</span>
+                    </div>
+                  </label>
+
+                  <label class="resource-item">
+                    <input type="checkbox" v-model="page.resources.form">
+                    <div class="resource-content">
+                      <i class="fas fa-envelope"></i>
+                      <span class="resource-name">Formulário</span>
+                      <span class="resource-price">+R$ 2,50/mês</span>
+                    </div>
+                  </label>
                 </div>
+              </div>
+
+              <div class="custom-page-total">
+                <span>Total desta página:</span>
+                <span class="total-value">{{ formatMonthlyPrice(calculateCustomPageTotal(page)) }}</span>
               </div>
             </div>
           </div>
 
           <!-- Conteúdo Pesado -->
-          <div class="addon-section">
+          <div v-if="config.content_addons" class="addon-section">
             <h3 class="section-title">
               <i class="fas fa-photo-video"></i>
               Conteúdo Especial
@@ -138,7 +235,7 @@
                         <span class="tooltip-text">{{ getContentTooltip(key) }}</span>
                       </span>
                     </span>
-                    <span class="toggle-price">+{{ formatPrice(content.price) }}</span>
+                    <span class="toggle-price">+{{ formatMonthlyPrice(content.price) }}</span>
                   </div>
                   <div class="toggle-switch">
                     <span class="switch"></span>
@@ -171,7 +268,7 @@
           <div v-if="selectedProduct === 'landing'" class="upsell-box">
             <div class="upsell-header">
               <i class="fas fa-arrow-up"></i>
-              <h3>Quer o site mais personalizado por apenas mais R$20 por ano?</h3>
+              <h3>Quer o site mais personalizado por apenas mais R$20 no ano?</h3>
             </div>
             <p class="upsell-description">
               Adicione páginas extras como Sobre, Serviços, Portfólio e muito mais!
@@ -329,9 +426,8 @@
 
               <!-- Textos de Páginas Adicionais -->
               <div 
-                v-for="(count, pageKey) in selectedPages"
+                v-for="pageKey in validSelectedPages"
                 :key="pageKey"
-                v-show="count > 0"
                 class="form-group"
               >
                 <label>Texto: {{ config.page_addons[pageKey].name }}</label>
@@ -392,16 +488,23 @@
                   <span>{{ formatPrice(basePrice) }}</span>
                 </div>
                 <div 
-                  v-for="(count, pageKey) in selectedPages"
+                  v-for="pageKey in validSelectedPages"
                   :key="pageKey"
-                  v-show="count > 0"
                   class="summary-item"
                 >
-                  <span>{{ config.page_addons[pageKey].name }} ({{ count }}x)</span>
-                  <span>{{ formatPrice(config.page_addons[pageKey].price * count) }}</span>
+                  <span>{{ config.page_addons[pageKey].name }}</span>
+                  <span>{{ formatPrice(config.page_addons[pageKey].price) }}</span>
                 </div>
                 <div 
-                  v-for="addonKey in selectedContentAddons"
+                  v-for="(page, index) in customPages"
+                  :key="'custom-' + index"
+                  class="summary-item"
+                >
+                  <span>Página Personalizada #{{ index + 1 }}</span>
+                  <span>{{ formatPrice(calculateCustomPageTotal(page)) }}</span>
+                </div>
+                <div 
+                  v-for="addonKey in validSelectedContentAddons"
                   :key="addonKey"
                   class="summary-item"
                 >
@@ -415,11 +518,11 @@
                   <span>{{ formatPrice(subtotal) }}</span>
                 </div>
                 <div class="total-row installments">
-                  <span>12x no cartão</span>
+                  <span>12x no cartão (+15%)</span>
                   <span class="highlight">12x de {{ formatPrice(installmentValue) }}</span>
                 </div>
                 <div class="total-row cash">
-                  <span>À vista (10% desc.)</span>
+                  <span>À vista</span>
                   <span class="highlight-success">{{ formatPrice(cashPrice) }}</span>
                 </div>
               </div>
@@ -449,44 +552,45 @@
       <div class="sidebar-items">
         <div v-if="selectedProduct" class="sidebar-item">
           <span class="item-name">{{ currentProductName }}</span>
-          <span class="item-price">{{ formatPrice(basePrice) }}</span>
+          <span class="item-price">{{ formatMonthlyPrice(basePrice) }}</span>
         </div>
         
+        <!-- Páginas pré-definidas -->
         <div 
-          v-for="(count, pageKey) in selectedPages"
+          v-for="pageKey in validSelectedPages"
           :key="pageKey"
-          v-show="count > 0"
           class="sidebar-item"
         >
-          <span class="item-name">
-            {{ config.page_addons[pageKey].name }} 
-            <span class="item-qty">({{ count }}x)</span>
-          </span>
-          <span class="item-price">{{ formatPrice(config.page_addons[pageKey].price * count) }}</span>
+          <span class="item-name">{{ config.page_addons[pageKey].name }}</span>
+          <span class="item-price">{{ formatMonthlyPrice(config.page_addons[pageKey].price) }}</span>
+        </div>
+
+        <!-- Páginas personalizadas -->
+        <div 
+          v-for="(page, index) in customPages"
+          :key="'custom-' + index"
+          class="sidebar-item"
+        >
+          <span class="item-name">Página Personalizada #{{ index + 1 }}</span>
+          <span class="item-price">{{ formatMonthlyPrice(calculateCustomPageTotal(page)) }}</span>
         </div>
 
         <div 
-          v-for="addonKey in selectedContentAddons"
+          v-for="addonKey in validSelectedContentAddons"
           :key="addonKey"
           class="sidebar-item"
         >
           <span class="item-name">{{ config.content_addons[addonKey].name }}</span>
-          <span class="item-price">{{ formatPrice(config.content_addons[addonKey].price) }}</span>
+          <span class="item-price">{{ formatMonthlyPrice(config.content_addons[addonKey].price) }}</span>
         </div>
       </div>
 
+      <!-- Total mensal (sempre visível) -->
       <div class="sidebar-total">
-        <div class="total-line">
-          <span>Subtotal</span>
-          <span>{{ formatPrice(subtotal) }}</span>
-        </div>
-        <div class="total-line installment">
-          <span>12x no cartão</span>
-          <span class="price-big">{{ formatPrice(installmentValue) }}</span>
-        </div>
-        <div class="total-line cash">
-          <span>À vista</span>
-          <span class="price-big success">{{ formatPrice(cashPrice) }}</span>
+        <div class="monthly-highlight">
+          <span class="monthly-label">Total</span>
+          <span class="monthly-price">{{ formatMonthlyPrice(subtotal) }}</span>
+          <span class="monthly-hint">Pagamento anual</span>
         </div>
       </div>
 
@@ -610,8 +714,9 @@ export default {
       
       // Seleções
       selectedProduct: null,
-      selectedPages: {}, // { about: 1, services: 2, ... }
+      selectedPages: [], // Array de strings: ['about', 'services', ...]
       selectedContentAddons: [], // ['video', 'pdf']
+      customPages: [], // Array de objetos: [{ description: '', resources: { image: false, video: false, carousel: false, form: false } }]
       
       // Briefing
       briefing: {
@@ -694,9 +799,56 @@ export default {
     },
     selectedContentAddons() {
       this.validatePriceOnServer();
+    },
+    customPages: {
+      deep: true,
+      handler() {
+        this.validatePriceOnServer();
+      }
     }
   },
   computed: {
+    // Filtered arrays para evitar v-if + v-for
+    validSelectedPages() {
+      console.log('🔍 [validSelectedPages] Computing...');
+      console.log('  - config.page_addons exists:', !!this.config.page_addons);
+      console.log('  - selectedPages:', this.selectedPages);
+      
+      if (!this.config.page_addons) {
+        console.log('  ⚠️ config.page_addons is missing!');
+        return [];
+      }
+      
+      const filtered = this.selectedPages.filter(key => {
+        const exists = !!this.config.page_addons[key];
+        console.log(`  - Checking key "${key}": ${exists ? '✅ exists' : '❌ NOT FOUND'}`);
+        return exists;
+      });
+      
+      console.log('  ✅ Result:', filtered);
+      return filtered;
+    },
+    
+    validSelectedContentAddons() {
+      console.log('🔍 [validSelectedContentAddons] Computing...');
+      console.log('  - config.content_addons exists:', !!this.config.content_addons);
+      console.log('  - selectedContentAddons:', this.selectedContentAddons);
+      
+      if (!this.config.content_addons) {
+        console.log('  ⚠️ config.content_addons is missing!');
+        return [];
+      }
+      
+      const filtered = this.selectedContentAddons.filter(key => {
+        const exists = !!this.config.content_addons[key];
+        console.log(`  - Checking key "${key}": ${exists ? '✅ exists' : '❌ NOT FOUND'}`);
+        return exists;
+      });
+      
+      console.log('  ✅ Result:', filtered);
+      return filtered;
+    },
+    
     currentProductName() {
       return this.selectedProduct ? this.config.products[this.selectedProduct].name : '';
     },
@@ -706,14 +858,22 @@ export default {
     },
     
     pagesTotal() {
-      return Object.entries(this.selectedPages).reduce((sum, [key, count]) => {
-        return sum + (this.config.page_addons[key].price * count);
+      // Páginas pré-definidas (checkboxes) - usa validSelectedPages para garantir que existem
+      const predefinedTotal = this.validSelectedPages.reduce((sum, key) => {
+        return sum + (this.config.page_addons[key]?.price || 0);
       }, 0);
+
+      // Páginas personalizadas
+      const customTotal = this.customPages.reduce((sum, page) => {
+        return sum + this.calculateCustomPageTotal(page);
+      }, 0);
+
+      return predefinedTotal + customTotal;
     },
     
     contentTotal() {
-      return this.selectedContentAddons.reduce((sum, key) => {
-        return sum + this.config.content_addons[key].price;
+      return this.validSelectedContentAddons.reduce((sum, key) => {
+        return sum + (this.config.content_addons[key]?.price || 0);
       }, 0);
     },
     
@@ -729,17 +889,16 @@ export default {
       if (this.serverValidatedPricing && this.serverValidatedPricing.source === 'server') {
         return this.serverValidatedPricing.avista;
       }
-      // 10% desconto à vista (cálculo local)
-      const discount = this.config.pricing_rules.cash_discount_percent / 100;
-      return Math.round(this.subtotal * (1 - discount) * 100) / 100;
+      // À vista = preço normal (sem desconto)
+      return this.subtotal;
     },
     
     installmentTotal() {
       if (this.serverValidatedPricing && this.serverValidatedPricing.source === 'server') {
         return this.serverValidatedPricing.parcelado_total;
       }
-      // 10% acréscimo no parcelado (cálculo local)
-      const markup = this.config.pricing_rules.installments_12_markup_percent / 100;
+      // 15% acréscimo no parcelado (taxa do gateway)
+      const markup = 0.15; // 15%
       return Math.round(this.subtotal * (1 + markup) * 100) / 100;
     },
     
@@ -758,19 +917,48 @@ export default {
   methods: {
     // Navegação
     nextStep() {
+      console.log('🔄 [nextStep] Current step:', this.currentStep);
       if (this.currentStep < 3) {
         this.currentStep++;
+        console.log('✅ [nextStep] Moved to step:', this.currentStep);
+      } else {
+        console.log('⚠️ [nextStep] Already at final step');
       }
     },
     
     previousStep() {
+      console.log('🔄 [previousStep] Current step:', this.currentStep);
       if (this.currentStep > 1) {
         this.currentStep--;
+        console.log('✅ [previousStep] Moved to step:', this.currentStep);
+      } else {
+        console.log('⚠️ [previousStep] Already at first step');
       }
     },
     
     proceedToCheckout() {
+      console.log('🔍 [PRE-CHECKOUT DEBUG] Iniciando checkout...');
+      console.log('📦 Config exists:', !!this.config);
+      console.log('📦 Config.page_addons exists:', !!this.config?.page_addons);
+      console.log('📦 Config.content_addons exists:', !!this.config?.content_addons);
+      console.log('📦 Config.page_addons keys:', this.config?.page_addons ? Object.keys(this.config.page_addons) : 'N/A');
+      console.log('📦 Config.content_addons keys:', this.config?.content_addons ? Object.keys(this.config.content_addons) : 'N/A');
+      
+      console.log('🎯 Selected Product:', this.selectedProduct);
+      console.log('🎯 Selected Pages (RAW):', this.selectedPages);
+      console.log('🎯 Selected Content Addons (RAW):', this.selectedContentAddons);
+      console.log('🎯 Custom Pages:', this.customPages);
+      
+      console.log('✅ Valid Selected Pages:', this.validSelectedPages);
+      console.log('✅ Valid Selected Content Addons:', this.validSelectedContentAddons);
+      
+      console.log('💰 Base Price:', this.basePrice);
+      console.log('💰 Pages Total:', this.pagesTotal);
+      console.log('💰 Content Total:', this.contentTotal);
+      console.log('💰 Subtotal:', this.subtotal);
+      
       this.currentStep = 3;
+      console.log('✅ [PRE-CHECKOUT DEBUG] Movido para step 3');
     },
 
     // Upgrade de Landing para Site Completo
@@ -788,7 +976,10 @@ export default {
     
     // Seleção de produto
     selectProduct(key) {
+      console.log('🎯 [selectProduct] Selected:', key);
+      console.log('🎯 [selectProduct] Config products:', this.config?.products);
       this.selectedProduct = key;
+      console.log('✅ [selectProduct] Product set, auto-advancing in 300ms...');
       // Ir automaticamente para próxima etapa (menos cliques)
       setTimeout(() => {
         this.nextStep();
@@ -799,22 +990,36 @@ export default {
       return key === 'landing' ? 'fas fa-file-alt' : 'fas fa-layer-group';
     },
     
-    // Páginas adicionais
-    getPageCount(key) {
-      return this.selectedPages[key] || 0;
+    // Páginas personalizadas
+    addCustomPage() {
+      this.customPages.push({
+        description: '',
+        resources: {
+          image: false,
+          video: false,
+          carousel: false,
+          form: false
+        }
+      });
     },
-    
-    incrementPage(key) {
-      if (!this.selectedPages[key]) {
-        this.selectedPages[key] = 0;
+
+    removeCustomPage() {
+      if (this.customPages.length > 0) {
+        this.customPages.pop();
       }
-      this.selectedPages[key]++;
     },
-    
-    decrementPage(key) {
-      if (this.selectedPages[key] && this.selectedPages[key] > 0) {
-        this.selectedPages[key]--;
-      }
+
+    removeCustomPageByIndex(index) {
+      this.customPages.splice(index, 1);
+    },
+
+    calculateCustomPageTotal(page) {
+      let total = 99; // Base price
+      if (page.resources.image) total += 10;
+      if (page.resources.video) total += 12;
+      if (page.resources.carousel) total += 20;
+      if (page.resources.form) total += 30;
+      return total;
     },
     
     // Upload handlers
@@ -972,6 +1177,11 @@ export default {
     // Utils
     formatPrice(value) {
       return `R$ ${value.toFixed(2).replace('.', ',')}`;
+    },
+
+    formatMonthlyPrice(annualValue) {
+      const monthly = annualValue / 12;
+      return `R$ ${monthly.toFixed(2).replace('.', ',')}/mês`;
     },
     
     // Tooltips informativos
@@ -1175,7 +1385,7 @@ export default {
       color: $white;
 
       &::after {
-        content: '\f00c';
+        content: '✓';
         font-family: 'Font Awesome 6 Free';
         font-weight: 900;
       }
@@ -1330,6 +1540,401 @@ export default {
     margin-bottom: 20px;
 
     i {
+      color: $p-color;
+    }
+  }
+
+  .section-subtitle {
+    color: $gray-medium;
+    margin-bottom: 24px;
+    font-size: 1rem;
+  }
+}
+
+// Checkboxes para páginas pré-definidas
+.addon-checkboxes {
+  display: grid;
+  gap: 12px;
+}
+
+.checkbox-item {
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    display: none;
+  }
+
+  .checkbox-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: $white;
+    border: 2px solid $gray-light;
+    border-radius: 12px;
+    transition: all 0.3s;
+
+    &:hover {
+      border-color: $p-color;
+      box-shadow: 0 4px 12px rgba($p-color, 0.1);
+    }
+  }
+
+  input[type="checkbox"]:checked + .checkbox-content {
+    border-color: $p-color;
+    background: linear-gradient(135deg, rgba($p-color, 0.05) 0%, rgba($p-dark, 0.02) 100%);
+
+    .checkbox-mark {
+      background: $p-color;
+      border-color: $p-color;
+
+      i {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+  }
+
+  .checkbox-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .checkbox-name {
+      font-weight: 600;
+      color: $gray-darkness;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .checkbox-price {
+      font-size: 0.9rem;
+      color: $p-color;
+      font-weight: 700;
+    }
+  }
+
+  .checkbox-mark {
+    width: 28px;
+    height: 28px;
+    border: 2px solid $gray-light;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+
+    i {
+      color: $white;
+      font-size: 0.9rem;
+      opacity: 0;
+      transform: scale(0.5);
+      transition: all 0.3s;
+    }
+  }
+}
+
+// Tooltip styling (compartilhado)
+.addon-tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: help;
+
+  i {
+    color: $gray-medium;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+  }
+
+  &:hover i {
+    color: $p-color;
+  }
+
+  .tooltip-text {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: $gray-darkness;
+    color: $white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 400;
+    line-height: 1.5;
+    width: 280px;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: opacity 0.3s, visibility 0.3s;
+    text-align: left;
+    pointer-events: none;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: $gray-darkness;
+    }
+  }
+
+  &:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+  }
+}
+
+// Páginas personalizadas
+.custom-page-counter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba($p-color, 0.05) 0%, rgba($p-dark, 0.02) 100%);
+  border: 2px solid rgba($p-color, 0.2);
+  border-radius: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  .counter-label {
+    font-weight: 600;
+    color: $gray-darkness;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .counter-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    .counter-btn {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: $white;
+      border: 2px solid $p-color;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+
+      i {
+        color: $p-color;
+      }
+
+      &:hover:not(:disabled) {
+        background: $p-color;
+
+        i {
+          color: $white;
+        }
+      }
+
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+    }
+
+    .counter-value {
+      min-width: 32px;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: $p-color;
+    }
+  }
+
+  .counter-price {
+    font-size: 0.9rem;
+    color: $p-color;
+    font-weight: 600;
+  }
+}
+
+.custom-page-box {
+  background: $white;
+  border: 2px solid $gray-light;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+  transition: all 0.3s;
+
+  &:hover {
+    border-color: $p-color;
+    box-shadow: 0 4px 16px rgba($p-color, 0.1);
+  }
+
+  .custom-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid $gray-lightness;
+
+    h4 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: $gray-darkness;
+      margin: 0;
+    }
+
+    .remove-page-btn {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: $gray-lightness;
+      color: $gray-medium;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+
+      &:hover {
+        background: #dc3545;
+        color: $white;
+      }
+    }
+  }
+
+  .custom-page-description {
+    margin-bottom: 24px;
+
+    label {
+      display: block;
+      font-weight: 600;
+      color: $gray-darkness;
+      margin-bottom: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid $gray-light;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      color: $gray-darkness;
+      resize: vertical;
+      font-family: inherit;
+      transition: all 0.3s;
+
+      &:focus {
+        outline: none;
+        border-color: $p-color;
+        box-shadow: 0 0 0 3px rgba($p-color, 0.1);
+      }
+
+      &::placeholder {
+        color: $gray-medium;
+      }
+    }
+
+    .char-count {
+      display: block;
+      text-align: right;
+      font-size: 0.85rem;
+      color: $gray-medium;
+      margin-top: 4px;
+    }
+  }
+
+  .custom-page-resources {
+    margin-bottom: 24px;
+
+    h5 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: $gray-darkness;
+      margin-bottom: 16px;
+    }
+
+    .resources-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .resource-item {
+      cursor: pointer;
+
+      input[type="checkbox"] {
+        display: none;
+      }
+
+      .resource-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 16px;
+        background: $gray-lightness;
+        border: 2px solid $gray-light;
+        border-radius: 12px;
+        transition: all 0.3s;
+        gap: 8px;
+
+        i {
+          font-size: 1.5rem;
+          color: $gray-medium;
+          transition: all 0.3s;
+        }
+
+        .resource-name {
+          font-weight: 600;
+          color: $gray-darkness;
+          font-size: 0.9rem;
+        }
+
+        .resource-price {
+          font-size: 0.85rem;
+          color: $p-color;
+          font-weight: 600;
+        }
+
+        &:hover {
+          border-color: $p-color;
+          background: rgba($p-color, 0.05);
+        }
+      }
+
+      input[type="checkbox"]:checked + .resource-content {
+        border-color: $p-color;
+        background: linear-gradient(135deg, rgba($p-color, 0.1) 0%, rgba($p-dark, 0.05) 100%);
+
+        i {
+          color: $p-color;
+        }
+      }
+    }
+  }
+
+  .custom-page-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: linear-gradient(135deg, rgba($p-color, 0.05) 0%, rgba($p-dark, 0.02) 100%);
+    border-radius: 12px;
+
+    span:first-child {
+      font-weight: 600;
+      color: $gray-darkness;
+    }
+
+    .total-value {
+      font-size: 1.3rem;
+      font-weight: 700;
       color: $p-color;
     }
   }
@@ -2098,8 +2703,42 @@ export default {
   }
 
   .sidebar-total {
-    padding: 20px;
-    background: $gray-lightness;
+    padding: 24px 20px;
+    background: linear-gradient(135deg, rgba($p-color, 0.08) 0%, rgba($p-dark, 0.05) 100%);
+    border-top: 2px solid rgba($p-color, 0.2);
+
+    .monthly-highlight {
+      text-align: center;
+      
+      .monthly-label {
+        display: block;
+        font-size: 0.9rem;
+        color: $gray-medium;
+        margin-bottom: 8px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .monthly-price {
+        display: block;
+        font-size: 2.5rem;
+        font-weight: 900;
+        background: $accent-green;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1.2;
+        margin-bottom: 4px;
+      }
+
+      .monthly-hint {
+        display: block;
+        font-size: 0.8rem;
+        color: $gray-medium;
+        font-weight: 500;
+      }
+    }
 
     .total-line {
       display: flex;

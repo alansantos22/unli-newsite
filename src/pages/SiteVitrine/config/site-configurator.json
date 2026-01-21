@@ -16,36 +16,36 @@
   "page_addons": {
     "about": {
       "name": "Sobre Nós",
-      "price": 199
+      "price": 80
     },
     "services": {
       "name": "Serviços",
-      "price": 249
+      "price": 120
     },
     "portfolio": {
       "name": "Portfólio",
-      "price": 299
+      "price": 160
     },
     "faq": {
       "name": "FAQ",
-      "price": 179
+      "price": 90
     },
     "contact": {
       "name": "Contato",
-      "price": 149
+      "price": 110
     }
   },
   "content_addons": {
     "video": {
       "name": "Vídeo",
-      "price": 79,
+      "price": 30,
       "allowed_uploads": [
         "video/*"
       ]
     },
     "pdf": {
       "name": "PDF",
-      "price": 49,
+      "price": 15,
       "allowed_uploads": [
         "application/pdf"
       ]

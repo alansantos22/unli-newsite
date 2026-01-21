@@ -383,7 +383,7 @@
               <li><i class="fas fa-check"></i> Formulário de Contato</li>
               <li><i class="fas fa-check"></i> 1 Alteração Anual Inclusa</li>
               <li><i class="fas fa-check"></i> Suporte de Disponibilidade</li>
-              <li><i class="fas fa-check"></i> Entrega em até 7 Dias Úteis</li>
+              <li><i class="fas fa-check"></i> Entrega em até 10 Dias Úteis</li>
             </ul>
 
             <a href="#configurador" class="pricing-button">
@@ -416,7 +416,6 @@
               <li><i class="fas fa-check"></i> Escolha Quantas Páginas Precisar</li>
               <li><i class="fas fa-check"></i> Adicione Vídeos e Documentos</li>
               <li><i class="fas fa-check"></i> Personalize o Visual</li>
-              <li><i class="fas fa-check"></i> Processo 100% Automatizado</li>
               <li><i class="fas fa-check"></i> Configurador Interativo</li>
               <li><i class="fas fa-check"></i> Entrega em Até 10 Dias Úteis</li>
             </ul>
@@ -705,11 +704,11 @@
           <div class="cta-features">
             <div class="cta-feature">
               <i class="fas fa-check-circle"></i>
-              <span>Entrega em 7 dias úteis</span>
+              <span>Entrega em 10 dias úteis</span>
             </div>
             <div class="cta-feature">
               <i class="fas fa-check-circle"></i>
-              <span>Tudo incluso por R$ 500/ano</span>
+              <span>Tudo incluso a partir de R$ 599/ano</span>
             </div>
             <div class="cta-feature">
               <i class="fas fa-check-circle"></i>
@@ -740,11 +739,11 @@
     <section id="configurador" class="configurator-section" data-scroll>
       <div class="section-container">
         <div class="configurator-intro">
-          <span class="section-badge">Processo 100% Automatizado</span>
+          <span class="section-badge">Fácil e Rápido</span>
           <h2 class="section-title">Monte Seu Site em 3 Passos</h2>
           <p class="section-description">
             Escolha o tipo, personalize add-ons, preencha os dados e pague. 
-            <strong>Sem reuniões, sem contato desnecessário.</strong> 
+            <strong>Simples, direto e eficiente.</strong> 
             Seu site pronto em até 10 dias.
           </p>
         </div>
@@ -2573,6 +2572,56 @@ export default {
         i {
           transform: translateX(4px);
         }
+      }
+    }
+  }
+}
+
+// ==========================================
+// CONFIGURATOR SECTION
+// ==========================================
+.configurator-section {
+  padding: 100px 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+
+  .configurator-intro {
+    text-align: center;
+    margin-bottom: 60px;
+
+    .section-badge {
+      display: inline-block;
+      padding: 8px 20px;
+      background: rgba($p-color, 0.1);
+      border: 1px solid rgba($p-color, 0.3);
+      border-radius: 50px;
+      color: $p-color;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: $gray-darkness;
+      line-height: 1.3;
+      margin-bottom: 16px;
+
+      @media (max-width: 768px) {
+        font-size: 2rem;
+      }
+    }
+
+    .section-description {
+      font-size: 1.1rem;
+      color: $gray-medium;
+      line-height: 1.8;
+      max-width: 700px;
+      margin: 0 auto;
+
+      strong {
+        color: $p-color;
+        font-weight: 600;
       }
     }
   }
