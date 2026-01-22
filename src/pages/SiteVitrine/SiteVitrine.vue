@@ -293,9 +293,9 @@
       <div class="section-container">
         <div class="section-header">
           <span class="section-badge">Investimento</span>
-          <h2 class="section-title">Tudo incluso em um único plano</h2>
+          <h2 class="section-title">Escolha o ponto de partida ideal para sua empresa</h2>
           <p class="section-description">
-            Sem taxas escondidas, sem surpresas. Pagamento único anual.
+            Comece com uma Landing Page ou monte um site completo. Todos com renovação anual e suporte incluso.
           </p>
         </div>
 
@@ -304,16 +304,16 @@
           <div class="pricing-card" data-scroll>
             <div class="promo-badge-card">30% OFF</div>
             <div class="pricing-header">
-              <h3 class="pricing-name">Site Vitrine Profissional</h3>
+              <h3 class="pricing-name">Landing Page (Página Única)</h3>
               <div class="pricing-price">
-                <div class="price-original">De R$ 779/ano</div>
+                <div class="price-original">De R$ 64,90/mês</div>
                 <div class="price-wrapper">
                   <span class="price-currency">R$</span>
-                  <span class="price-amount">599</span>
-                  <span class="price-period">/ano</span>
+                  <span class="price-amount">49,90</span>
+                  <span class="price-period">/mês</span>
                 </div>
               </div>
-              <p class="pricing-description">~R$ 49,90/mês — Tudo incluso</p>
+              <p class="pricing-description">Cobrança única anual de R$ 599 (ou 12x no cartão)</p>
             </div>
 
             <ul class="pricing-features">
@@ -327,7 +327,7 @@
 
             <router-link to="/configurador?plan=landing" class="pricing-button secondary">
               <i class="fas fa-rocket"></i>
-              Quero meu site
+              Quero minha Landing Page
             </router-link>
 
             <div class="pricing-guarantee">
@@ -341,17 +341,17 @@
             <div class="pricing-badge">Mais Popular</div>
             <div class="promo-badge-card">30% OFF</div>
             <div class="pricing-header">
-              <h3 class="pricing-name">Site Mais Personalizado</h3>
+              <h3 class="pricing-name">Site Multi-Páginas (Expansível)</h3>
               <div class="pricing-price">
-                <div class="price-original">De R$ 805/ano</div>
+                <div class="price-original">De R$ 67,08/mês</div>
+                <span class="price-text">A partir de</span>
                 <div class="price-wrapper">
-                  <span class="price-text">A partir de</span>
                   <span class="price-currency">R$</span>
-                  <span class="price-amount">619</span>
-                  <span class="price-period">/ano</span>
+                  <span class="price-amount">51,58</span>
+                  <span class="price-period">/mês</span>
                 </div>
               </div>
-              <p class="pricing-description">Configure páginas e recursos extras</p>
+              <p class="pricing-description">Cobrança anual a partir de R$ 619 (ou 12x no cartão)</p>
             </div>
 
             <ul class="pricing-features">
@@ -391,12 +391,14 @@
               <li><i class="fas fa-check"></i> Integrações complexas</li>
               <li><i class="fas fa-check"></i> Backend / Painel admin</li>
               <li><i class="fas fa-check"></i> Funcionalidades customizadas</li>
-              <li><i class="fas fa-check"></i> Alterações ilimitadas</li>
+              <li><i class="fas fa-check"></i> Alterações ilimitadas*</li>
             </ul>
 
+            <p class="pricing-custom-note">* Dentro do escopo acordado em contrato</p>
+
             <a href="#contact" class="pricing-button">
-              <i class="fas fa-comment-dots"></i>
-              Solicitar orçamento
+              <i class="fas fa-users"></i>
+              Consultar Especialistas
             </a>
 
             <div class="pricing-guarantee">
@@ -413,7 +415,7 @@
       <div class="section-container">
         <div class="section-header">
           <span class="section-badge">Transparência</span>
-          <h2 class="section-title">Como garantimos entrega em 7 dias e preço acessível</h2>
+          <h2 class="section-title">Como garantimos entrega em 10 dias e preço acessível</h2>
           <p class="section-description">
             Nosso processo otimizado permite entregar sites de alta qualidade 
             rapidamente e com o melhor custo-benefício do mercado.
@@ -427,7 +429,7 @@
             </div>
             <h3 class="policy-title">Prazo de Entrega</h3>
             <p class="policy-description">
-              <strong>Até 7 dias úteis</strong> após confirmação do pagamento 
+              <strong>Até 10 dias úteis</strong> após confirmação do pagamento 
               e recebimento completo dos materiais (textos, imagens e dados).
             </p>
             <div class="policy-note">
@@ -1630,6 +1632,13 @@ export default {
           font-weight: 600;
           opacity: 0.6;
         }
+
+        .price-text {
+          font-size: 0.9rem;
+          color: $gray-medium;
+          font-weight: 500;
+          margin-bottom: 4px;
+        }
         
         .price-wrapper {
           display: flex;
@@ -1753,6 +1762,17 @@ export default {
       i {
         color: $p-color;
       }
+    }
+
+    .pricing-custom-note {
+      font-size: 0.85rem;
+      color: $gray-medium;
+      font-style: italic;
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba($accent-purple, 0.05);
+      border-radius: 8px;
+      border-left: 3px solid $accent-purple;
     }
   }
 }

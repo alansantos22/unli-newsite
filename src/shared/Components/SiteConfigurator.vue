@@ -180,11 +180,11 @@
                 <label>Descreva o que você quer nesta página:</label>
                 <textarea
                   v-model="page.description"
-                  maxlength="500"
+                  maxlength="1500"
                   placeholder="Ex: Página de produtos com galeria de fotos, descrições e botões de compra..."
                   rows="4"
                 ></textarea>
-                <span class="char-count">{{ page.description.length }}/500 caracteres</span>
+                <span class="char-count">{{ page.description.length }}/1500 caracteres</span>
               </div>
 
               <div class="custom-page-resources">
@@ -302,38 +302,37 @@
           <div v-if="selectedProduct === 'landing'" class="upsell-box">
             <div class="upsell-header">
               <i class="fas fa-arrow-up"></i>
-              <h3>Quer o site mais personalizado por apenas mais R$20 no ano?</h3>
+              <h3>Desbloqueie o Site Multi-Páginas por + R$ 1,66/mês</h3>
             </div>
             <p class="upsell-description">
-              Adicione páginas extras como Sobre, Serviços, Portfólio e muito mais!
-              Transforme seu site simples em uma presença completa na web.
+              O plano Landing Page te limita a uma página. Com o upgrade de apenas <strong>R$ 20,00 anuais</strong>, você ganha estrutura para crescer (Home, Sobre, Serviços, Blog e mais). É a escolha de 95% dos clientes.
             </p>
             <div class="upsell-actions">
               <button class="btn-upsell-accept" @click="upgradeToComplete">
                 <i class="fas fa-star"></i>
-                Sim, quero o site completo
+                Quero Liberdade Total (+ R$ 20/ano)
               </button>
               <button class="btn-upsell-decline" @click="proceedToCheckout">
-                Não, quero um site mais simples
+                Prefiro continuar limitado à Página Única
               </button>
             </div>
           </div>
 
           <!-- Pergunta de Customização para Site Completo -->
           <div v-else class="custom-question">
-            <h3>Precisa de algo mais personalizado?</h3>
-            <p>E-commerce, integrações avançadas, área de login, etc.</p>
+            <h3>Vamos confirmar o escopo do seu projeto?</h3>
+            <p>O Plano Anual cobre sites institucionais completos. Se você precisa de sistemas complexos, indicamos nossa consultoria.</p>
             <div class="question-actions">
               <button class="btn-standard" @click="proceedToCheckout">
-                Preciso apenas de um site para minha empresa
+                O Plano Site Profissional é o que eu preciso
               </button>
               <button class="btn-custom" @click="openCustomForm">
-                Na verdade, preciso de algo mais completo
+                Preciso de uma Loja Virtual ou Sistema
               </button>
             </div>
             <div class="back-to-landing">
               <a @click="selectedProduct = 'landing'">
-                ← Acho que prefiro a landing page simples
+                ← Busco algo mais simples (Ver Planos de Landing Page)
               </a>
             </div>
           </div>
@@ -514,199 +513,165 @@
               </div>
             </div>
 
+            <!-- Detalhes do Formulário (se selecionado) -->
+            <div v-if="hasFormResource" class="form-section">
+              <h3 class="form-section-title">
+                <i class="fas fa-list-check"></i>
+                Campos do Formulário
+              </h3>
+              
+              <div class="form-group">
+                <label>Quais campos você quer no formulário? *</label>
+                <textarea 
+                  v-model="briefing.form_fields"
+                  rows="6"
+                  placeholder="Ex: Nome, E-mail, Telefone, Assunto, Mensagem, Data desejada, Orçamento aproximado"
+                  maxlength="1500"
+                  required
+                ></textarea>
+                <small>Liste os campos que deseja incluir no formulário de contato (um por linha ou separados por vírgula)</small>
+                <span class="char-count">{{ (briefing.form_fields || '').length }}/1500 caracteres</span>
+              </div>
+
+              <div class="form-group">
+                <label>Onde enviar os dados do formulário?</label>
+                <input 
+                  type="email" 
+                  v-model="briefing.form_recipient_email"
+                  :placeholder="briefing.email || 'email@empresa.com'"
+                >
+                <small>Deixe em branco para usar o e-mail principal da empresa</small>
+              </div>
+            </div>
+
             <!-- Resumo do Pedido -->
             <div class="order-summary">
+              <!-- Header Compacto com Toggle -->
               <div class="summary-header">
-                <h3>
-                  <i class="fas fa-shield-check"></i>
-                  Plano Anual PRO
-                </h3>
+                <div class="product-info">
+                  <h3>Plano Anual PRO</h3>
+                  <p class="product-summary">Site + Hospedagem + Domínio + SSL</p>
+                </div>
+                <button 
+                  type="button"
+                  @click="showDetails = !showDetails" 
+                  class="btn-toggle-details"
+                  :class="{ open: showDetails }"
+                >
+                  {{ showDetails ? 'Ocultar' : 'Ver tudo' }}
+                  <i class="fas fa-chevron-down"></i>
+                </button>
               </div>
               
-              <!-- Serviços Recorrentes Inclusos -->
-              <div class="included-services">
-                <div class="services-header">
-                  <i class="fas fa-check-double"></i>
-                  <h4>Serviços Contínuos Inclusos</h4>
-                </div>
-                <div class="service-item">
-                  <i class="fas fa-check-circle"></i>
-                  <span class="service-label">Hospedagem Premium</span>
-                  <span class="service-tag">12 meses</span>
-                </div>
-                <div class="service-item">
-                  <i class="fas fa-check-circle"></i>
-                  <span class="service-label">Domínio .com.br ou .com</span>
-                  <span class="service-tag">Incluso</span>
-                </div>
-                <div class="service-item">
-                  <i class="fas fa-check-circle"></i>
-                  <span class="service-label">Certificado SSL (HTTPS)</span>
-                  <span class="service-tag">Incluso</span>
-                </div>
-                <div class="service-item">
-                  <i class="fas fa-check-circle"></i>
-                  <span class="service-label">Monitoramento 24/7</span>
-                  <span class="service-tag">Incluso</span>
-                </div>
-                <div class="service-item">
-                  <i class="fas fa-check-circle"></i>
-                  <span class="service-label">Suporte Técnico</span>
-                  <span class="service-tag">12 meses</span>
-                </div>
-                <div class="service-item">
-                  <i class="fas fa-check-circle"></i>
-                  <span class="service-label">Criação e Design do Site</span>
-                  <span class="service-tag">Setup</span>
-                </div>
+              <!-- Serviços Inclusos (Accordion) -->
+              <div 
+                class="included-services"
+                :class="{ collapsed: !showDetails, expanded: showDetails }"
+              >
+                <ul>
+                  <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span><strong>Hospedagem Premium</strong> (12 meses)</span>
+                  </li>
+                  <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span><strong>Domínio</strong> .com.br ou .com (Incluso)</span>
+                  </li>
+                  <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span><strong>Certificado SSL</strong> (HTTPS Incluso)</span>
+                  </li>
+                  <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span><strong>Monitoramento 24/7</strong> (Incluso)</span>
+                  </li>
+                  <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span><strong>Suporte Técnico</strong> (12 meses)</span>
+                  </li>
+                  <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span><strong>Criação e Design</strong> do Site (Setup)</span>
+                  </li>
+                </ul>
               </div>
               
-              <!-- Valor sem desconto -->
-              <div class="original-price-banner">
-                <span class="label">Sem a promoção você pagaria:</span>
-                <span class="value">{{ formatOriginalTotalPrice(subtotal) }}</span>
+              <!-- Divider -->
+              <hr class="divider">
+              
+              <!-- Preço com Badge do Café Inline -->
+              <div class="price-display">
+                <span class="label">Total Anual:</span>
+                <div class="values">
+                  <span class="final-price">{{ formatPrice(cashPrice) }}</span>
+                  <span class="coffee-badge">
+                    ☕ R$ {{ dailyPrice }} / dia
+                  </span>
+                </div>
+                <span class="savings-text">💰 Economia de {{ formatPrice(savingsAmount) }}</span>
               </div>
               
-              <div class="summary-items">
-                <div class="summary-item">
-                  <span>{{ currentProductName }}</span>
-                  <div class="item-prices">
-                    <span class="price-original-item">{{ formatOriginalPrice(basePrice / 12) }}</span>
-                    <span class="price-current-item">{{ formatMonthlyPrice(basePrice) }}</span>
-                  </div>
-                </div>
-                <div 
-                  v-for="pageKey in validSelectedPages"
-                  :key="pageKey"
-                  class="summary-item"
-                >
-                  <span>{{ config.page_addons[pageKey].name }}</span>
-                  <div class="item-prices">
-                    <span class="price-original-item">{{ formatOriginalPrice(config.page_addons[pageKey].price / 12) }}</span>
-                    <span class="price-current-item">{{ formatMonthlyPrice(config.page_addons[pageKey].price) }}</span>
-                  </div>
-                </div>
-                <div 
-                  v-for="(page, index) in customPages"
-                  :key="'custom-' + index"
-                  class="summary-item"
-                >
-                  <span>Página Personalizada #{{ index + 1 }}</span>
-                  <div class="item-prices">
-                    <span class="price-original-item">{{ formatOriginalPrice(calculateCustomPageTotal(page) / 12) }}</span>
-                    <span class="price-current-item">{{ formatMonthlyPrice(calculateCustomPageTotal(page)) }}</span>
-                  </div>
-                </div>
-                <div 
-                  v-for="addonKey in validSelectedContentAddons"
-                  :key="addonKey"
-                  class="summary-item"
-                >
-                  <span>{{ config.content_addons[addonKey].name }}</span>
-                  <div class="item-prices">
-                    <span class="price-original-item">{{ formatOriginalPrice(config.content_addons[addonKey].price / 12) }}</span>
-                    <span class="price-current-item">{{ formatMonthlyPrice(config.content_addons[addonKey].price) }}</span>
-                  </div>
-                </div>
-              </div>
-              <div class="summary-total">
-                <!-- Ancoragem de Preço: Quebrar para Mensal/Diário -->
-                <div class="price-anchoring">
-                  <div class="anchoring-label">💡 Seu departamento de TI por:</div>
-                  <div class="anchoring-values">
-                    <div class="anchoring-item">
-                      <div class="value">{{ formatPrice((subtotal * 1.15) / 12) }}</div>
-                      <div class="label">por mês</div>
-                    </div>
-                    <div class="divider"></div>
-                    <div class="anchoring-item">
-                      <div class="value">{{ formatPrice((subtotal * 1.15) / 365) }}</div>
-                      <div class="label">por dia</div>
-                    </div>
-                  </div>
-                  <div class="anchoring-subtext">
-                    Menos que um café: sua empresa online 24/7
-                  </div>
-                </div>
-                
-                <h4 class="payment-title">Escolha a forma de pagamento:</h4>
-                
-                <!-- Opção 1: À Vista (PRÉ-SELECIONADA) -->
-                <label 
-                  class="total-row cash featured"
-                  :class="{ selected: paymentMethod === 'cash' }"
-                >
+              <!-- Seletor de Pagamento Compacto -->
+              <div class="payment-selector">
+                <!-- Opção Pix (PRÉ-SELECIONADA) -->
+                <label class="payment-option">
                   <input 
                     type="radio" 
                     value="cash" 
                     v-model="paymentMethod"
                   >
                   <div class="payment-content">
-                    <div class="payment-header">
-                      <div class="payment-main-info">
-                        <span class="payment-label">💳 À vista (Pix/Boleto)</span>
-                        <span class="badge-recommended">✨ Mais Escolhido</span>
-                      </div>
-                      <div class="payment-prices">
-                        <span class="price-original-total">De {{ formatOriginalTotalAnnual(subtotal) }}</span>
-                        <span class="price-cash">{{ formatPrice(cashPrice) }}<small>/ano</small></span>
-                      </div>
+                    <div class="radio-header">
+                      <span class="radio-label">
+                        <i class="fas fa-qrcode"></i> Pagar via Pix
+                      </span>
+                      <span class="discount-tag">-15% OFF</span>
                     </div>
-                    <div class="payment-benefits">
-                      <span class="economy-tag-cash">🔥 Economize {{ formatPrice(savingsAmount) }} agora!</span>
-                      <span class="payment-note">✅ Plano ativo imediatamente após pagamento</span>
-                    </div>
-                  </div>
-                  <div class="radio-check">
-                    <i class="fas fa-check-circle"></i>
+                    <button 
+                      type="submit"
+                      class="btn-pay-now"
+                      :disabled="isSubmitting"
+                    >
+                      <i class="fas fa-lock"></i>
+                      {{ isSubmitting ? 'Processando...' : `Pagar ${formatPrice(cashPrice)}` }}
+                    </button>
                   </div>
                 </label>
                 
-                <!-- Opção 2: Parcelado -->
-                <label 
-                  class="total-row installments"
-                  :class="{ selected: paymentMethod === 'installments' }"
-                >
+                <!-- Opção Cartão -->
+                <label class="payment-option">
                   <input 
                     type="radio" 
                     value="installments" 
                     v-model="paymentMethod"
                   >
                   <div class="payment-content">
-                    <div class="payment-header">
-                      <div class="payment-main-info">
-                        <span class="payment-label">💳 Parcelado no Cartão</span>
-                      </div>
-                      <div class="payment-prices">
-                        <span class="price-installment">12x de {{ formatPrice(installmentValue) }}</span>
-                        <span class="price-total-installment">(Total anual: {{ formatPrice(installmentTotal) }})</span>
-                      </div>
+                    <div class="radio-header">
+                      <span class="radio-label">
+                        <i class="fas fa-credit-card"></i> Cartão em 12x
+                      </span>
                     </div>
-                    <div class="payment-benefits">
-                      <span class="economy-tag"><strong class="no-interest">Sem juros</strong> • Plano de 12 meses</span>
-                      <span class="economy-tag">💰 Economize 30% vs. preço normal</span>
-                    </div>
-                  </div>
-                  <div class="radio-check">
-                    <i class="fas fa-check-circle"></i>
+                    <p class="payment-details">
+                      12x de {{ formatPrice(installmentValue) }} <strong>sem juros</strong>
+                    </p>
+                    <button 
+                      type="submit"
+                      class="btn-pay-now"
+                      :disabled="isSubmitting"
+                    >
+                      <i class="fas fa-lock"></i>
+                      {{ isSubmitting ? 'Processando...' : 'Pagar Parcelado' }}
+                    </button>
                   </div>
                 </label>
               </div>
             </div>
 
-            <div class="step-navigation">
+            <!-- Botão de Voltar (Navegação Simples) -->
+            <div class="step-navigation-back">
               <button type="button" class="btn-back" @click="currentStep = 2">
-                <i class="fas fa-edit"></i>
-                Quero mudar alguma coisa
-              </button>
-              <button 
-                type="submit" 
-                class="btn-submit" 
-                :class="{ 'btn-cash': paymentMethod === 'cash' }"
-                :disabled="isSubmitting"
-              >
-                <i class="fas fa-lock"></i>
-                {{ isSubmitting ? 'Processando...' : ctaText }}
+                <i class="fas fa-arrow-left"></i>
+                Voltar para personalização
               </button>
             </div>
             
@@ -935,7 +900,9 @@ export default {
         page_contents: {},
         image_links: '',
         video_file: null,
-        pdf_file: null
+        pdf_file: null,
+        form_fields: '',
+        form_recipient_email: ''
       },
       
       // Estilos disponíveis
@@ -965,7 +932,10 @@ export default {
       // Validação server-side
       serverValidatedPricing: null,
       serverAvailable: null, // null = não testado, true = online, false = offline
-      isValidating: false
+      isValidating: false,
+      
+      // UI Control - Accordion para mobile
+      showDetails: false
     };
   },
   async mounted() {
@@ -1165,6 +1135,18 @@ export default {
         return `🎯 Assinar Plano Anual - ${this.formatPrice(this.cashPrice)}`;
       }
       return '🎯 Assinar Plano Anual (12x sem juros)';
+    },
+    
+    // Preço diário para gatilho mental do café
+    dailyPrice() {
+      const annual = this.cashPrice;
+      const daily = annual / 365;
+      return daily.toFixed(2).replace('.', ',');
+    },
+    
+    // Verificar se alguma página personalizada tem formulário
+    hasFormResource() {
+      return this.customPages.some(page => page.resources.form === true);
     }
   },
   methods: {
@@ -2795,6 +2777,47 @@ export default {
   }
 }
 
+// Navegação Simplificada (apenas botão voltar)
+.step-navigation-back {
+  margin-top: 24px;
+  
+  @media (max-width: 768px) {
+    margin-top: 20px;
+  }
+  
+  .btn-back {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    background: $white;
+    color: $gray-darkness;
+    border: 2px solid $gray-light;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    
+    i {
+      font-size: 0.9rem;
+    }
+
+    &:hover {
+      border-color: $p-color;
+      color: $p-color;
+      transform: translateX(-4px);
+    }
+    
+    @media (max-width: 768px) {
+      width: 100%;
+      justify-content: center;
+      padding: 12px 16px;
+      font-size: 0.9rem;
+    }
+  }
+}
+
 .renewal-notice {
   display: flex;
   gap: 12px;
@@ -2888,6 +2911,14 @@ export default {
       font-size: 0.85rem;
       color: $gray-medium;
     }
+    
+    .char-count {
+      display: block;
+      margin-top: 6px;
+      font-size: 0.85rem;
+      color: $gray-medium;
+      text-align: right;
+    }
 
     .file-input {
       padding: 12px;
@@ -2947,455 +2978,357 @@ export default {
 }
 
 .order-summary {
-  padding: 32px;
-  background: $gray-lightness;
+  padding: 24px;
+  background: $white;
   border-radius: 16px;
-  margin-bottom: 40px;
-  border: 2px solid rgba($p-color, 0.15);
+  margin-bottom: 32px;
+  border: 2px solid $gray-light;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
   
+  @media (max-width: 768px) {
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  
+  // Header Compacto com Toggle
   .summary-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    gap: 12px;
     
-    h3 {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: $gray-darkness;
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    .product-info {
+      flex: 1;
       
-      i {
-        color: $p-color;
-        font-size: 1.2rem;
-      }
-    }
-    
-    .promo-badge-summary {
-      background: linear-gradient(135deg, $p-color 0%, $p-dark 100%);
-      color: white;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 700;
-      box-shadow: 0 4px 12px rgba($p-color, 0.3);
-    }
-  }
-  
-  .included-services {
-    margin-bottom: 24px;
-    padding: 24px;
-    background: linear-gradient(135deg, rgba($p-color, 0.05) 0%, rgba($p-dark, 0.02) 100%);
-    border-radius: 12px;
-    border: 2px solid rgba($p-color, 0.15);
-    
-    .services-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 2px solid rgba($p-color, 0.1);
-      
-      i {
-        color: $p-color;
-        font-size: 1.1rem;
-      }
-      
-      h4 {
-        font-size: 1rem;
+      h3 {
+        font-size: 1.3rem;
         font-weight: 700;
         color: $gray-darkness;
+        margin: 0 0 4px 0;
+        line-height: 1.3;
+        
+        @media (max-width: 768px) {
+          font-size: 1.1rem;
+        }
+      }
+      
+      .product-summary {
+        font-size: 0.9rem;
+        color: $gray-medium;
         margin: 0;
+        line-height: 1.4;
+        
+        @media (max-width: 768px) {
+          font-size: 0.85rem;
+        }
       }
     }
     
-    .service-item {
+    .btn-toggle-details {
+      background: transparent;
+      border: 2px solid $gray-light;
+      color: $p-color;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.3s;
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 0;
-      font-size: 0.9rem;
-      color: $gray-medium;
+      gap: 6px;
       
-      &:not(:last-child) {
-        border-bottom: 1px solid rgba($gray-light, 0.5);
+      &:hover {
+        border-color: $p-color;
+        background: rgba($p-color, 0.05);
       }
       
       i {
-        color: #10b981;
-        font-size: 0.85rem;
-        flex-shrink: 0;
+        font-size: 0.75rem;
+        transition: transform 0.3s;
       }
       
-      .service-label {
-        flex: 1;
-        font-weight: 500;
-        color: $gray-darkness;
+      &.open i {
+        transform: rotate(180deg);
       }
       
-      .service-tag {
-        padding: 3px 10px;
-        background: rgba($p-color, 0.1);
-        color: $p-color;
-        border-radius: 10px;
-        font-size: 0.7rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
+      @media (max-width: 768px) {
+        font-size: 0.8rem;
+        padding: 6px 12px;
       }
     }
   }
   
-  .original-price-banner {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    background: rgba($gray-medium, 0.1);
-    border-radius: 8px;
-    margin-bottom: 16px;
-    border-left: 4px solid $gray-medium;
+  // Accordion com animação
+  .included-services {
+    overflow: hidden;
+    transition: max-height 0.4s ease, opacity 0.3s ease, margin 0.3s ease;
+    
+    &.collapsed {
+      max-height: 0;
+      opacity: 0;
+      margin-bottom: 0;
+    }
+    
+    &.expanded {
+      max-height: 800px;
+      opacity: 1;
+      margin-bottom: 20px;
+    }
+    
+    ul {
+      list-style: none;
+      margin: 0;
+      padding: 16px 0 0 0;
+      display: grid;
+      gap: 10px;
+      
+      li {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        background: $gray-lightness;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        color: $gray-darkness;
+        line-height: 1.4;
+        
+        @media (max-width: 768px) {
+          font-size: 0.85rem;
+          padding: 8px 10px;
+          gap: 10px;
+        }
+        
+        i {
+          color: #4caf50;
+          font-size: 1rem;
+          flex-shrink: 0;
+        }
+        
+        strong {
+          color: $p-color;
+          font-weight: 600;
+        }
+      }
+    }
+  }
+  
+  // Divider
+  .divider {
+    border: none;
+    border-top: 2px solid $gray-light;
+    margin: 20px 0;
+    
+    @media (max-width: 768px) {
+      margin: 16px 0;
+    }
+  }
+  
+  // Preço com Badge do Café Inline
+  .price-display {
+    padding: 20px;
+    background: linear-gradient(135deg, rgba($p-color, 0.05) 0%, rgba($p-dark, 0.02) 100%);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    
+    @media (max-width: 768px) {
+      padding: 16px;
+      margin-bottom: 16px;
+    }
     
     .label {
+      display: block;
       font-size: 0.9rem;
-      color: $gray-medium;
       font-weight: 600;
-    }
-    
-    .value {
-      font-size: 1.1rem;
-      font-weight: 700;
       color: $gray-medium;
-      text-decoration: line-through;
-    }
-  }
-
-  .summary-items {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 2px solid $gray-light;
-
-    .summary-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.95rem;
-      color: $gray-medium;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
       
-      .item-prices {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 2px;
-        
-        .price-original-item {
-          text-decoration: line-through;
-          color: $gray-medium;
-          font-size: 0.75rem;
-          opacity: 0.7;
-        }
-        
-        .price-current-item {
-          font-weight: 600;
-          color: $gray-darkness;
-          font-size: 0.95rem;
-        }
-      }
-
-      span:last-child {
-        font-weight: 600;
-        color: $gray-darkness;
-      }
-    }
-  }
-
-  .summary-total {
-    .price-anchoring {
-      text-align: center;
-      padding: 20px;
-      background: linear-gradient(135deg, rgba(#10b981, 0.1) 0%, rgba(#059669, 0.05) 100%);
-      border-radius: 12px;
-      margin-bottom: 24px;
-      border: 2px dashed rgba(#10b981, 0.3);
-      
-      .anchoring-label {
-        font-size: 0.9rem;
-        color: $gray-medium;
-        margin-bottom: 12px;
-        font-weight: 600;
-      }
-      
-      .anchoring-values {
-        display: flex;
-        gap: 24px;
-        justify-content: center;
-        align-items: center;
-        margin-bottom: 12px;
-        
-        .anchoring-item {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          
-          .value {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: #10b981;
-            line-height: 1.2;
-          }
-          
-          .label {
-            font-size: 0.75rem;
-            color: $gray-medium;
-            margin-top: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-          }
-        }
-        
-        .divider {
-          width: 1px;
-          height: 50px;
-          background: rgba($gray-medium, 0.3);
-        }
-      }
-      
-      .anchoring-subtext {
+      @media (max-width: 768px) {
         font-size: 0.85rem;
-        color: $gray-medium;
-        font-style: italic;
       }
     }
     
-    .payment-title {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: $gray-darkness;
-      margin-bottom: 16px;
-      text-align: center;
-    }
-    
-    .total-row {
-      position: relative;
+    .values {
       display: flex;
       align-items: center;
-      gap: 16px;
-      padding: 20px;
-      border-radius: 16px;
-      margin: 12px 0;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 12px;
+      
+      .final-price {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: $p-color;
+        line-height: 1;
+        
+        @media (max-width: 768px) {
+          font-size: 1.8rem;
+        }
+      }
+      
+      .coffee-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        background: linear-gradient(135deg, #6F4E37 0%, #8B4513 100%);
+        color: white;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(111, 78, 55, 0.3);
+        white-space: nowrap;
+        
+        @media (max-width: 768px) {
+          font-size: 0.8rem;
+          padding: 5px 10px;
+        }
+      }
+    }
+    
+    .savings-text {
+      display: block;
+      font-size: 0.9rem;
+      color: #4caf50;
+      font-weight: 600;
+      
+      @media (max-width: 768px) {
+        font-size: 0.85rem;
+      }
+    }
+  }
+  
+  // Seletor de Pagamento Compacto
+  .payment-selector {
+    display: grid;
+    gap: 12px;
+    
+    .payment-option {
+      position: relative;
       cursor: pointer;
-      transition: all 0.3s;
-      border: 3px solid transparent;
       
       input[type="radio"] {
         display: none;
       }
       
       .payment-content {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
+        padding: 16px;
+        border: 2px solid $gray-light;
+        border-radius: 12px;
+        transition: all 0.3s;
+        background: $white;
         
-        .payment-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 16px;
-          
-          .payment-main-info {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            
-            .payment-label {
-              font-size: 1.1rem;
-              font-weight: 700;
-              color: $gray-darkness;
-            }
-            
-            .badge-recommended {
-              display: inline-flex;
-              align-items: center;
-              gap: 4px;
-              background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-              color: #000;
-              padding: 4px 10px;
-              border-radius: 12px;
-              font-size: 0.75rem;
-              font-weight: 800;
-              width: fit-content;
-              box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
-            }
-          }
-          
-          .payment-prices {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 4px;
-            
-            .price-original-total {
-              text-decoration: line-through;
-              color: $gray-medium;
-              font-size: 0.95rem;
-              font-weight: 600;
-            }
-            
-            .price-cash {
-              font-size: 1.8rem;
-              font-weight: 900;
-              color: $success;
-              
-              small {
-                font-size: 0.7rem;
-                font-weight: 600;
-                opacity: 0.8;
-                margin-left: 4px;
-              }
-            }
-            
-            .price-installment {
-              font-size: 1.5rem;
-              font-weight: 800;
-              color: $p-color;
-            }
-            
-            .price-total-installment {
-              font-size: 0.85rem;
-              color: $gray-medium;
-            }
-          }
+        @media (max-width: 768px) {
+          padding: 14px;
         }
         
-        .payment-benefits {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          
-          .payment-note {
-            font-size: 0.85rem;
-            color: $gray-medium;
-            font-style: italic;
-          }
+        &:hover {
+          border-color: $p-color;
+          box-shadow: 0 2px 8px rgba($p-color, 0.1);
         }
       }
       
-      .radio-check {
-        width: 28px;
-        height: 28px;
-        border: 2px solid $gray-light;
-        border-radius: 50%;
+      input[type="radio"]:checked + .payment-content {
+        border-color: $p-color;
+        background: linear-gradient(135deg, rgba($p-color, 0.05) 0%, rgba($p-dark, 0.02) 100%);
+        box-shadow: 0 4px 12px rgba($p-color, 0.15);
+        
+        .btn-pay-now {
+          display: flex;
+        }
+      }
+      
+      .radio-header {
         display: flex;
         align-items: center;
-        justify-content: center;
-        transition: all 0.3s;
+        justify-content: space-between;
+        margin-bottom: 12px;
         
-        i {
-          font-size: 1.2rem;
-          color: $white;
-          opacity: 0;
-          transition: all 0.3s;
-        }
-      }
-      
-      &.selected {
-        .radio-check {
-          background: $p-color;
-          border-color: $p-color;
+        .radio-label {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-weight: 600;
+          color: $gray-darkness;
+          font-size: 1rem;
+          
+          @media (max-width: 768px) {
+            font-size: 0.95rem;
+          }
           
           i {
-            opacity: 1;
-          }
-        }
-      }
-
-      &.installments {
-        background: rgba($gray-light, 0.3);
-        border-color: rgba($gray-light, 0.5);
-        
-        &:hover {
-          background: $white;
-          border-color: $p-color;
-          box-shadow: 0 4px 12px rgba($p-color, 0.15);
-        }
-        
-        &.selected {
-          background: $white;
-          border-color: $p-color;
-          box-shadow: 0 4px 16px rgba($p-color, 0.2);
-          
-          .radio-check {
-            background: $p-color;
-            border-color: $p-color;
-          }
-        }
-
-        .no-interest {
-          color: $accent-green;
-          font-weight: 900;
-        }
-      }
-
-      &.cash {
-        background: rgba($success, 0.08);
-        border: 3px solid rgba($success, 0.4);
-        
-        &:hover {
-          background: rgba($success, 0.12);
-          border-color: $success;
-          box-shadow: 0 6px 20px rgba($success, 0.25);
-          transform: translateY(-2px);
-        }
-        
-        &.featured {
-          box-shadow: 0 6px 24px rgba($success, 0.3);
-        }
-        
-        &.selected {
-          background: rgba($success, 0.15);
-          border-color: $success;
-          box-shadow: 0 8px 28px rgba($success, 0.35);
-          
-          .radio-check {
-            background: $success;
-            border-color: $success;
+            font-size: 1.1rem;
+            color: $p-color;
           }
         }
         
-        .economy-tag-cash {
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-          font-size: 0.9rem;
-          color: $success;
-          font-weight: 800;
-          background: rgba($success, 0.2);
-          padding: 6px 12px;
-          border-radius: 10px;
-          width: fit-content;
-          animation: pulse 2s ease-in-out infinite;
+        .discount-tag {
+          padding: 4px 10px;
+          background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+          color: white;
+          border-radius: 6px;
+          font-size: 0.75rem;
+          font-weight: 700;
+          text-transform: uppercase;
         }
       }
       
-      .economy-tag {
-        display: inline-flex;
+      .btn-pay-now {
+        display: none;
+        width: 100%;
+        padding: 14px;
+        background: $gradient-primary;
+        color: $white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
         align-items: center;
-        gap: 4px;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.3s;
+        
+        @media (max-width: 768px) {
+          font-size: 0.95rem;
+          padding: 12px;
+        }
+        
+        i {
+          font-size: 0.9rem;
+        }
+        
+        &:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba($p-color, 0.4);
+        }
+        
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+      }
+      
+      .payment-details {
         font-size: 0.85rem;
-        color: $p-color;
-        font-weight: 600;
-        background: rgba($p-color, 0.1);
-        padding: 4px 10px;
-        border-radius: 8px;
-        width: fit-content;
+        color: $gray-medium;
+        line-height: 1.4;
+        margin: 0 0 12px 0;
+        
+        @media (max-width: 768px) {
+          font-size: 0.8rem;
+        }
+        
+        strong {
+          color: #4caf50;
+          font-weight: 700;
+        }
       }
     }
   }
