@@ -9,19 +9,14 @@
  * Output: { order_id, pricing, ... }
  */
 
-header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+// CORS - Configuração segura
+require_once __DIR__ . '/lib/cors.php';
 
-// Handle preflight
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
+header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/lib/pricing.php';
 require_once __DIR__ . '/lib/storage.php';
+require_once __DIR__ . '/lib/database.php';
 
 try {
     // Carregar configuração oficial
@@ -76,8 +71,16 @@ try {
         'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown'
     ];
     
+    // Salvar no arquivo (compatibilidade)
     if (!save_order($order)) {
-        throw new Exception("Failed to save order");
+        throw new Exception("Failed to save order to file");
+    }
+    
+    // 🔥 NOVO: Salvar no banco de dados MySQL
+    $dbResult = save_order_to_db($order);
+    if (!$dbResult) {
+        error_log("Warning: Failed to save order to database: " . $orderId);
+        // Não falhar completamente, continuar com o fluxo
     }
     
     // 7. Retornar resumo (sem dados sensíveis)
@@ -89,8 +92,15 @@ try {
         'pricing' => $pricing,
         'payment_method' => $paymentMethod,
         'next_step' => 'payment_create',
-        'message' => 'Pedido criado com sucesso! Prossiga para pagamento.'
+        'message' => 'Pedido criado com sucesso! Prossiga para pagamento.',
+        'db_saved' => $dbResult !== false
     ];
+    
+    // Se salvou no DB, incluir o token de onboarding
+    if ($dbResult !== false) {
+        $response['onboarding_token'] = $dbResult['token'];
+        $response['db_id'] = $dbResult['id'];
+    }
     
     echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     

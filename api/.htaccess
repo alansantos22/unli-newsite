@@ -25,10 +25,16 @@ Options -Indexes
 </FilesMatch>
 
 # Permite apenas arquivos PHP de API pública
-<FilesMatch "^(process_payment|webhook-payment|price|order_create|payment_create)\.php$">
+<FilesMatch "^(process_payment|webhook-payment|webhook_mercadopago|price|order_create|payment_create|migrate)\.php$">
     Order Allow,Deny
     Allow from all
 </FilesMatch>
+
+# 🔒 SEGURANÇA: Depois de executar as migrations, bloqueie o acesso descomentando abaixo:
+# <Files "migrate.php">
+#     Order Allow,Deny
+#     Deny from all
+# </Files>
 
 # Proteção contra injeção de código
 <IfModule mod_rewrite.c>

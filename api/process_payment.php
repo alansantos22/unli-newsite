@@ -36,6 +36,16 @@ if (!file_exists($configFile)) {
 
 require_once $configFile;
 
+// Carregar helpers do banco de dados
+require_once __DIR__ . '/lib/database.php';
+
+// ============================================
+// CORS - Configuração segura
+// ============================================
+require_once __DIR__ . '/lib/cors.php';
+
+header('Content-Type: application/json; charset=utf-8');
+
 // Verificar se as credenciais foram configuradas corretamente
 if (!validateCredentials()) {
     http_response_code(500);
@@ -49,20 +59,6 @@ if (!validateCredentials()) {
 // Aliases para compatibilidade
 define('MERCADOPAGO_ACCESS_TOKEN', MP_ACCESS_TOKEN);
 define('MERCADOPAGO_API_URL', MP_API_URL);
-
-// ============================================
-// CORS & HEADERS (para permitir Vue.js chamar esta API)
-// ============================================
-header('Access-Control-Allow-Origin: *'); // Em produção, especifique seu domínio
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-header('Content-Type: application/json; charset=utf-8');
-
-// Responder OPTIONS (preflight CORS)
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
 
 // ============================================
 // FUNÇÃO: LOG DE DEBUG
@@ -250,6 +246,13 @@ function processPixPayment($data) {
             jsonResponse(false, 'Erro ao gerar QR Code', [], 500);
         }
         
+        // 🔥 SALVAR/ATUALIZAR NO BANCO DE DADOS
+        $orderId = $data['external_reference'] ?? null;
+        if ($orderId) {
+            update_payment_status($orderId, 'pending', $response['id']);
+            debugLog('Status atualizado no BD', ['order_id' => $orderId, 'payment_id' => $response['id']]);
+        }
+        
         jsonResponse(
             true,
             'QR Code Pix gerado com sucesso',
@@ -337,6 +340,18 @@ function processCreditCardPayment($data) {
         ];
         
         $message = $statusMessages[$status] ?? 'Pagamento processado';
+        
+        // 🔥 SALVAR/ATUALIZAR NO BANCO DE DADOS
+        $orderId = $data['external_reference'] ?? null;
+        if ($orderId) {
+            $dbStatus = ($status === 'approved') ? 'paid' : 'pending';
+            update_payment_status($orderId, $dbStatus, $response['id']);
+            debugLog('Status atualizado no BD', [
+                'order_id' => $orderId, 
+                'payment_id' => $response['id'],
+                'status' => $dbStatus
+            ]);
+        }
         
         jsonResponse(
             $status === 'approved',
