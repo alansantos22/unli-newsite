@@ -324,9 +324,11 @@
             <p>O Plano Anual cobre sites institucionais completos. Se você precisa de sistemas complexos, indicamos nossa consultoria.</p>
             <div class="question-actions">
               <button class="btn-standard" @click="proceedToCheckout">
+                <i class="fas fa-check"></i>
                 O Plano Site Profissional é o que eu preciso
               </button>
               <button class="btn-custom" @click="openCustomForm">
+                <i class="fas fa-comments"></i>
                 Preciso de uma Loja Virtual ou Sistema
               </button>
             </div>
@@ -561,7 +563,7 @@
             <div class="step-navigation-back">
               <button type="button" class="btn-back" @click="previousStep">
                 <i class="fas fa-arrow-left"></i>
-                Voltar
+                Quero voltar para fazer ajustes
               </button>
             </div>
             
@@ -1044,12 +1046,21 @@ export default {
     }
   },
   methods: {
+    // Scroll para o topo suave
+    scrollToTop() {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    },
+    
     // Navegação
     nextStep() {
       console.log('🔄 [nextStep] Current step:', this.currentStep);
       if (this.currentStep < 2) { // Agora temos apenas 2 steps: Personalize e Checkout
         this.currentStep++;
         console.log('✅ [nextStep] Moved to step:', this.currentStep);
+        this.scrollToTop();
       } else {
         console.log('⚠️ [nextStep] Already at final step');
       }
@@ -1060,6 +1071,7 @@ export default {
       if (this.currentStep > 1) {
         this.currentStep--;
         console.log('✅ [previousStep] Moved to step:', this.currentStep);
+        this.scrollToTop();
       } else {
         console.log('⚠️ [previousStep] Already at first step');
       }
@@ -1090,12 +1102,14 @@ export default {
       // Se não existe, vai do step 2 para 3
       this.currentStep = this.initialProduct ? 2 : 3;
       console.log(`✅ [PRE-CHECKOUT DEBUG] Movido para step ${this.currentStep} (checkout)`);
+      this.scrollToTop();
     },
 
     // Upgrade de Landing para Site Completo
     upgradeToComplete() {
       this.selectedProduct = 'site_complete';
       // Manter na etapa 2 para adicionar páginas
+      this.scrollToTop();
     },
 
     // Abrir formulário de contato para projetos customizados
@@ -2567,71 +2581,125 @@ export default {
 }
 
 .custom-question {
-  padding: 32px;
+  padding: 40px;
   background: $gray-lightness;
   border-radius: 16px;
   text-align: center;
   margin-bottom: 40px;
 
   h3 {
-    font-size: 1.5rem;
-    font-weight: 700;
+    font-size: 1.75rem;
+    font-weight: 800;
     color: $gray-darkness;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
+    line-height: 1.3;
   }
 
   p {
     color: $gray-medium;
-    margin-bottom: 24px;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    margin-bottom: 32px;
   }
 
   .question-actions {
     display: flex;
-    gap: 12px;
+    gap: 20px;
     justify-content: center;
     flex-wrap: wrap;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 
-    button {
-      padding: 14px 28px;
-      border: none;
-      border-radius: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s;
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: center;
     }
 
-    .btn-standard {
-      background: $p-color;
-      color: $white;
+    button {
+      // TAMANHO E ESPAÇAMENTO - O segredo do botão "gordinho"
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      min-height: 60px;
+      padding: 0 40px;
+      
+      // FONTE - Negrito passa confiança
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-transform: none;
+      letter-spacing: 0.5px;
+      
+      // FORMA
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-sizing: border-box;
 
-      &:hover {
-        background: $p-dark;
-        transform: translateY(-2px);
+      // Largura mínima para não ficarem muito estreitos
+      min-width: 420px;
+
+      @media (max-width: 768px) {
+        min-width: 100%;
+        max-width: 420px;
+        padding: 0 24px;
+        font-size: 1rem;
+      }
+
+      i {
+        font-size: 1.2rem;
+        flex-shrink: 0;
       }
     }
 
-    .btn-custom {
-      background: $white;
-      color: $p-color;
-      border: 2px solid $p-color;
+    // ESTILO LARANJA (PRINCIPAL)
+    .btn-standard {
+      background: linear-gradient(135deg, #E67E22 0%, #D35400 100%);
+      color: $white;
+      box-shadow: 0 4px 15px rgba(230, 126, 34, 0.3);
 
       &:hover {
-        background: $p-color;
-        color: $white;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(230, 126, 34, 0.4);
+      }
+
+      &:active {
+        transform: translateY(0);
+        box-shadow: 0 4px 15px rgba(230, 126, 34, 0.3);
+      }
+    }
+
+    // ESTILO BRANCO (SECUNDÁRIO)
+    .btn-custom {
+      background: $white;
+      color: #E67E22;
+      border: 2px solid #E67E22;
+
+      &:hover {
+        background: #FFF5EC;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(230, 126, 34, 0.15);
+      }
+
+      &:active {
+        transform: translateY(0);
       }
     }
   }
 
   .back-to-landing {
-    padding-top: 16px;
+    padding-top: 20px;
     border-top: 1px solid rgba($gray-medium, 0.2);
+    margin-top: 8px;
 
     a {
-      font-size: 0.6rem;
+      font-size: 0.95rem;
       color: $gray-medium;
       cursor: pointer;
       transition: color 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
 
       &:hover {
         color: $p-color;
