@@ -306,14 +306,14 @@
             <div class="pricing-header">
               <h3 class="pricing-name">Landing Page (Página Única)</h3>
               <div class="pricing-price">
-                <div class="price-original">De R$ 64,90/mês</div>
+                <div class="price-original">De R$ 74,63/mês</div>
                 <div class="price-wrapper">
                   <span class="price-currency">R$</span>
-                  <span class="price-amount">49,90</span>
+                  <span class="price-amount">57,40</span>
                   <span class="price-period">/mês</span>
                 </div>
               </div>
-              <p class="pricing-description">Cobrança única anual de R$ 599 (ou 12x no cartão)</p>
+              <p class="pricing-description">ou R$ 599 à vista</p>
             </div>
 
             <ul class="pricing-features">
@@ -343,15 +343,15 @@
             <div class="pricing-header">
               <h3 class="pricing-name">Site Multi-Páginas (Expansível)</h3>
               <div class="pricing-price">
-                <div class="price-original">De R$ 67,08/mês</div>
+                <div class="price-original">De R$ 77,12/mês</div>
                 <span class="price-text">A partir de</span>
                 <div class="price-wrapper">
                   <span class="price-currency">R$</span>
-                  <span class="price-amount">51,58</span>
+                  <span class="price-amount">59,32</span>
                   <span class="price-period">/mês</span>
                 </div>
               </div>
-              <p class="pricing-description">Cobrança anual a partir de R$ 619 (ou 12x no cartão)</p>
+              <p class="pricing-description">ou R$ 619 à vista</p>
             </div>
 
             <ul class="pricing-features">
