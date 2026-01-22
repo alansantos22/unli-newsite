@@ -38,5 +38,10 @@ export default [
         path: "/setup",
         name: "OnboardingWizard",
         component: () => import("./shared/Components/OnboardingWizard.vue")
+    },
+    {
+        path: "/test-checkout",
+        name: "TestCheckout",
+        component: () => import("./pages/TestCheckout/TestCheckout.vue")
     }
 ]

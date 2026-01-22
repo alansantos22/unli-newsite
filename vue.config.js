@@ -6,6 +6,17 @@ const webpack = require('webpack');
 module.exports = defineConfig({
   transpileDependencies: true,
   publicPath: "/",
+  devServer: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        pathRewrite: {
+          '^/api': ''
+        }
+      }
+    }
+  },
   configureWebpack: {
     resolve: {
         alias: {

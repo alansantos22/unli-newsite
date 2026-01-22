@@ -1,0 +1,74 @@
+# ============================================
+# PROTEÇÃO DE ARQUIVOS SENSÍVEIS
+# Apache .htaccess
+# ============================================
+
+# Bloqueia acesso direto a arquivos de configuração
+<FilesMatch "^(config\.secure\.php|config\..*\.php|db\.config\.php)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Bloqueia acesso a arquivos de log
+<FilesMatch "\.(log|txt)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Bloqueia listagem de diretórios
+Options -Indexes
+
+# Bloqueia acesso a arquivos ocultos (.env, .git, etc)
+<FilesMatch "^\.">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Permite apenas arquivos PHP de API pública
+<FilesMatch "^(process_payment|webhook-payment|price|order_create|payment_create)\.php$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+
+# Proteção contra injeção de código
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Bloqueia acesso a arquivos de configuração via URL rewrite
+    RewriteRule ^config\..*\.php$ - [F,L]
+    
+    # Bloqueia tentativas de acesso direto a includes/lib
+    RewriteRule ^(lib|includes|onboarding)/.*$ - [F,L]
+</IfModule>
+
+# Headers de segurança adicionais
+<IfModule mod_headers.c>
+    # Previne clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
+    
+    # Previne MIME sniffing
+    Header always set X-Content-Type-Options "nosniff"
+    
+    # Habilita proteção XSS do navegador
+    Header always set X-XSS-Protection "1; mode=block"
+    
+    # Remove informações do servidor
+    Header unset Server
+    Header unset X-Powered-By
+</IfModule>
+
+# Desabilita execução de PHP em uploads (se houver)
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+# Limite de tamanho de requisição (previne ataques de DoS)
+LimitRequestBody 10485760
+
+# Timeout de conexão
+<IfModule mod_reqtimeout.c>
+    RequestReadTimeout header=20-40,MinRate=500 body=20-40,MinRate=500
+</IfModule>
