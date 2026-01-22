@@ -518,7 +518,7 @@
               </div>
               <div class="summary-total">
                 <div class="total-row installments">
-                  <span>12x no cartão</span>
+                  <span>12x no cartão <strong class="no-interest">sem juros</strong></span>
                   <span class="highlight">12x de {{ formatPrice(installmentValue) }}</span>
                 </div>
                 <div class="total-row cash">
@@ -2598,6 +2598,13 @@ export default {
         background: $white;
         border-radius: 12px;
         margin: 8px 0;
+
+        .no-interest {
+          color: $accent-green;
+          font-weight: 900;
+          font-size: 1.05em;
+          letter-spacing: 0.3px;
+        }
 
         .highlight {
           font-size: 1.3rem;

@@ -109,6 +109,7 @@ export default {
       { href: '#ourWorks', label: 'Portfólio' },
       { href: '#whatWeDo', label: 'Serviços' },
       { href: '/consultoria-gamificacao', label: 'Consultoria', isRoute: true },
+      { href: '/site-vitrine', label: 'Quero meu site', isRoute: true },
       { href: '#contact', label: 'Contato' }
     ];
 

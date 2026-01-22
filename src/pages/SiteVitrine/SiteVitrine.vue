@@ -8,30 +8,30 @@
       <div class="hero-container">
         <div class="hero-content">
           <span class="hero-badge">
-            <i class="fas fa-rocket"></i>
-            Presença Online Profissional
+            <i class="fas fa-star"></i>
+            Plano Anual Completo
           </span>
           <h1 class="hero-title">
-            Seu Site Vitrine no Ar em 
-            <span class="highlight-text">Até 7 Dias Úteis</span>
+            Seu site profissional<br>
+            <span class="highlight-text">no ar em até 10 dias</span>
           </h1>
           <p class="hero-description">
-            Plano anual acessível com domínio + hospedagem + SSL inclusos. 
-            Sem complicação, entrega rápida e site personalizado para sua empresa.
+            Plano anual completo com <strong>domínio + hospedagem + SSL</strong>. Presença digital com padrão profissional, 
+            para sua empresa transmitir confiança e receber contatos todos os dias.
           </p>
           
           <div class="hero-price-highlight">
             <div class="price-box">
-              <span class="price-label">A partir de</span>
-              <span class="price-value">R$ 599<span class="price-period">/ano</span></span>
-              <span class="price-subtext">Tudo incluso • Sem mensalidades</span>
+              <span class="price-label">Investimento Anual</span>
+              <span class="price-value">~R$ 49,90<span class="price-period">/Mês</span></span>
+              <span class="price-subtext">~R$ 599/ano</span>
             </div>
           </div>
 
           <div class="hero-actions">
             <a href="#configurador" class="btn-primary">
               <i class="fas fa-rocket"></i>
-              Monte Seu Site Agora
+              Criar meu site agora
             </a>
             <a href="#como-funciona" class="btn-secondary">
               <i class="fas fa-play-circle"></i>
@@ -41,16 +41,16 @@
 
           <div class="hero-trust">
             <div class="trust-item">
-              <i class="fas fa-shield-alt"></i>
-              <span>SSL Grátis</span>
+              <i class="fas fa-check-circle"></i>
+              <span>Visual profissional e responsivo (mobile-first)</span>
             </div>
             <div class="trust-item">
-              <i class="fas fa-bolt"></i>
-              <span>Entrega Rápida</span>
+              <i class="fas fa-file-alt"></i>
+              <span>Páginas essenciais: Home, Serviços, Sobre e Contato</span>
             </div>
             <div class="trust-item">
-              <i class="fas fa-mobile-alt"></i>
-              <span>100% Responsivo</span>
+              <i class="fas fa-edit"></i>
+              <span>Você edita textos quando quiser pelo sistema</span>
             </div>
           </div>
         </div>
@@ -58,108 +58,93 @@
         <div class="hero-visual">
           <div class="mockup-container">
             <div class="mockup-glow"></div>
-            <!-- ADICIONAR IMAGEM: src/assets/img/general/site-mockup.png -->
-            <!-- Placeholder temporário com ícone -->
-            <div class="mockup-placeholder">
-              <i class="fas fa-laptop-code"></i>
-              <p>Adicione a imagem do mockup aqui</p>
-            </div>
+            <img 
+              src="@/assets/img/criacao-sites/notebook.png" 
+              alt="Mockup de site profissional" 
+              class="mockup-image"
+            />
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Por Que Ter Uma Vitrine Virtual -->
+    <!-- Credibilidade se decide em segundos -->
     <section class="benefits-section" data-scroll>
       <div class="section-container">
         <div class="section-header">
-          <span class="section-badge">Benefícios</span>
-          <h2 class="section-title">Por Que Sua Empresa Precisa de uma Vitrine Virtual?</h2>
+          <span class="section-badge">Dados Comprovados</span>
+          <h2 class="section-title">Credibilidade se decide em segundos</h2>
           <p class="section-description">
-            No mundo digital, sua presença online é a primeira impressão. 
-            Um site vitrine profissional é essencial para crescer.
+            A primeira impressão do seu site determina se um cliente confia ou abandona sua empresa.
           </p>
         </div>
 
         <div class="benefits-grid">
           <div class="benefit-card" data-scroll>
             <div class="benefit-icon">
-              <i class="fas fa-star"></i>
+              <i class="fas fa-eye"></i>
             </div>
-            <h3 class="benefit-title">Credibilidade Profissional</h3>
+            <h3 class="benefit-title">46,1% avaliam pela aparência</h3>
             <p class="benefit-description">
-              Empresas sem site perdem até 70% dos clientes em potencial. 
-              Mostre que você é sério e profissional.
+              <strong>46,1%</strong> das pessoas avaliam a credibilidade de uma empresa com base no <strong>visual do site</strong> 
+              (layout, tipografia, cores).
+            </p>
+            <p class="benefit-source">
+              <a href="https://simson.net/ref/2002/stanfordPTL.pdf" target="_blank" rel="noopener">
+                <i class="fas fa-external-link-alt"></i> Fonte: Stanford Web Credibility Research
+              </a>
             </p>
           </div>
 
           <div class="benefit-card" data-scroll>
             <div class="benefit-icon">
-              <i class="fas fa-search"></i>
+              <i class="fas fa-bolt"></i>
             </div>
-            <h3 class="benefit-title">Seja Encontrado no Google</h3>
+            <h3 class="benefit-title">50 milissegundos para impressionar</h3>
             <p class="benefit-description">
-              Clientes procuram serviços online todos os dias. 
-              Apareça nas buscas e conquiste novos clientes.
+              A primeira impressão do visual do seu site acontece em cerca de <strong>50 milissegundos (0,05s)</strong>. 
+              Você tem menos de um piscar de olhos para transmitir profissionalismo.
+            </p>
+            <p class="benefit-source">
+              <a href="https://www.tandfonline.com/doi/abs/10.1080/01449290500330448" target="_blank" rel="noopener">
+                <i class="fas fa-external-link-alt"></i> Fonte: Taylor & Francis Online
+              </a>
             </p>
           </div>
 
           <div class="benefit-card" data-scroll>
             <div class="benefit-icon">
-              <i class="fas fa-whatsapp"></i>
+              <i class="fas fa-times-circle"></i>
             </div>
-            <h3 class="benefit-title">Contato Direto via WhatsApp</h3>
+            <h3 class="benefit-title">38% abandonam por design ruim</h3>
             <p class="benefit-description">
-              Botão WhatsApp integrado para clientes entrarem em contato 
-              com você de forma rápida e fácil.
+              <strong>38%</strong> das pessoas param de engajar com um site se o conteúdo ou layout for 
+              <strong>pouco atraente</strong>. Design importa para conversão.
             </p>
-          </div>
-
-          <div class="benefit-card" data-scroll>
-            <div class="benefit-icon">
-              <i class="fas fa-chart-line"></i>
-            </div>
-            <h3 class="benefit-title">Mais Vendas e Conversões</h3>
-            <p class="benefit-description">
-              Site otimizado para conversão com CTAs estratégicos 
-              que transformam visitantes em clientes.
-            </p>
-          </div>
-
-          <div class="benefit-card" data-scroll>
-            <div class="benefit-icon">
-              <i class="fas fa-link"></i>
-            </div>
-            <h3 class="benefit-title">Centralize Seus Links</h3>
-            <p class="benefit-description">
-              Reúna redes sociais, WhatsApp, localização e portfólio 
-              em um só lugar profissional.
-            </p>
-          </div>
-
-          <div class="benefit-card" data-scroll>
-            <div class="benefit-icon">
-              <i class="fas fa-clock"></i>
-            </div>
-            <h3 class="benefit-title">Disponível 24/7</h3>
-            <p class="benefit-description">
-              Seu site trabalha por você a qualquer hora, 
-              apresentando sua empresa mesmo quando você está offline.
+            <p class="benefit-source">
+              <a href="https://newflux.fr/files/content/dam/adobe/en/max/2015/pdfs/state-of-content-oct.pdf" target="_blank" rel="noopener">
+                <i class="fas fa-external-link-alt"></i> Fonte: Adobe State of Content
+              </a>
             </p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- O Que Você Recebe -->
+    <!-- Feito pela Unli -->
     <section class="includes-section" data-scroll>
       <div class="section-container">
         <div class="section-header">
-          <span class="section-badge">Entregáveis</span>
-          <h2 class="section-title">O Que Está Incluso no Seu Site Vitrine?</h2>
+          <span class="section-badge">Autoridade</span>
+          <h2 class="section-title">Feito por uma empresa com histórico de entrega</h2>
           <p class="section-description">
-            Tudo que você precisa para ter presença profissional na internet, 
-            em um único plano anual sem surpresas.
+            A Unli tem <strong>5 anos de empresa</strong> e experiência real entregando projetos para negócios exigentes. 
+            Aqui, você contrata um <strong>processo validado</strong>, com padrão de qualidade e previsibilidade de entrega.
+          </p>
+          <p class="section-description">
+            <a href="https://unli.com.br" target="_blank" rel="noopener" style="color: #6C5CE7; font-weight: 600;">
+              <i class="fas fa-arrow-right"></i> Saiba mais em unli.com.br
+            </a>
           </p>
         </div>
 
@@ -187,49 +172,10 @@
                 <i class="fas fa-check-circle"></i>
               </div>
               <div class="include-content">
-                <h4 class="include-title">Site Single Page Personalizado</h4>
-                <p class="include-description">
-                  Uma página completa com todas as seções necessárias: 
-                  apresentação, serviços, diferenciais, depoimentos, FAQ e contato.
-                </p>
-              </div>
-            </div>
-
-            <div class="include-item" data-scroll>
-              <div class="include-icon">
-                <i class="fas fa-check-circle"></i>
-              </div>
-              <div class="include-content">
-                <h4 class="include-title">Seu Conteúdo, Sua Identidade</h4>
-                <p class="include-description">
-                  Desenvolvido com seus textos e imagens. Não é template genérico, 
-                  é o seu negócio representado profissionalmente.
-                </p>
-              </div>
-            </div>
-
-            <div class="include-item" data-scroll>
-              <div class="include-icon">
-                <i class="fas fa-check-circle"></i>
-              </div>
-              <div class="include-content">
-                <h4 class="include-title">WhatsApp + Formulário de Contato</h4>
-                <p class="include-description">
-                  Botão WhatsApp flutuante e formulário de contato 
-                  para facilitar a comunicação com seus clientes.
-                </p>
-              </div>
-            </div>
-
-            <div class="include-item" data-scroll>
-              <div class="include-icon">
-                <i class="fas fa-check-circle"></i>
-              </div>
-              <div class="include-content">
                 <h4 class="include-title">Domínio + Hospedagem + SSL</h4>
                 <p class="include-description">
-                  Seu domínio próprio (.com.br ou .com), hospedagem rápida 
-                  e certificado SSL (cadeado de segurança) inclusos no plano.
+                  Seu próprio endereço na internet (ex: suaempresa.com.br), servidor rápido e seguro, 
+                  e certificado SSL (cadeado HTTPS) inclusos.
                 </p>
               </div>
             </div>
@@ -239,10 +185,10 @@
                 <i class="fas fa-check-circle"></i>
               </div>
               <div class="include-content">
-                <h4 class="include-title">Design Responsivo</h4>
+                <h4 class="include-title">Design profissional e responsivo</h4>
                 <p class="include-description">
-                  Funciona perfeitamente em celulares, tablets e computadores. 
-                  Seus clientes terão uma ótima experiência em qualquer dispositivo.
+                  Layout moderno, 100% responsivo (funciona perfeitamente em celulares, tablets e desktops) 
+                  e adaptado à identidade visual da sua marca.
                 </p>
               </div>
             </div>
@@ -252,10 +198,36 @@
                 <i class="fas fa-check-circle"></i>
               </div>
               <div class="include-content">
-                <h4 class="include-title">Publicação e Suporte Técnico</h4>
+                <h4 class="include-title">Estrutura completa (seções essenciais)</h4>
                 <p class="include-description">
-                  Colocamos seu site no ar e garantimos que ele fique disponível. 
-                  Suporte técnico incluso para manter tudo funcionando.
+                  Páginas prontas: Home, Serviços, Sobre e Contato/WhatsApp. 
+                  Estrutura completa para apresentar sua empresa profissionalmente.
+                </p>
+              </div>
+            </div>
+
+            <div class="include-item" data-scroll>
+              <div class="include-icon">
+                <i class="fas fa-check-circle"></i>
+              </div>
+              <div class="include-content">
+                <h4 class="include-title">Publicação e configurações técnicas</h4>
+                <p class="include-description">
+                  DNS configurado, emails @seudominio.com.br, Google Analytics instalado, integração WhatsApp. 
+                  Tudo pronto para uso imediato.
+                </p>
+              </div>
+            </div>
+
+            <div class="include-item" data-scroll>
+              <div class="include-icon">
+                <i class="fas fa-check-circle"></i>
+              </div>
+              <div class="include-content">
+                <h4 class="include-title">Acesso ao sistema para editar textos</h4>
+                <p class="include-description">
+                  Você tem acesso completo ao sistema para editar textos, informações e conteúdos a qualquer momento, 
+                  sem depender de ninguém.
                 </p>
               </div>
             </div>
@@ -269,9 +241,9 @@
       <div class="section-container">
         <div class="section-header">
           <span class="section-badge">Processo</span>
-          <h2 class="section-title">Como Funciona? Simples e Rápido</h2>
+          <h2 class="section-title">Simples do início ao fim</h2>
           <p class="section-description">
-            Processo objetivo em 5 passos. Do pagamento ao site no ar em até 7 dias úteis.
+            Sem atrito, sem burocracia. Você contrata, nós entregamos.
           </p>
         </div>
 
@@ -279,38 +251,24 @@
           <div class="timeline-item" data-scroll>
             <div class="timeline-number">1</div>
             <div class="timeline-content">
-              <h3 class="timeline-title">Pagamento Confirmado</h3>
+              <h3 class="timeline-title">Você escolhe o modelo e preenche as informações</h3>
               <p class="timeline-description">
-                Escolha seu plano, efetue o pagamento e receba confirmação imediata. 
-                Sua produção é reservada em nossa agenda.
+                Acesse o configurador, selecione um modelo e preenche os dados da sua empresa. 
+                Simples e direto.
               </p>
             </div>
             <div class="timeline-icon">
-              <i class="fas fa-credit-card"></i>
+              <i class="fas fa-cog"></i>
             </div>
           </div>
 
           <div class="timeline-item" data-scroll>
             <div class="timeline-number">2</div>
             <div class="timeline-content">
-              <h3 class="timeline-title">Envie Seus Materiais</h3>
+              <h3 class="timeline-title">Nós produzimos o site no padrão Unli</h3>
               <p class="timeline-description">
-                Preencha um checklist simples com textos, imagens, logo, 
-                cores da marca e dados de contato. Guiamos você no processo.
-              </p>
-            </div>
-            <div class="timeline-icon">
-              <i class="fas fa-upload"></i>
-            </div>
-          </div>
-
-          <div class="timeline-item" data-scroll>
-            <div class="timeline-number">3</div>
-            <div class="timeline-content">
-              <h3 class="timeline-title">Produção do Site</h3>
-              <p class="timeline-description">
-                Nossa equipe desenvolve seu site mantendo qualidade profissional. 
-                Até 10 dias úteis após material completo.
+                Nossa equipe desenvolve o site seguindo o padrão de qualidade e design profissional 
+                validado pela Unli.
               </p>
             </div>
             <div class="timeline-icon">
@@ -319,26 +277,12 @@
           </div>
 
           <div class="timeline-item" data-scroll>
-            <div class="timeline-number">4</div>
+            <div class="timeline-number">3</div>
             <div class="timeline-content">
-              <h3 class="timeline-title">Revisão e Ajustes</h3>
+              <h3 class="timeline-title">Publicamos e deixamos tudo funcionando no seu domínio</h3>
               <p class="timeline-description">
-                Você visualiza o site, solicita ajustes necessários 
-                e aprovamos juntos. Uma rodada de revisão inclusa.
-              </p>
-            </div>
-            <div class="timeline-icon">
-              <i class="fas fa-edit"></i>
-            </div>
-          </div>
-
-          <div class="timeline-item" data-scroll>
-            <div class="timeline-number">5</div>
-            <div class="timeline-content">
-              <h3 class="timeline-title">Site no Ar!</h3>
-              <p class="timeline-description">
-                Publicamos seu site com domínio configurado e SSL ativo. 
-                Pronto para receber clientes e gerar resultados!
+                Configuramos DNS, emails, SSL e deixamos tudo pronto. 
+                Seu site está no ar, profissional e seguro.
               </p>
             </div>
             <div class="timeline-icon">
@@ -354,52 +298,50 @@
       <div class="section-container">
         <div class="section-header">
           <span class="section-badge">Investimento</span>
-          <h2 class="section-title">Plano Anual Sem Complicação</h2>
+          <h2 class="section-title">Tudo incluso em um único plano</h2>
           <p class="section-description">
-            Valor acessível com tudo incluso. Sem mensalidades, sem surpresas.
+            Sem taxas escondidas, sem surpresas. Pagamento único anual.
           </p>
         </div>
 
         <div class="pricing-cards">
           <!-- Plano Principal -->
-          <div class="pricing-card" data-scroll>
+          <div class="pricing-card featured" data-scroll>
+            <div class="pricing-badge">Plano Completo</div>
             <div class="pricing-header">
-              <h3 class="pricing-name">Site Vitrine Anual</h3>
+              <h3 class="pricing-name">Site Vitrine Profissional</h3>
               <div class="pricing-price">
                 <span class="price-currency">R$</span>
                 <span class="price-amount">599</span>
                 <span class="price-period">/ano</span>
               </div>
-              <p class="pricing-description">Perfeito para pequenas empresas e profissionais</p>
+              <p class="pricing-description">~R$ 49,90/mês — Tudo incluso</p>
             </div>
 
             <ul class="pricing-features">
-              <li><i class="fas fa-check"></i> Site Single Page Personalizado</li>
-              <li><i class="fas fa-check"></i> Domínio .com.br ou .com Incluso</li>
-              <li><i class="fas fa-check"></i> Hospedagem por 1 Ano</li>
-              <li><i class="fas fa-check"></i> Certificado SSL (Segurança)</li>
-              <li><i class="fas fa-check"></i> Design 100% Responsivo</li>
-              <li><i class="fas fa-check"></i> Botão WhatsApp Integrado</li>
-              <li><i class="fas fa-check"></i> Formulário de Contato</li>
-              <li><i class="fas fa-check"></i> 1 Alteração Anual Inclusa</li>
-              <li><i class="fas fa-check"></i> Suporte de Disponibilidade</li>
-              <li><i class="fas fa-check"></i> Entrega em até 10 Dias Úteis</li>
+              <li><i class="fas fa-check"></i> <strong>Domínio + Hospedagem + SSL</strong></li>
+              <li><i class="fas fa-check"></i> <strong>Design profissional e responsivo</strong></li>
+              <li><i class="fas fa-check"></i> <strong>Páginas essenciais</strong> (Home, Serviços, Sobre, Contato)</li>
+              <li><i class="fas fa-check"></i> <strong>Integração WhatsApp</strong> e Formulário</li>
+              <li><i class="fas fa-check"></i> <strong>Google Analytics</strong> configurado</li>
+              <li><i class="fas fa-check"></i> <strong>Emails profissionais</strong> @seudominio.com.br</li>
+              <li><i class="fas fa-check"></i> <strong>Publicação completa</strong> (DNS, SSL, tudo pronto)</li>
+              <li><i class="fas fa-check"></i> <strong>Sistema para você editar</strong> textos quando quiser</li>
             </ul>
 
             <a href="#configurador" class="pricing-button">
-              <i class="fas fa-shopping-cart"></i>
-              Contratar Agora
+              <i class="fas fa-rocket"></i>
+              Quero meu site
             </a>
 
             <div class="pricing-guarantee">
               <i class="fas fa-shield-alt"></i>
-              <span>Site no ar ou seu dinheiro de volta</span>
+              <span>Entrega em até 10 dias úteis</span>
             </div>
           </div>
 
           <!-- Site Mais Personalizado -->
-          <div class="pricing-card addon featured" data-scroll>
-            <div class="pricing-badge">Mais Popular</div>
+          <div class="pricing-card addon" data-scroll>
             <div class="pricing-header">
               <h3 class="pricing-name">Site Mais Personalizado</h3>
               <div class="pricing-price">
@@ -412,22 +354,21 @@
             </div>
 
             <ul class="pricing-features">
-              <li class="included"><i class="fas fa-plus-circle"></i> <strong>Tudo do Site Vitrine +</strong></li>
-              <li><i class="fas fa-check"></i> Escolha Quantas Páginas Precisar</li>
-              <li><i class="fas fa-check"></i> Adicione Vídeos e Documentos</li>
-              <li><i class="fas fa-check"></i> Personalize o Visual</li>
-              <li><i class="fas fa-check"></i> Configurador Interativo</li>
-              <li><i class="fas fa-check"></i> Entrega em Até 10 Dias Úteis</li>
+              <li class="included"><i class="fas fa-plus-circle"></i> <strong>Tudo do plano completo +</strong></li>
+              <li><i class="fas fa-check"></i> Escolha quantas páginas precisar</li>
+              <li><i class="fas fa-check"></i> Adicione vídeos e documentos</li>
+              <li><i class="fas fa-check"></i> Personalize o visual</li>
+              <li><i class="fas fa-check"></i> Configurador interativo</li>
             </ul>
 
             <a href="#configurador" class="pricing-button">
               <i class="fas fa-cog"></i>
-              Configurar Meu Site
+              Configurar meu site
             </a>
 
             <div class="pricing-guarantee">
               <i class="fas fa-shield-alt"></i>
-              <span>Site no ar ou seu dinheiro de volta</span>
+              <span>Entrega em até 10 dias úteis</span>
             </div>
           </div>
 
@@ -443,22 +384,22 @@
 
             <ul class="pricing-features">
               <li class="included"><i class="fas fa-plus-circle"></i> <strong>Tudo das opções anteriores +</strong></li>
-              <li><i class="fas fa-check"></i> Site Multipáginas</li>
-              <li><i class="fas fa-check"></i> E-commerce Completo</li>
-              <li><i class="fas fa-check"></i> Área do Cliente / Login</li>
-              <li><i class="fas fa-check"></i> Integrações Complexas</li>
-              <li><i class="fas fa-check"></i> Backend / Painel Admin</li>
-              <li><i class="fas fa-check"></i> Funcionalidades Customizadas</li>
+              <li><i class="fas fa-check"></i> Site multipáginas</li>
+              <li><i class="fas fa-check"></i> E-commerce completo</li>
+              <li><i class="fas fa-check"></i> Área do cliente / Login</li>
+              <li><i class="fas fa-check"></i> Integrações complexas</li>
+              <li><i class="fas fa-check"></i> Backend / Painel admin</li>
+              <li><i class="fas fa-check"></i> Funcionalidades customizadas</li>
             </ul>
 
             <a href="#contact" class="pricing-button">
               <i class="fas fa-comment-dots"></i>
-              Solicitar Orçamento
+              Solicitar orçamento
             </a>
 
             <div class="pricing-guarantee">
               <i class="fas fa-shield-alt"></i>
-              <span>Site no ar ou seu dinheiro de volta</span>
+              <span>Prazo sob proposta</span>
             </div>
           </div>
         </div>
@@ -557,6 +498,19 @@
             <div class="faq-item" data-scroll>
               <div class="faq-question">
                 <i class="fas fa-question-circle"></i>
+                <h3>Posso cancelar?</h3>
+              </div>
+              <div class="faq-answer">
+                Sim. Você pode cancelar em até <strong>7 dias</strong> após a compra 
+                e receber reembolso integral, desde que o site ainda não tenha sido publicado. 
+                O estorno é processado em até <strong>30 dias</strong> após o cancelamento, 
+                a depender da empresa de pagamentos.
+              </div>
+            </div>
+
+            <div class="faq-item" data-scroll>
+              <div class="faq-question">
+                <i class="fas fa-question-circle"></i>
                 <h3>Isso é um site completo?</h3>
               </div>
               <div class="faq-answer">
@@ -583,19 +537,6 @@
             <div class="faq-item" data-scroll>
               <div class="faq-question">
                 <i class="fas fa-question-circle"></i>
-                <h3>Posso alterar o site sempre que quiser?</h3>
-              </div>
-              <div class="faq-answer">
-                O plano inclui <strong>1 alteração anual</strong> de conteúdo 
-                (trocar texto, imagem, dados de contato). Alterações adicionais 
-                podem ser contratadas como add-on, mantendo o custo do plano 
-                acessível para todos.
-              </div>
-            </div>
-
-            <div class="faq-item" data-scroll>
-              <div class="faq-question">
-                <i class="fas fa-question-circle"></i>
                 <h3>Vocês fazem os textos do site?</h3>
               </div>
               <div class="faq-answer">
@@ -612,7 +553,7 @@
                 <h3>Quanto tempo leva para ficar pronto?</h3>
               </div>
               <div class="faq-answer">
-                <strong>Até 7 dias úteis</strong> após confirmação do pagamento 
+                <strong>Até 10 dias úteis</strong> após confirmação do pagamento 
                 e envio completo dos materiais. O prazo começa quando você 
                 envia textos, imagens e dados solicitados no checklist.
               </div>
@@ -690,46 +631,46 @@
       <div class="cta-container">
         <div class="cta-content">
           <span class="cta-badge">
-            <i class="fas fa-rocket"></i>
-            Comece Hoje
+            <i class="fas fa-star"></i>
+            Processo Validado
           </span>
           <h2 class="cta-title">
-            Pronto para Ter Presença Profissional na Internet?
+            Sua empresa merece transmitir profissionalismo online
           </h2>
           <p class="cta-description">
-            Não perca mais clientes por não ter um site. 
-            Invista em credibilidade e seja encontrado por quem procura seus serviços.
+            Clientes decidem em segundos se confiam ou não. Não deixe um site amador prejudicar sua imagem. 
+            Contrate um processo com padrão de qualidade e entrega previsível.
           </p>
           
           <div class="cta-features">
             <div class="cta-feature">
-              <i class="fas fa-check-circle"></i>
-              <span>Entrega em 10 dias úteis</span>
+              <i class="fas fa-bolt"></i>
+              <span>Entrega em até 10 dias</span>
             </div>
             <div class="cta-feature">
-              <i class="fas fa-check-circle"></i>
-              <span>Tudo incluso a partir de R$ 599/ano</span>
+              <i class="fas fa-dollar-sign"></i>
+              <span>R$ 599/ano (~R$ 49,90/mês)</span>
             </div>
             <div class="cta-feature">
-              <i class="fas fa-check-circle"></i>
-              <span>Processo simples e rápido</span>
+              <i class="fas fa-building"></i>
+              <span>+ de 5 anos de experiência</span>
             </div>
           </div>
 
           <div class="cta-actions">
-            <a href="#planos" class="btn-primary large">
-              <i class="fas fa-shopping-cart"></i>
-              Contratar Meu Site Agora
+            <a href="#configurador" class="btn-primary large">
+              <i class="fas fa-rocket"></i>
+              Quero meu site
             </a>
             <a href="#contact" class="btn-secondary large">
-              <i class="fas fa-comment-dots"></i>
-              Falar com Consultor
+              <i class="fas fa-comments"></i>
+              Falar com Especialista
             </a>
           </div>
 
           <div class="cta-guarantee">
-            <i class="fas fa-shield-alt"></i>
-            <span>Satisfação garantida ou seu dinheiro de volta</span>
+            <i class="fas fa-check-circle"></i>
+            <span>Tudo incluso: domínio, hospedagem, SSL, site e publicação.</span>
           </div>
         </div>
       </div>
@@ -760,7 +701,7 @@
       <div class="section-container">
         <div class="section-header">
           <span class="section-badge">Contato</span>
-          <h2 class="section-title">Ficou com Dúvidas? Fale Conosco</h2>
+          <h2 class="section-title">Quer algo mais robusto? Fale Conosco</h2>
           <p class="section-description">
             Nossa equipe está pronta para ajudar você a ter presença online profissional.
           </p>
@@ -774,8 +715,8 @@
               </div>
               <h3 class="info-title">WhatsApp</h3>
               <p class="info-text">Atendimento rápido e direto</p>
-              <a href="https://wa.me/5511999999999" class="info-link" target="_blank">
-                (11) 99999-9999
+              <a href="https://wa.me/5511968354238" class="info-link" target="_blank">
+                (11) 96835-4238
               </a>
             </div>
 
@@ -785,8 +726,8 @@
               </div>
               <h3 class="info-title">E-mail</h3>
               <p class="info-text">Resposta em até 24h</p>
-              <a href="mailto:contato@empresa.com" class="info-link">
-                contato@empresa.com
+              <a href="mailto:alanreis@unli.com.br" class="info-link">
+                alanreis@unli.com.br
               </a>
             </div>
 
@@ -796,7 +737,6 @@
               </div>
               <h3 class="info-title">Horário</h3>
               <p class="info-text">Seg a Sex: 9h às 18h</p>
-              <p class="info-text">Sáb: 9h às 12h</p>
             </div>
           </div>
 
@@ -1225,7 +1165,7 @@ export default {
     .mockup-container {
       position: relative;
       width: 100%;
-      max-width: 500px;
+      max-width: 600px;
 
       .mockup-glow {
         position: absolute;
@@ -1334,6 +1274,32 @@ export default {
       font-size: 1rem;
       color: $gray-medium;
       line-height: 1.7;
+      margin-bottom: 16px;
+    }
+
+    .benefit-source {
+      padding-top: 16px;
+      border-top: 1px solid $gray-light;
+      margin-top: 16px;
+
+      a {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.85rem;
+        color: $gray-medium;
+        text-decoration: none;
+        transition: all 0.3s ease;
+
+        i {
+          font-size: 0.75rem;
+        }
+
+        &:hover {
+          color: $p-color;
+          text-decoration: underline;
+        }
+      }
     }
   }
 }
@@ -1785,7 +1751,7 @@ export default {
 
   .policies-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
     gap: 32px;
     margin-top: 60px;
   }
@@ -2318,18 +2284,24 @@ export default {
   }
 
   .contact-form {
-    padding: 40px;
+    padding: 50px;
     background: $white;
-    border-radius: 20px;
-    box-shadow: $shadow-lg;
+    border-radius: 28px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+
+    @media (max-width: 768px) {
+      padding: 32px 24px;
+      border-radius: 20px;
+    }
 
     .form-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 20px;
+      gap: 24px;
 
       @media (max-width: 768px) {
         grid-template-columns: 1fr;
+        gap: 0;
       }
     }
 
@@ -2338,34 +2310,62 @@ export default {
 
       label {
         display: block;
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: $gray-darkness;
-        margin-bottom: 8px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #2C2C2C;
+        margin-bottom: 10px;
+        letter-spacing: 0.01em;
       }
 
       input,
       select,
       textarea {
         width: 100%;
-        padding: 14px 16px;
+        padding: 18px 20px;
         font-size: 1rem;
-        color: $gray-darkness;
-        background: $gray-lightness;
+        font-family: inherit;
+        color: #2C2C2C;
+        background: #F5F5F5;
         border: 2px solid transparent;
-        border-radius: 12px;
-        transition: all 0.3s ease;
+        border-radius: 14px;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        appearance: none;
+
+        &::placeholder {
+          color: #999999;
+          font-size: 0.95rem;
+        }
+
+        &:hover {
+          background: #ECECEC;
+        }
 
         &:focus {
           outline: none;
           background: $white;
-          border-color: $p-color;
+          border-color: #E67E22;
+          box-shadow: 0 0 0 4px rgba(#E67E22, 0.08);
+        }
+      }
+
+      select {
+        background-image: url("data:image/svg+xml,%3Csvg width='14' height='8' viewBox='0 0 14 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L7 7L13 1' stroke='%23666666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 20px center;
+        background-size: 14px;
+        padding-right: 50px;
+        cursor: pointer;
+
+        &:focus {
+          background-image: url("data:image/svg+xml,%3Csvg width='14' height='8' viewBox='0 0 14 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L7 7L13 1' stroke='%23E67E22' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
         }
       }
 
       textarea {
         resize: vertical;
-        min-height: 120px;
+        min-height: 160px;
+        line-height: 1.6;
+        font-family: inherit;
       }
     }
 
@@ -2373,26 +2373,44 @@ export default {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 12px;
       width: 100%;
-      padding: 16px;
-      background: $gradient-primary;
+      padding: 20px;
+      background: linear-gradient(135deg, #E67E22 0%, #D35400 100%);
       color: $white;
       border: none;
-      border-radius: 12px;
+      border-radius: 14px;
       font-size: 1.1rem;
-      font-weight: 600;
+      font-weight: 700;
+      letter-spacing: 0.02em;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 6px 20px rgba(#E67E22, 0.35);
+      margin-top: 8px;
+
+      i {
+        font-size: 1.15rem;
+        transition: transform 0.3s ease;
+      }
 
       &:hover:not(:disabled) {
         transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba($p-color, 0.5);
+        box-shadow: 0 10px 30px rgba(#E67E22, 0.45);
+
+        i {
+          transform: translateX(4px);
+        }
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: 0 4px 16px rgba(#E67E22, 0.35);
       }
 
       &:disabled {
-        opacity: 0.6;
+        opacity: 0.65;
         cursor: not-allowed;
+        transform: none;
       }
     }
   }
