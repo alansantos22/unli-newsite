@@ -39,6 +39,9 @@ require_once $configFile;
 // Carregar helpers do banco de dados
 require_once __DIR__ . '/lib/database.php';
 
+// Carregar helpers do Fila Chamados
+require_once __DIR__ . '/lib/fila-chamados.php';
+
 // ============================================
 // CORS - Configuração segura
 // ============================================
@@ -251,6 +254,9 @@ function processPixPayment($data) {
         if ($orderId) {
             update_payment_status($orderId, 'pending', $response['id']);
             debugLog('Status atualizado no BD', ['order_id' => $orderId, 'payment_id' => $response['id']]);
+            
+            // 🎫 NOTA: Ticket do Fila Chamados será criado quando o Pix for confirmado via webhook
+            // (o status 'pending' ainda não é uma venda confirmada)
         }
         
         jsonResponse(
@@ -351,6 +357,33 @@ function processCreditCardPayment($data) {
                 'payment_id' => $response['id'],
                 'status' => $dbStatus
             ]);
+            
+            // 🎫 CRIAR TICKET NO FILA CHAMADOS se pagamento aprovado
+            if ($status === 'approved') {
+                $ticketData = [
+                    'customer_name' => $data['payer']['first_name'] ?? 'Cliente',
+                    'customer_email' => $data['payer']['email'],
+                    'order_id' => $orderId,
+                    'plan_name' => $data['description'] ?? 'Site',
+                    'amount' => $data['transaction_amount'],
+                    'payment_method' => 'credit_card',
+                    'payment_id' => $response['id']
+                ];
+                
+                $ticketResult = createTicketForSale($ticketData);
+                
+                if ($ticketResult['success']) {
+                    debugLog('✅ Ticket criado no Fila Chamados', [
+                        'ticket_id' => $ticketResult['ticket_id'],
+                        'order_id' => $orderId
+                    ]);
+                } elseif (!isset($ticketResult['skipped'])) {
+                    debugLog('⚠️ Falha ao criar ticket no Fila Chamados', [
+                        'error' => $ticketResult['error'],
+                        'order_id' => $orderId
+                    ]);
+                }
+            }
         }
         
         jsonResponse(

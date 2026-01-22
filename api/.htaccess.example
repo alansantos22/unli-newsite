@@ -1,0 +1,44 @@
+# ============================================
+# SEGURANÇA - Proteção de Arquivos Sensíveis
+# ============================================
+
+# Bloquear acesso direto a arquivos de configuração
+<FilesMatch "^(config\.secure\.php|config\.php|db\.config\.php)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Bloquear acesso a arquivos de teste em produção
+<FilesMatch "^(test-.*\.php)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Permitir acesso apenas a endpoints públicos específicos
+<FilesMatch "^(order_create|payment_create|process_payment|webhook-payment|webhook_mercadopago|price)\.php$">
+    Order allow,deny
+    Allow from all
+</FilesMatch>
+
+# Bloquear listagem de diretórios
+Options -Indexes
+
+# Proteger arquivos sensíveis da pasta lib
+<Directory "lib">
+    Order allow,deny
+    Deny from all
+</Directory>
+
+# Headers de segurança
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# ============================================
+# NOTA: Remova ou comente estas linhas em
+# desenvolvimento se precisar acessar os
+# arquivos de teste diretamente
+# ============================================

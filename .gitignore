@@ -36,6 +36,9 @@ api/uploads/
 api/temp/
 *.secure.php
 
+# Arquivos de teste (podem conter credenciais)
+api/test-*.php
+
 # Backups de configuração
 api/*.backup.php
 api/*.bak

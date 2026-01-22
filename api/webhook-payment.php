@@ -13,6 +13,7 @@ header('Content-Type: application/json');
 
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/lib/onboarding-helpers.php';
+require_once __DIR__ . '/lib/fila-chamados.php';
 
 // Log the webhook request
 logWebhookRequest();
@@ -144,6 +145,26 @@ function handlePaymentApproved($conn, $webhookData) {
     
     if (!$emailSent) {
         logError("Failed to send onboarding email to: {$webhookData['customer_email']}", __FILE__);
+    }
+    
+    // 🎫 CRIAR TICKET NO FILA CHAMADOS
+    $ticketData = [
+        'customer_name' => $webhookData['customer_name'],
+        'customer_email' => $webhookData['customer_email'],
+        'customer_phone' => $webhookData['customer_phone'] ?? '',
+        'order_id' => $orderId,
+        'plan_name' => $orderDetails['plan'],
+        'amount' => $webhookData['amount'],
+        'payment_method' => $webhookData['payment_method'],
+        'payment_id' => $webhookData['payment_id']
+    ];
+    
+    $ticketResult = createTicketForSale($ticketData);
+    
+    if ($ticketResult['success']) {
+        error_log("✅ FILA CHAMADOS: Ticket #{$ticketResult['ticket_id']} criado para pedido #{$orderId}");
+    } elseif (!isset($ticketResult['skipped'])) {
+        error_log("⚠️ FILA CHAMADOS: Falha ao criar ticket para pedido #{$orderId} - {$ticketResult['error']}");
     }
     
     // Log success
