@@ -16,23 +16,42 @@
   "page_addons": {
     "about": {
       "name": "Sobre Nós",
-      "price": 59
+      "price": 59,
+      "description": "História, missão, valores e equipe da empresa"
     },
     "services": {
       "name": "Serviços",
-      "price": 119
+      "price": 119,
+      "description": "Apresentação detalhada dos serviços oferecidos"
     },
     "portfolio": {
       "name": "Portfólio",
-      "price": 159
+      "price": 159,
+      "description": "Galeria de projetos e trabalhos realizados"
     },
     "faq": {
       "name": "FAQ",
-      "price": 89
+      "price": 89,
+      "description": "Perguntas frequentes e respostas"
     },
     "contact": {
       "name": "Contato",
-      "price": 89
+      "price": 89,
+      "description": "Formulário de contato e informações"
+    },
+    "blog": {
+      "name": "Blog de Notícias",
+      "price": 349,
+      "description": "Área de gestão de posts e artigos otimizados para SEO",
+      "isNew": true,
+      "isPremium": true
+    },
+    "showcase": {
+      "name": "Vitrine de Produtos",
+      "price": 449,
+      "description": "Catálogo online com galeria e detalhes dos produtos (sem carrinho, checkout ou sistema de compra online)",
+      "isNew": true,
+      "isPremium": true
     }
   },
   "content_addons": {
@@ -57,23 +76,28 @@
     "resources": {
       "images": {
         "name": "Imagens",
-        "price": 8.70,
+        "price": 9,
         "description": "Galeria de imagens para a página"
       },
       "video": {
         "name": "Vídeo",
-        "price": 10.43,
+        "price": 12,
         "description": "Vídeo integrado na página"
       },
       "carousel": {
         "name": "Carrossel",
-        "price": 17.39,
+        "price": 18,
         "description": "Carrossel de imagens ou conteúdo"
       },
       "form": {
         "name": "Formulário",
-        "price": 26.09,
+        "price": 25,
         "description": "Formulário de contato customizado"
+      },
+      "testimonials": {
+        "name": "Depoimentos",
+        "price": 20,
+        "description": "Seção de depoimentos de clientes"
       }
     }
   },
@@ -81,5 +105,28 @@
     "cash_discount_percent": 15,
     "installments_12_markup_percent": 15,
     "installments": 12
+  },
+  "predefined_packages": {
+    "essential": {
+      "name": "Essencial",
+      "tagline": "Para quem presta serviços e precisa ser encontrado",
+      "icon": "🏢",
+      "pages": ["about", "services", "contact"],
+      "ideal_for": "Advogados, Clínicas, Consultores"
+    },
+    "authority": {
+      "name": "Autoridade",
+      "tagline": "Mostre seu trabalho e tire dúvidas para fechar contratos",
+      "icon": "🚀",
+      "pages": ["about", "services", "contact", "portfolio", "faq"],
+      "ideal_for": "Arquitetos, Agências, Engenharia, Reformas"
+    },
+    "enterprise": {
+      "name": "Ecossistema Digital",
+      "tagline": "Atraia tráfego com Blog e exiba seus produtos online",
+      "icon": "💎",
+      "pages": ["about", "services", "contact", "portfolio", "faq", "blog", "showcase"],
+      "ideal_for": "Lojas, Importadoras, Indústrias"
+    }
   }
 }

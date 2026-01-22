@@ -89,36 +89,130 @@
         <div v-else-if="currentStep === (initialProduct ? 1 : 2)" class="step-content step-addons">
           <h2 class="step-title">Monte Seu Site</h2>
           <p class="step-description">
-            Adicione páginas e conteúdo conforme sua necessidade.
+            Escolha um pacote pronto ou personalize conforme sua necessidade.
           </p>
+
+          <!-- ========== CARDS DE PACOTES PRÉ-DEFINIDOS ========== -->
+          <div class="packages-section">
+            <h3 class="section-title">
+              <i class="fas fa-box-open"></i>
+              Qual o objetivo do seu site hoje?
+            </h3>
+            <p class="section-subtitle">
+              Escolha um pacote pronto que atende o seu perfil ou personalize cada item abaixo:
+            </p>
+
+            <div class="package-cards">
+              <!-- Pacote Essencial -->
+              <div 
+                :class="['package-card', { selected: isPackageSelected('essential') }]"
+                @click="selectPackage('essential')"
+              >
+                <div class="package-icon">🏢</div>
+                <h4 class="package-name">Essencial</h4>
+                <p class="package-tagline">Para quem presta serviços e precisa ser encontrado</p>
+                
+                <div class="package-includes">
+                  <div class="includes-title">Inclui:</div>
+                  <ul>
+                    <li><i class="fas fa-check"></i> Home</li>
+                    <li><i class="fas fa-check"></i> Sobre Nós</li>
+                    <li><i class="fas fa-check"></i> Serviços</li>
+                    <li><i class="fas fa-check"></i> Contato</li>
+                  </ul>
+                </div>
+                
+                <div class="package-ideal">
+                  <i class="fas fa-users"></i>
+                  <span>Ideal para: {{ config.predefined_packages.essential.ideal_for }}</span>
+                </div>
+              </div>
+
+              <!-- Pacote Autoridade -->
+              <div 
+                :class="['package-card recommended', { selected: isPackageSelected('authority') }]"
+                @click="selectPackage('authority')"
+              >
+                <div class="package-icon">🚀</div>
+                <h4 class="package-name">Autoridade</h4>
+                <p class="package-tagline">Mostre seu trabalho e tire dúvidas para fechar contratos</p>
+                
+                <div class="package-includes">
+                  <div class="includes-title">Tudo do Essencial +</div>
+                  <ul>
+                    <li><i class="fas fa-check"></i> Portfólio</li>
+                    <li><i class="fas fa-check"></i> FAQ</li>
+                    <li><i class="fas fa-check"></i> Depoimentos</li>
+                  </ul>
+                </div>
+                
+                <div class="package-ideal">
+                  <i class="fas fa-users"></i>
+                  <span>Ideal para: {{ config.predefined_packages.authority.ideal_for }}</span>
+                </div>
+              </div>
+
+              <!-- Pacote Enterprise -->
+              <div 
+                :class="['package-card premium', { selected: isPackageSelected('enterprise') }]"
+                @click="selectPackage('enterprise')"
+              >
+                <div class="premium-shine"></div>
+                <div class="package-icon">💎</div>
+                <h4 class="package-name">Ecossistema Digital</h4>
+                <p class="package-tagline">Atraia tráfego com Blog e exiba seus produtos online</p>
+                
+                <div class="package-includes">
+                  <div class="includes-title">Tudo do Autoridade +</div>
+                  <ul>
+                    <li><i class="fas fa-check"></i> Blog de Notícias <span class="new-badge">Novo</span></li>
+                    <li><i class="fas fa-check"></i> Vitrine de Produtos <span class="new-badge">Novo</span></li>
+                  </ul>
+                </div>
+                
+                <div class="package-ideal">
+                  <i class="fas fa-users"></i>
+                  <span>Ideal para: {{ config.predefined_packages.enterprise.ideal_for }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="custom-notice">
+              <i class="fas fa-arrow-down"></i>
+              <span>Prefere montar do seu jeito? Personalize os itens abaixo</span>
+            </div>
+          </div>
 
           <!-- Páginas Adicionais (somente Site Completo) -->
           <div v-if="selectedProduct === 'site_complete' && config.page_addons" class="addon-section">
             <h3 class="section-title">
-              <i class="fas fa-file-alt"></i>
-              Páginas Pré-Definidas
+              <i class="fas fa-sliders-h"></i>
+              Personalize seu Pacote
             </h3>
+            <p class="section-subtitle">
+              {{ selectedPackage ? 'Ajuste as páginas do pacote selecionado:' : 'Selecione as páginas que deseja adicionar:' }}
+            </p>
             
-            <!-- Checkbox "Estrutura Completa" -->
+            <!-- Toggle Switch "Estrutura Completa" -->
             <div class="select-all-wrapper">
-              <label class="checkbox-select-all">
+              <label class="toggle-select-all">
                 <input
                   type="checkbox"
                   :checked="allPagesSelected"
                   @change="toggleAllPages"
                 >
-                <div class="select-all-content">
+                <div class="toggle-content">
                   <i class="fas fa-star"></i>
-                  <div class="select-all-text">
+                  <div class="toggle-text">
                     <strong>Ativar Estrutura Profissional Completa</strong>
                     <span>Adiciona todas as páginas essenciais para passar máxima credibilidade ao seu cliente.</span>
                   </div>
-                  <div class="select-all-badge">
+                  <div class="toggle-badge">
                     <i class="fas fa-award"></i>
                     Recomendado
                   </div>
-                  <div class="checkbox-mark">
-                    <i class="fas fa-check"></i>
+                  <div class="toggle-switch">
+                    <div class="toggle-slider"></div>
                   </div>
                 </div>
               </label>
@@ -128,7 +222,7 @@
               <label
                 v-for="(page, key) in config.page_addons"
                 :key="key"
-                class="checkbox-item"
+                :class="['checkbox-item', { 'premium-item': page.isPremium }]"
               >
                 <input
                   type="checkbox"
@@ -136,13 +230,16 @@
                   v-model="selectedPages"
                 >
                 <div class="checkbox-content">
-                  <div class="promo-tag">-30%</div>
+                  <div v-if="!page.isPremium" class="promo-tag">-30%</div>
+                  <div v-if="page.isNew" class="new-tag">
+                    <i class="fas fa-sparkles"></i> Novo
+                  </div>
                   <div class="checkbox-info">
                     <span class="checkbox-name">
                       {{ page.name }}
                       <span class="addon-tooltip">
                         <i class="fas fa-info-circle"></i>
-                        <span class="tooltip-text">{{ getPageTooltip(key) }}</span>
+                        <span class="tooltip-text">{{ page.description || getPageTooltip(key) }}</span>
                       </span>
                     </span>
                     <div class="checkbox-price">
@@ -196,18 +293,22 @@
               class="custom-page-box"
             >
               <div class="custom-page-header">
-                <h4>Página Personalizada #{{ index + 1 }}</h4>
+                <h4>Página de Conteúdo Extra #{{ index + 1 }}</h4>
                 <button class="remove-page-btn" @click="removeCustomPageByIndex(index)">
                   <i class="fas fa-times"></i>
                 </button>
               </div>
 
               <div class="custom-page-description">
-                <label>Descreva o que você quer nesta página:</label>
+                <label>Descreva o conteúdo da sua nova página:</label>
+                <p class="description-helper">
+                  Este espaço é perfeito para <strong>apresentar informações detalhadas, criar ofertas temporárias ou destacar um serviço específico</strong>.<br>
+                  <em>Ideal para: Landing Pages promocionais, Detalhes de um Serviço, Biografia ou Página de Vendas.</em>
+                </p>
                 <textarea
                   v-model="page.description"
                   maxlength="1500"
-                  placeholder="Ex: Página de produtos com galeria de fotos, descrições e botões de compra..."
+                  placeholder="Ex: Quero uma página especial para Black Friday com contagem regressiva, galeria de fotos dos produtos em promoção e formulário de contato no final..."
                   rows="4"
                 ></textarea>
                 <span class="char-count">{{ page.description.length }}/1500 caracteres</span>
@@ -251,6 +352,24 @@
                       <span class="resource-price">+R$ {{ customPageResourcePrices.form?.toFixed(2).replace('.', ',') || '0,00' }}/mês</span>
                     </div>
                   </label>
+
+                  <label class="resource-item">
+                    <input type="checkbox" v-model="page.resources.testimonials">
+                    <div class="resource-content">
+                      <i class="fas fa-quote-right"></i>
+                      <span class="resource-name">Depoimentos</span>
+                      <span class="resource-price">+R$ {{ customPageResourcePrices.testimonials?.toFixed(2).replace('.', ',') || '0,00' }}/mês</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Nota informativa -->
+              <div class="custom-page-note">
+                <i class="fas fa-info-circle"></i>
+                <div class="note-content">
+                  <strong>Precisa de um Blog ou Loja Online?</strong>
+                  <p>Esses recursos exigem programação avançada de banco de dados e não se encaixam como "Página Extra". Veja nosso plano <strong>Ecossistema Digital</strong>.</p>
                 </div>
               </div>
 
@@ -488,29 +607,68 @@
                 <ul>
                   <li>
                     <i class="fas fa-check-circle"></i>
+                    <span><strong>Domínio</strong> .com.br ou .com</span>
+                  </li>
+                  <li>
+                    <i class="fas fa-check-circle"></i>
                     <span><strong>Hospedagem Premium</strong> (12 meses)</span>
                   </li>
                   <li>
                     <i class="fas fa-check-circle"></i>
-                    <span><strong>Domínio</strong> .com.br ou .com (Incluso)</span>
+                    <span><strong>Certificado SSL</strong> (HTTPS)</span>
                   </li>
                   <li>
                     <i class="fas fa-check-circle"></i>
-                    <span><strong>Certificado SSL</strong> (HTTPS Incluso)</span>
-                  </li>
-                  <li>
-                    <i class="fas fa-check-circle"></i>
-                    <span><strong>Monitoramento 24/7</strong> (Incluso)</span>
+                    <span><strong>Criação e Design</strong> Profissional</span>
                   </li>
                   <li>
                     <i class="fas fa-check-circle"></i>
                     <span><strong>Suporte Técnico</strong> (12 meses)</span>
                   </li>
-                  <li>
-                    <i class="fas fa-check-circle"></i>
-                    <span><strong>Criação e Design</strong> do Site (Setup)</span>
-                  </li>
+                  
+                  <!-- Itens Expandíveis (Técnicos) -->
+                  <template v-if="showAllIncludedItems">
+                    <li>
+                      <i class="fas fa-check-circle"></i>
+                      <span><strong>Monitoramento 24/7</strong> de disponibilidade</span>
+                    </li>
+                    <li>
+                      <i class="fas fa-check-circle"></i>
+                      <span><strong>Otimização SEO</strong> básica</span>
+                    </li>
+                    <li>
+                      <i class="fas fa-check-circle"></i>
+                      <span><strong>Responsivo Mobile</strong> (todas as telas)</span>
+                    </li>
+                    <li>
+                      <i class="fas fa-check-circle"></i>
+                      <span><strong>Google Analytics</strong> (configurado)</span>
+                    </li>
+                    <li>
+                      <i class="fas fa-check-circle"></i>
+                      <span><strong>Backup Automático</strong> diário</span>
+                    </li>
+                    <li>
+                      <i class="fas fa-check-circle"></i>
+                      <span><strong>CDN Global</strong> (carregamento rápido)</span>
+                    </li>
+                  </template>
                 </ul>
+                
+                <button 
+                  class="btn-toggle-items"
+                  @click="showAllIncludedItems = !showAllIncludedItems"
+                  type="button"
+                >
+                  <span v-if="!showAllIncludedItems">
+                    <i class="fas fa-plus-circle"></i>
+                    Ver mais 6 itens técnicos
+                  </span>
+                  <span v-else>
+                    <i class="fas fa-minus-circle"></i>
+                    Mostrar menos
+                  </span>
+                </button>
               </div>
               
               <!-- Divider -->
@@ -524,7 +682,7 @@
                   <span class="old-price">{{ formatOriginalPrice(installmentTotal) }}</span>
                 </div>
                 
-                <span class="label">Por apenas:</span>
+                <span class="label">Equivalente a:</span>
                 <div class="values">
                   <span class="final-price">{{ formatPrice(cashPrice) }}</span>
                   <span class="coffee-badge">
@@ -658,7 +816,7 @@
           :key="'custom-' + index"
           class="sidebar-item"
         >
-          <span class="item-name">Página Personalizada #{{ index + 1 }}</span>
+          <span class="item-name">Página de Conteúdo Extra #{{ index + 1 }}</span>
           <div class="item-price">
             <span class="price-original-small">{{ formatOriginalPrice(calculateCustomPageTotal(page) / 12) }}</span>
             <span class="price-current-small">{{ formatMonthlyPrice(calculateCustomPageTotal(page)) }}</span>
@@ -823,6 +981,9 @@ export default {
       selectedContentAddons: [], // ['video', 'pdf']
       customPages: [], // Array de objetos: [{ description: '', resources: { image: false, video: false, carousel: false, form: false } }]
       
+      // Pacote Pré-definido selecionado
+      selectedPackage: null, // 'essential', 'authority', 'enterprise' ou null (personalizado)
+      
       // Briefing (Apenas dados para checkout/pagamento)
       // O briefing completo será coletado via OnboardingWizard após o pagamento
       briefing: {
@@ -858,7 +1019,10 @@ export default {
       isValidating: false,
       
       // UI Control - Accordion para mobile
-      showDetails: false
+      showDetails: false,
+      
+      // UI Control - Expandir lista de itens incluídos
+      showAllIncludedItems: false
     };
   },
   async mounted() {
@@ -913,6 +1077,8 @@ export default {
       deep: true,
       handler() {
         this.validatePriceOnServer();
+        // Verificar se ainda corresponde ao pacote selecionado
+        this.checkIfPackageStillMatches();
       }
     },
     selectedContentAddons() {
@@ -1116,6 +1282,53 @@ export default {
     }
   },
   methods: {
+    // ========== PACOTES PRÉ-DEFINIDOS ==========
+    
+    // Selecionar pacote pré-definido
+    selectPackage(packageKey) {
+      console.log('📦 [selectPackage] Selecionando pacote:', packageKey);
+      
+      const packageData = this.config.predefined_packages[packageKey];
+      if (!packageData) {
+        console.error('❌ [selectPackage] Pacote não encontrado:', packageKey);
+        return;
+      }
+      
+      this.selectedPackage = packageKey;
+      this.selectedPages = [...packageData.pages];
+      
+      console.log('✅ [selectPackage] Páginas selecionadas:', this.selectedPages);
+      this.scrollToTop();
+    },
+    
+    // Verificar se o pacote ainda está correspondendo às seleções
+    checkIfPackageStillMatches() {
+      if (!this.selectedPackage) return;
+      
+      const packageData = this.config.predefined_packages[this.selectedPackage];
+      if (!packageData) return;
+      
+      // Comparar arrays ordenados
+      const currentPages = [...this.selectedPages].sort();
+      const packagePages = [...packageData.pages].sort();
+      
+      const stillMatches = 
+        currentPages.length === packagePages.length &&
+        currentPages.every((page, index) => page === packagePages[index]);
+      
+      if (!stillMatches) {
+        console.log('🔄 [checkIfPackageStillMatches] Pacote não corresponde mais. Mudando para personalizado.');
+        this.selectedPackage = null;
+      }
+    },
+    
+    // Verificar se um pacote está selecionado
+    isPackageSelected(packageKey) {
+      return this.selectedPackage === packageKey;
+    },
+    
+    // ========== NAVEGAÇÃO E UI ==========
+    
     // Scroll para o topo suave
     scrollToTop() {
       window.scrollTo({
@@ -1197,7 +1410,8 @@ export default {
           image: false,
           video: false,
           carousel: false,
-          form: false
+          form: false,
+          testimonials: false
         }
       });
     },
@@ -1219,6 +1433,7 @@ export default {
       if (page.resources.video) total += this.config.custom_pages.resources.video.price;
       if (page.resources.carousel) total += this.config.custom_pages.resources.carousel.price;
       if (page.resources.form) total += this.config.custom_pages.resources.form.price;
+      if (page.resources.testimonials) total += this.config.custom_pages.resources.testimonials.price;
       return total;
     },
     
@@ -1924,6 +2139,307 @@ export default {
   }
 }
 
+// ========== PACOTES PRÉ-DEFINIDOS ==========
+.packages-section {
+  margin-bottom: 50px;
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $gray-darkness;
+    margin-bottom: 12px;
+
+    i {
+      color: $p-color;
+    }
+  }
+
+  .section-subtitle {
+    color: $gray-medium;
+    margin-bottom: 32px;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .package-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-bottom: 24px;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .package-card {
+    position: relative;
+    padding: 32px 24px;
+    background: $white;
+    border: 3px solid $gray-light;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, $gray-light, $gray-medium);
+      transition: all 0.3s;
+    }
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+      border-color: rgba($p-color, 0.3);
+
+      &::before {
+        background: $gradient-primary;
+      }
+    }
+
+    &.selected {
+      border-color: $p-color;
+      background: linear-gradient(135deg, rgba($p-color, 0.03) 0%, rgba($p-dark, 0.01) 100%);
+      box-shadow: 0 8px 32px rgba($p-color, 0.2);
+
+      &::before {
+        background: $gradient-primary;
+        height: 6px;
+      }
+
+      .package-icon {
+        transform: scale(1.1);
+      }
+    }
+
+    // Pacote Recomendado
+    &.recommended {
+      border-color: $p-color;
+
+      &::before {
+        background: linear-gradient(90deg, $p-color, $p-dark);
+      }
+
+      &:hover::before {
+        background: linear-gradient(90deg, $p-color, $p-dark);
+      }
+
+      &.selected {
+        border-color: $p-color;
+        background: linear-gradient(135deg, rgba($p-color, 0.05) 0%, rgba($p-color, 0.02) 100%);
+        box-shadow: 0 8px 32px rgba($p-color, 0.25);
+
+        &::before {
+          background: linear-gradient(90deg, $p-color, $p-dark);
+        }
+      }
+
+      .recommended-badge {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        background: linear-gradient(135deg, $p-color 0%, $p-dark 100%);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        animation: pulse 2s ease-in-out infinite;
+
+        i {
+          font-size: 0.8rem;
+        }
+      }
+    }
+
+    // Pacote Premium
+    &.premium {
+      border-color: #6b46c1;
+
+      &::before {
+        background: linear-gradient(90deg, #6b46c1, #9333ea);
+      }
+
+      &:hover::before {
+        background: linear-gradient(90deg, #6b46c1, #9333ea);
+      }
+
+      &.selected {
+        border-color: #6b46c1;
+        background: linear-gradient(135deg, rgba(107, 70, 193, 0.05) 0%, rgba(147, 51, 234, 0.02) 100%);
+        box-shadow: 0 8px 32px rgba(107, 70, 193, 0.25);
+
+        &::before {
+          background: linear-gradient(90deg, #6b46c1, #9333ea);
+        }
+      }
+
+      .premium-shine {
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+        animation: shine 3s infinite;
+      }
+
+      @keyframes shine {
+        0% {
+          transform: translateX(-100%) translateY(-100%) rotate(45deg);
+        }
+        100% {
+          transform: translateX(100%) translateY(100%) rotate(45deg);
+        }
+      }
+    }
+
+    .package-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      transition: transform 0.3s;
+    }
+
+    .package-name {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: $gray-darkness;
+      margin-bottom: 8px;
+    }
+
+    .package-tagline {
+      font-size: 0.95rem;
+      color: $gray-medium;
+      line-height: 1.5;
+      margin-bottom: 24px;
+      min-height: 48px;
+    }
+
+    .package-includes {
+      margin-bottom: 20px;
+      padding: 16px;
+      background: rgba($p-color, 0.03);
+      border-radius: 12px;
+
+      .includes-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: $gray-darkness;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+
+        li {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 0.95rem;
+          color: $gray-medium;
+          margin-bottom: 8px;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+          i {
+            color: $p-color;
+            font-size: 0.8rem;
+          }
+
+          .new-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-left: 6px;
+          }
+        }
+      }
+    }
+
+    .package-ideal {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      background: rgba($accent-blue, 0.05);
+      border-radius: 10px;
+      font-size: 0.85rem;
+      color: $gray-medium;
+      line-height: 1.4;
+
+      i {
+        color: $accent-blue;
+        flex-shrink: 0;
+      }
+
+      span {
+        font-weight: 500;
+      }
+    }
+  }
+
+  .custom-notice {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px 20px;
+    background: transparent;
+    border: none;
+    font-size: 0.95rem;
+    color: $gray-medium;
+    font-weight: 500;
+    text-align: center;
+
+    i {
+      font-size: 1.5rem;
+      color: $gray-light;
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-8px);
+      }
+    }
+
+    span {
+      color: $gray-darkness;
+      font-weight: 500;
+    }
+  }
+}
+
 // Etapa 1/2: Personalização (Add-ons)
 .addon-section {
   margin-bottom: 40px;
@@ -1949,11 +2465,11 @@ export default {
   }
 }
 
-// Checkbox "Estrutura Profissional Completa"
+// Toggle Switch "Estrutura Profissional Completa"
 .select-all-wrapper {
   margin-bottom: 20px;
   
-  .checkbox-select-all {
+  .toggle-select-all {
     cursor: pointer;
     display: block;
     
@@ -1961,7 +2477,7 @@ export default {
       display: none;
     }
     
-    .select-all-content {
+    .toggle-content {
       display: flex;
       align-items: center;
       gap: 16px;
@@ -2001,7 +2517,7 @@ export default {
         filter: drop-shadow(0 2px 4px rgba(255, 152, 0, 0.3));
       }
       
-      .select-all-text {
+      .toggle-text {
         flex: 1;
         display: flex;
         flex-direction: column;
@@ -2021,7 +2537,7 @@ export default {
         }
       }
       
-      .select-all-badge {
+      .toggle-badge {
         display: flex;
         align-items: center;
         gap: 6px;
@@ -2039,42 +2555,45 @@ export default {
         }
       }
       
-      .checkbox-mark {
-        width: 32px;
-        height: 32px;
-        border: 3px solid #ffa726;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: white;
-        transition: all 0.3s ease;
+      .toggle-switch {
+        width: 56px;
+        height: 30px;
+        background: rgba(255, 255, 255, 0.6);
+        border: 2px solid #ffa726;
+        border-radius: 30px;
+        position: relative;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         flex-shrink: 0;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
         
-        i {
-          color: white;
-          font-size: 1rem;
-          opacity: 0;
-          transform: scale(0);
-          transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        .toggle-slider {
+          position: absolute;
+          top: 2px;
+          left: 2px;
+          width: 22px;
+          height: 22px;
+          background: white;
+          border-radius: 50%;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
         }
       }
     }
     
-    input[type="checkbox"]:checked + .select-all-content {
+    input[type="checkbox"]:checked + .toggle-content {
       background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
       border-color: #ff9800;
       box-shadow: 0 8px 24px rgba(255, 152, 0, 0.3);
       
-      .checkbox-mark {
+      .toggle-switch {
         background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
         border-color: #ff9800;
-        box-shadow: 0 3px 10px rgba(255, 152, 0, 0.4);
+        box-shadow: 0 2px 8px rgba(255, 152, 0, 0.4);
         
-        i {
-          opacity: 1;
-          transform: scale(1.1);
+        .toggle-slider {
+          left: 28px;
+          background: white;
+          box-shadow: 0 3px 10px rgba(255, 152, 0, 0.5);
         }
       }
     }
@@ -2092,6 +2611,26 @@ export default {
 
   input[type="checkbox"] {
     display: none;
+  }
+
+  &.premium-item .checkbox-content {
+    border-color: rgba(107, 70, 193, 0.3);
+    background: linear-gradient(135deg, rgba(107, 70, 193, 0.02) 0%, rgba(147, 51, 234, 0.01) 100%);
+
+    &:hover {
+      border-color: rgba(107, 70, 193, 0.5);
+      box-shadow: 0 4px 16px rgba(107, 70, 193, 0.15);
+    }
+  }
+
+  &.premium-item input[type="checkbox"]:checked + .checkbox-content {
+    border-color: #6b46c1;
+    background: linear-gradient(135deg, rgba(107, 70, 193, 0.08) 0%, rgba(147, 51, 234, 0.04) 100%);
+
+    .checkbox-mark {
+      background: linear-gradient(135deg, #6b46c1 0%, #9333ea 100%);
+      border-color: #6b46c1;
+    }
   }
 
   .checkbox-content {
@@ -2116,6 +2655,38 @@ export default {
       font-size: 0.65rem;
       font-weight: 700;
       box-shadow: 0 2px 6px rgba(255, 107, 107, 0.3);
+    }
+
+    .new-tag {
+      position: absolute;
+      top: -8px;
+      left: 16px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      animation: glow 2s ease-in-out infinite;
+
+      i {
+        font-size: 0.75rem;
+      }
+    }
+
+    @keyframes glow {
+      0%, 100% {
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+      }
+      50% {
+        box-shadow: 0 4px 16px rgba(16, 185, 129, 0.6);
+      }
     }
 
     &:hover {
@@ -2377,6 +2948,30 @@ export default {
       margin-bottom: 8px;
     }
 
+    .description-helper {
+      background: linear-gradient(135deg, rgba($accent-blue, 0.05) 0%, rgba($accent-blue, 0.02) 100%);
+      border-left: 3px solid $accent-blue;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: $gray-darkness;
+
+      strong {
+        color: $accent-blue;
+        font-weight: 600;
+      }
+
+      em {
+        display: block;
+        margin-top: 8px;
+        font-size: 0.85rem;
+        color: $gray-medium;
+        font-style: normal;
+      }
+    }
+
     textarea {
       width: 100%;
       padding: 12px;
@@ -2387,6 +2982,7 @@ export default {
       resize: vertical;
       font-family: inherit;
       transition: all 0.3s;
+      height: 300px;
 
       &:focus {
         outline: none;
@@ -2472,6 +3068,48 @@ export default {
 
         i {
           color: $p-color;
+        }
+      }
+    }
+  }
+
+  .custom-page-note {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    background: linear-gradient(135deg, rgba($accent-blue, 0.08) 0%, rgba($accent-blue, 0.04) 100%);
+    border: 2px solid rgba($accent-blue, 0.2);
+    border-radius: 12px;
+    margin-bottom: 20px;
+
+    > i {
+      color: $accent-blue;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .note-content {
+      flex: 1;
+
+      strong {
+        display: block;
+        color: $accent-blue;
+        font-size: 0.95rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+
+      p {
+        margin: 0;
+        font-size: 0.85rem;
+        color: $gray-darkness;
+        line-height: 1.5;
+
+        strong {
+          display: inline;
+          color: $p-color;
+          font-weight: 600;
         }
       }
     }
@@ -3832,6 +4470,39 @@ export default {
         }
       }
     }
+    
+    .btn-toggle-items {
+      width: 100%;
+      margin-top: 12px;
+      padding: 10px 16px;
+      background: transparent;
+      border: 2px dashed $gray-light;
+      border-radius: 8px;
+      color: $gray-medium;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      
+      &:hover {
+        border-color: $p-color;
+        color: $p-color;
+        background: rgba($p-color, 0.03);
+      }
+      
+      i {
+        font-size: 0.9rem;
+      }
+      
+      @media (max-width: 768px) {
+        font-size: 0.8rem;
+        padding: 8px 12px;
+      }
+    }
   }
   
   // Divider
@@ -3929,6 +4600,34 @@ export default {
           font-size: 0.8rem;
           padding: 5px 10px;
         }
+      }
+    }
+    
+    .annual-total {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 10px 16px;
+      background: rgba($accent-blue, 0.08);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      color: $gray-darkness;
+      
+      i {
+        color: $accent-blue;
+        font-size: 1rem;
+      }
+      
+      strong {
+        color: $p-color;
+        font-weight: 700;
+      }
+      
+      @media (max-width: 768px) {
+        font-size: 0.85rem;
+        padding: 8px 12px;
       }
     }
     
