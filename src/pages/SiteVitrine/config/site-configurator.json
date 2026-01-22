@@ -28,7 +28,7 @@
     },
     "faq": {
       "name": "FAQ",
-      "price": 79
+      "price": 89
     },
     "contact": {
       "name": "Contato",
@@ -37,14 +37,14 @@
   },
   "content_addons": {
     "video": {
-      "name": "Vídeo",
-      "price": 30,
+      "name": "Suporte a Vídeos",
+      "price": 35,
       "allowed_uploads": [
         "video/*"
       ]
     },
     "pdf": {
-      "name": "PDF",
+      "name": "Suporte a Documentos (PDF)",
       "price": 15,
       "allowed_uploads": [
         "application/pdf"
@@ -52,7 +52,7 @@
     }
   },
   "custom_pages": {
-    "base_price": 119,
+    "base_price": 134,
     "description": "Páginas personalizadas com conteúdo exclusivo",
     "resources": {
       "images": {

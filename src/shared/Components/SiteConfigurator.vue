@@ -98,6 +98,32 @@
               <i class="fas fa-file-alt"></i>
               Páginas Pré-Definidas
             </h3>
+            
+            <!-- Checkbox "Estrutura Completa" -->
+            <div class="select-all-wrapper">
+              <label class="checkbox-select-all">
+                <input
+                  type="checkbox"
+                  :checked="allPagesSelected"
+                  @change="toggleAllPages"
+                >
+                <div class="select-all-content">
+                  <i class="fas fa-star"></i>
+                  <div class="select-all-text">
+                    <strong>Ativar Estrutura Profissional Completa</strong>
+                    <span>Adiciona todas as páginas essenciais para passar máxima credibilidade ao seu cliente.</span>
+                  </div>
+                  <div class="select-all-badge">
+                    <i class="fas fa-award"></i>
+                    Recomendado
+                  </div>
+                  <div class="checkbox-mark">
+                    <i class="fas fa-check"></i>
+                  </div>
+                </div>
+              </label>
+            </div>
+            
             <div class="addon-checkboxes">
               <label
                 v-for="(page, key) in config.page_addons"
@@ -235,11 +261,11 @@
             </div>
           </div>
 
-          <!-- Conteúdo Pesado -->
+          <!-- Tipos de Arquivos Aceitos -->
           <div v-if="config.content_addons" class="addon-section">
             <h3 class="section-title">
-              <i class="fas fa-photo-video"></i>
-              Conteúdo Especial
+              <i class="fas fa-file-upload"></i>
+              Tipos de Arquivos Aceitos
             </h3>
             <div class="addon-toggles">
               <label
@@ -349,6 +375,17 @@
             <strong>Você receberá um link por e-mail para configurar seu site após o pagamento.</strong>
           </p>
 
+          <!-- Alertas de Validação -->
+          <div v-if="formErrors.length > 0" class="validation-alert">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div class="alert-content">
+              <strong>Por favor, corrija os seguintes erros:</strong>
+              <ul>
+                <li v-for="(error, index) in formErrors" :key="index">{{ error }}</li>
+              </ul>
+            </div>
+          </div>
+
           <form class="checkout-form" @submit.prevent="submitOrder">
             <!-- Informações de Contato -->
             <div class="form-section">
@@ -369,6 +406,7 @@
                     type="text" 
                     v-model="briefing.customer_name"
                     placeholder="Ex: João Silva"
+                    minlength="3"
                     required
                   >
                 </div>
@@ -393,7 +431,9 @@
                   <input 
                     type="tel" 
                     v-model="briefing.whatsapp"
+                    @input="handleWhatsAppInput('briefing')"
                     placeholder="(00) 00000-0000"
+                    maxlength="15"
                     required
                   >
                   <small class="field-hint">
@@ -406,7 +446,9 @@
                   <input 
                     type="text" 
                     v-model="briefing.document"
+                    @input="handleDocumentInput"
                     placeholder="000.000.000-00"
+                    maxlength="18"
                   >
                 </div>
               </div>
@@ -701,7 +743,9 @@
                 <input 
                   type="tel" 
                   v-model="customRequest.whatsapp"
+                  @input="handleWhatsAppInput('customRequest')"
                   placeholder="(00) 00000-0000"
+                  maxlength="15"
                   required
                 >
               </div>
@@ -787,6 +831,9 @@ export default {
         whatsapp: '',
         document: '' // CPF/CNPJ opcional
       },
+      
+      // Validação
+      formErrors: [],
       
       // Modal personalizado
       showCustomModal: false,
@@ -876,6 +923,22 @@ export default {
       handler() {
         this.validatePriceOnServer();
       }
+    },
+    // Limpar erros quando usuário começar a corrigir
+    'briefing.customer_name'() {
+      if (this.formErrors.length > 0) {
+        this.formErrors = [];
+      }
+    },
+    'briefing.email'() {
+      if (this.formErrors.length > 0) {
+        this.formErrors = [];
+      }
+    },
+    'briefing.whatsapp'() {
+      if (this.formErrors.length > 0) {
+        this.formErrors = [];
+      }
     }
   },
   computed: {
@@ -884,6 +947,13 @@ export default {
       return this.initialProduct 
         ? ['Personalize', 'Checkout']  // Pula a etapa de escolha de produto
         : ['Produto', 'Personalize', 'Checkout'];  // Mostra todas as etapas
+    },
+    
+    // Verificar se todas as páginas estão selecionadas
+    allPagesSelected() {
+      if (!this.config.page_addons) return false;
+      const allPageKeys = Object.keys(this.config.page_addons);
+      return allPageKeys.length > 0 && allPageKeys.every(key => this.selectedPages.includes(key));
     },
     
     // Offset para cálculo correto de steps (1 quando tem initialProduct, 0 quando não)
@@ -1173,6 +1243,119 @@ export default {
       }
     },
     
+    // Máscaras de formatação
+    formatWhatsApp(value) {
+      // Remove tudo que não é dígito
+      let cleaned = value.replace(/\D/g, '');
+      
+      // Limita a 11 dígitos (máximo para celular brasileiro)
+      cleaned = cleaned.substring(0, 11);
+      
+      // Aplica a máscara
+      if (cleaned.length <= 2) {
+        return cleaned;
+      } else if (cleaned.length <= 7) {
+        return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
+      } else {
+        return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
+      }
+    },
+    
+    formatDocument(value) {
+      // Remove tudo que não é dígito
+      let cleaned = value.replace(/\D/g, '');
+      
+      // Limita a 14 dígitos (máximo para CNPJ)
+      cleaned = cleaned.substring(0, 14);
+      
+      // Aplica máscara de CPF (11 dígitos) ou CNPJ (14 dígitos)
+      if (cleaned.length <= 11) {
+        // Máscara CPF: 000.000.000-00
+        if (cleaned.length <= 3) {
+          return cleaned;
+        } else if (cleaned.length <= 6) {
+          return `${cleaned.slice(0, 3)}.${cleaned.slice(3)}`;
+        } else if (cleaned.length <= 9) {
+          return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(6)}`;
+        } else {
+          return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(6, 9)}-${cleaned.slice(9)}`;
+        }
+      } else {
+        // Máscara CNPJ: 00.000.000/0000-00
+        if (cleaned.length <= 2) {
+          return cleaned;
+        } else if (cleaned.length <= 5) {
+          return `${cleaned.slice(0, 2)}.${cleaned.slice(2)}`;
+        } else if (cleaned.length <= 8) {
+          return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(5)}`;
+        } else if (cleaned.length <= 12) {
+          return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(5, 8)}/${cleaned.slice(8)}`;
+        } else {
+          return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(5, 8)}/${cleaned.slice(8, 12)}-${cleaned.slice(12)}`;
+        }
+      }
+    },
+    
+    handleWhatsAppInput(field) {
+      // field pode ser 'briefing' ou 'customRequest'
+      const rawValue = this[field].whatsapp;
+      this[field].whatsapp = this.formatWhatsApp(rawValue);
+    },
+    
+    handleDocumentInput() {
+      const rawValue = this.briefing.document;
+      this.briefing.document = this.formatDocument(rawValue);
+    },
+    
+    // Toggle para selecionar/desselecionar todas as páginas
+    toggleAllPages(event) {
+      if (!this.config.page_addons) return;
+      
+      const allPageKeys = Object.keys(this.config.page_addons);
+      
+      if (event.target.checked) {
+        // Selecionar todas
+        this.selectedPages = [...allPageKeys];
+      } else {
+        // Desselecionar todas
+        this.selectedPages = [];
+      }
+      
+      console.log('⚡ [toggleAllPages] Todas as páginas:', event.target.checked ? 'selecionadas' : 'desmarcadas');
+    },
+    
+    // Validação de formulário
+    validateCheckoutForm() {
+      const errors = [];
+      
+      // Validar nome
+      if (!this.briefing.customer_name || this.briefing.customer_name.trim().length < 3) {
+        errors.push('Nome completo é obrigatório (mínimo 3 caracteres)');
+      }
+      
+      // Validar email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!this.briefing.email || !emailRegex.test(this.briefing.email)) {
+        errors.push('E-mail válido é obrigatório');
+      }
+      
+      // Validar WhatsApp (pelo menos 10 dígitos)
+      const whatsappDigits = this.briefing.whatsapp.replace(/\D/g, '');
+      if (!this.briefing.whatsapp || whatsappDigits.length < 10) {
+        errors.push('WhatsApp válido é obrigatório (mínimo 10 dígitos)');
+      }
+      
+      // Validar CPF/CNPJ se preenchido
+      if (this.briefing.document && this.briefing.document.trim()) {
+        const docDigits = this.briefing.document.replace(/\D/g, '');
+        if (docDigits.length !== 11 && docDigits.length !== 14) {
+          errors.push('CPF deve ter 11 dígitos ou CNPJ deve ter 14 dígitos');
+        }
+      }
+      
+      return errors;
+    },
+    
     // Validar preço no servidor (background)
     async validatePriceOnServer() {
       if (!this.selectedProduct) return;
@@ -1211,6 +1394,19 @@ export default {
     
     // Submit final
     async submitOrder() {
+      // Validar formulário antes de enviar
+      const validationErrors = this.validateCheckoutForm();
+      
+      if (validationErrors.length > 0) {
+        this.formErrors = validationErrors;
+        // Scroll para o topo para ver os erros
+        this.scrollToTop();
+        return;
+      }
+      
+      // Limpar erros se validação passou
+      this.formErrors = [];
+      
       this.isSubmitting = true;
       
       try {
@@ -1370,10 +1566,10 @@ export default {
     
     getContentTooltip(key) {
       const tooltips = {
-        video: 'Incorporação de vídeo institucional no site (YouTube, Vimeo, ou upload direto)',
-        pdf: 'Catálogo, menu, folder ou documento PDF disponível para download no site'
+        video: 'Por padrão, o site suporta apenas imagens. Ative esta opção se você precisa subir vídeos institucionais ou de produtos diretamente no site.',
+        pdf: 'Habilita o envio de arquivos PDF para seus clientes baixarem. Ideal para disponibilizar cardápios, catálogos e tabelas. Sem isso, o site aceita apenas imagens e textos.'
       };
-      return tooltips[key] || 'Conteúdo adicional';
+      return tooltips[key] || 'Recurso adicional';
     }
   }
 };
@@ -1750,6 +1946,138 @@ export default {
     color: $gray-medium;
     margin-bottom: 24px;
     font-size: 1rem;
+  }
+}
+
+// Checkbox "Estrutura Profissional Completa"
+.select-all-wrapper {
+  margin-bottom: 20px;
+  
+  .checkbox-select-all {
+    cursor: pointer;
+    display: block;
+    
+    input[type="checkbox"] {
+      display: none;
+    }
+    
+    .select-all-content {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px 24px;
+      background: linear-gradient(135deg, #fff8e1 0%, #fffbf0 100%);
+      border: 3px solid #ffa726;
+      border-radius: 16px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        transition: left 0.6s;
+      }
+      
+      &:hover {
+        border-color: #ff9800;
+        box-shadow: 0 8px 24px rgba(255, 152, 0, 0.25);
+        transform: translateY(-2px);
+        
+        &::before {
+          left: 100%;
+        }
+      }
+      
+      > i:first-child {
+        font-size: 1.8rem;
+        color: #ff9800;
+        flex-shrink: 0;
+        filter: drop-shadow(0 2px 4px rgba(255, 152, 0, 0.3));
+      }
+      
+      .select-all-text {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        
+        strong {
+          font-size: 1.15rem;
+          color: $gray-darkness;
+          font-weight: 800;
+          letter-spacing: -0.01em;
+        }
+        
+        span {
+          font-size: 0.9rem;
+          color: $gray-medium;
+          line-height: 1.4;
+        }
+      }
+      
+      .select-all-badge {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        color: white;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+        white-space: nowrap;
+        
+        i {
+          font-size: 0.9rem;
+        }
+      }
+      
+      .checkbox-mark {
+        width: 32px;
+        height: 32px;
+        border: 3px solid #ffa726;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        
+        i {
+          color: white;
+          font-size: 1rem;
+          opacity: 0;
+          transform: scale(0);
+          transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+      }
+    }
+    
+    input[type="checkbox"]:checked + .select-all-content {
+      background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+      border-color: #ff9800;
+      box-shadow: 0 8px 24px rgba(255, 152, 0, 0.3);
+      
+      .checkbox-mark {
+        background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        border-color: #ff9800;
+        box-shadow: 0 3px 10px rgba(255, 152, 0, 0.4);
+        
+        i {
+          opacity: 1;
+          transform: scale(1.1);
+        }
+      }
+    }
   }
 }
 
@@ -2828,6 +3156,64 @@ export default {
 
 // Etapa 2: Checkout Form Simplificado (Apenas dados de pagamento)
 .checkout-form {
+  .validation-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 20px;
+    background: linear-gradient(135deg, #ffebee, #ffcdd2);
+    border-left: 4px solid #f44336;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    animation: slideDown 0.3s ease;
+
+    i {
+      color: #f44336;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .alert-content {
+      flex: 1;
+
+      strong {
+        display: block;
+        color: #c62828;
+        margin-bottom: 8px;
+        font-size: 1rem;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 20px;
+        list-style: disc;
+
+        li {
+          color: $gray-darkness;
+          font-size: 0.9rem;
+          line-height: 1.6;
+          margin-bottom: 4px;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+        }
+      }
+    }
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   .info-box {
     display: flex;
     align-items: flex-start;
