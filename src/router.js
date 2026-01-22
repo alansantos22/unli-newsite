@@ -33,5 +33,10 @@ export default [
         path: "/configurador",
         name: "ConfiguradorPage",
         component: () => import("./pages/ConfiguradorPage/ConfiguradorPage.vue")
+    },
+    {
+        path: "/setup",
+        name: "OnboardingWizard",
+        component: () => import("./shared/Components/OnboardingWizard.vue")
     }
 ]

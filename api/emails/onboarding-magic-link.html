@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vamos começar o seu site?</title>
+    <style>
+        /* Reset */
+        body, table, td, a {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+        table, td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+        img {
+            -ms-interpolation-mode: bicubic;
+            border: 0;
+            height: auto;
+            line-height: 100%;
+            outline: none;
+            text-decoration: none;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100% !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f4f7;
+        }
+        
+        /* Container */
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+        
+        /* Header */
+        .email-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .email-header h1 {
+            color: #ffffff;
+            font-size: 28px;
+            margin: 0 0 10px 0;
+            font-weight: 700;
+        }
+        
+        .email-header .emoji {
+            font-size: 48px;
+            margin-bottom: 15px;
+            display: block;
+        }
+        
+        .email-header p {
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 16px;
+            margin: 0;
+            line-height: 1.5;
+        }
+        
+        /* Content */
+        .email-content {
+            padding: 40px 30px;
+            color: #333333;
+            line-height: 1.6;
+        }
+        
+        .email-content h2 {
+            color: #212529;
+            font-size: 22px;
+            margin: 0 0 15px 0;
+        }
+        
+        .email-content p {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            color: #555555;
+        }
+        
+        /* Status Box */
+        .status-box {
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+        
+        .status-box strong {
+            color: #28a745;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .status-box p {
+            margin: 10px 0 0 0;
+            font-size: 15px;
+            color: #333;
+        }
+        
+        /* Info Grid */
+        .info-grid {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        
+        .info-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        
+        .info-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .info-icon {
+            font-size: 24px;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .info-text h3 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+            color: #212529;
+        }
+        
+        .info-text p {
+            margin: 0;
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        /* CTA Button */
+        .cta-container {
+            text-align: center;
+            padding: 30px 0;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #0066CC, #00A8FF);
+            color: #ffffff !important;
+            text-decoration: none;
+            padding: 16px 40px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(0, 102, 204, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .cta-button:hover {
+            box-shadow: 0 6px 20px rgba(0, 102, 204, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        .cta-subtext {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        /* Timeline */
+        .timeline {
+            margin: 30px 0;
+            padding: 0;
+            list-style: none;
+        }
+        
+        .timeline-item {
+            display: flex;
+            margin-bottom: 20px;
+            align-items: flex-start;
+        }
+        
+        .timeline-marker {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            flex-shrink: 0;
+            font-size: 16px;
+        }
+        
+        .timeline-marker.active {
+            background: #28a745;
+            color: white;
+        }
+        
+        .timeline-content h4 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+            color: #212529;
+        }
+        
+        .timeline-content p {
+            margin: 0;
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        /* Highlight Box */
+        .highlight-box {
+            background: linear-gradient(135deg, #fff5e6, #ffe9cc);
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        
+        .highlight-box .icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .highlight-box p {
+            margin: 0;
+            font-size: 15px;
+            color: #333;
+        }
+        
+        .highlight-box strong {
+            color: #f57c00;
+            font-size: 17px;
+        }
+        
+        /* Footer */
+        .email-footer {
+            background: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .email-footer p {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        .social-links {
+            margin: 20px 0;
+        }
+        
+        .social-links a {
+            display: inline-block;
+            margin: 0 10px;
+            color: #0066CC;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        /* Responsive */
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+            }
+            
+            .email-header,
+            .email-content,
+            .email-footer {
+                padding: 25px 20px !important;
+            }
+            
+            .email-header h1 {
+                font-size: 24px !important;
+            }
+            
+            .cta-button {
+                display: block !important;
+                padding: 14px 30px !important;
+            }
+            
+            .info-item {
+                flex-direction: column;
+            }
+            
+            .info-icon {
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f4f4f7;">
+        <tr>
+            <td style="padding: 20px 0;">
+                <table class="email-container" role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td class="email-header">
+                            <span class="emoji">🚀</span>
+                            <h1>Vamos começar o seu site?</h1>
+                            <p>Seu pagamento foi confirmado com sucesso!</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td class="email-content">
+                            <h2>Olá, {{CUSTOMER_NAME}}! 👋</h2>
+                            
+                            <p>Ótimas notícias! Seu pagamento foi processado e <strong>já separamos seu servidor</strong> para começar a criação do seu site.</p>
+                            
+                            <!-- Status Box -->
+                            <div class="status-box">
+                                <strong>✅ Pagamento Confirmado</strong>
+                                <p>Pedido #{{ORDER_ID}} • {{PLAN_NAME}}</p>
+                            </div>
+                            
+                            <h2 style="margin-top: 35px;">📋 Próximo Passo Importante</h2>
+                            
+                            <p>Para criarmos o site perfeito para você, precisamos conhecer um pouco sobre sua empresa. <strong>Preparamos um assistente de configuração super rápido</strong> (5 minutos) com perguntas guiadas.</p>
+                            
+                            <!-- Info Grid -->
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <div class="info-icon">⚡</div>
+                                    <div class="info-text">
+                                        <h3>Rápido e Intuitivo</h3>
+                                        <p>Perguntas guiadas em 5 etapas simples</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <div class="info-icon">💾</div>
+                                    <div class="info-text">
+                                        <h3>Salva Automaticamente</h3>
+                                        <p>Pode pausar e continuar depois a qualquer momento</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <div class="info-icon">🔒</div>
+                                    <div class="info-text">
+                                        <h3>Acesso Sem Login</h3>
+                                        <p>Link exclusivo e seguro, sem precisar criar senha</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- CTA -->
+                            <div class="cta-container">
+                                <a href="{{ONBOARDING_LINK}}" class="cta-button">
+                                    🎨 Acessar Painel de Configuração
+                                </a>
+                                <p class="cta-subtext">
+                                    Este link é exclusivo e expira em 30 dias<br>
+                                    Guarde este e-mail para acessar depois
+                                </p>
+                            </div>
+                            
+                            <!-- Highlight -->
+                            <div class="highlight-box">
+                                <div class="icon">⏰</div>
+                                <p>
+                                    <strong>Quanto mais rápido você preencher, mais rápido seu site fica pronto!</strong><br>
+                                    Nossa equipe está esperando para começar a trabalhar.
+                                </p>
+                            </div>
+                            
+                            <h2 style="margin-top: 35px;">📅 Linha do Tempo</h2>
+                            
+                            <ul class="timeline">
+                                <li class="timeline-item">
+                                    <div class="timeline-marker active">✓</div>
+                                    <div class="timeline-content">
+                                        <h4>Pagamento Confirmado</h4>
+                                        <p>Pedido registrado no sistema</p>
+                                    </div>
+                                </li>
+                                
+                                <li class="timeline-item">
+                                    <div class="timeline-marker">2</div>
+                                    <div class="timeline-content">
+                                        <h4>Você Preenche o Briefing</h4>
+                                        <p>Informações sobre sua empresa</p>
+                                    </div>
+                                </li>
+                                
+                                <li class="timeline-item">
+                                    <div class="timeline-marker">3</div>
+                                    <div class="timeline-content">
+                                        <h4>Design Inicial (2-3 dias)</h4>
+                                        <p>Criação do layout personalizado</p>
+                                    </div>
+                                </li>
+                                
+                                <li class="timeline-item">
+                                    <div class="timeline-marker">4</div>
+                                    <div class="timeline-content">
+                                        <h4>Desenvolvimento (3-4 dias)</h4>
+                                        <p>Programação e integração</p>
+                                    </div>
+                                </li>
+                                
+                                <li class="timeline-item">
+                                    <div class="timeline-marker">5</div>
+                                    <div class="timeline-content">
+                                        <h4>Revisão e Publicação</h4>
+                                        <p>Seu site online e funcionando!</p>
+                                    </div>
+                                </li>
+                            </ul>
+                            
+                            <p style="margin-top: 30px; font-size: 15px;">
+                                <strong>💡 Dica:</strong> Tenha em mãos antes de começar:
+                            </p>
+                            <ul style="margin: 10px 0; padding-left: 20px; color: #555;">
+                                <li>Seu logotipo (se tiver)</li>
+                                <li>Número de WhatsApp comercial</li>
+                                <li>Links de redes sociais</li>
+                                <li>Uma breve descrição da sua empresa</li>
+                            </ul>
+                            
+                            <p style="margin-top: 25px; padding-top: 25px; border-top: 1px solid #e9ecef;">
+                                Qualquer dúvida? <strong>Responda este e-mail</strong> ou chame no WhatsApp: <a href="https://wa.me/5511999999999" style="color: #0066CC; text-decoration: none;"><strong>(11) 99999-9999</strong></a>
+                            </p>
+                            
+                            <p style="margin-top: 20px;">
+                                Estamos ansiosos para criar algo incrível para você! 🎉
+                            </p>
+                            
+                            <p style="margin-top: 25px;">
+                                Atenciosamente,<br>
+                                <strong>Equipe Unli</strong>
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td class="email-footer">
+                            <p><strong>Unli Sites</strong></p>
+                            <p>Sites Profissionais que Convertem</p>
+                            
+                            <div class="social-links">
+                                <a href="https://instagram.com/unli">Instagram</a> •
+                                <a href="https://facebook.com/unli">Facebook</a> •
+                                <a href="https://unli.com.br">unli.com.br</a>
+                            </div>
+                            
+                            <p style="font-size: 12px; margin-top: 20px;">
+                                Você está recebendo este e-mail porque adquiriu um plano de site conosco.<br>
+                                Este é um e-mail transacional importante sobre seu pedido.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
