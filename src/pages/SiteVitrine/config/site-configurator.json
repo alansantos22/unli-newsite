@@ -16,23 +16,23 @@
   "page_addons": {
     "about": {
       "name": "Sobre Nós",
-      "price": 80
+      "price": 59
     },
     "services": {
       "name": "Serviços",
-      "price": 120
+      "price": 119
     },
     "portfolio": {
       "name": "Portfólio",
-      "price": 160
+      "price": 159
     },
     "faq": {
       "name": "FAQ",
-      "price": 90
+      "price": 79
     },
     "contact": {
       "name": "Contato",
-      "price": 110
+      "price": 89
     }
   },
   "content_addons": {
@@ -51,9 +51,35 @@
       ]
     }
   },
+  "custom_pages": {
+    "base_price": 119,
+    "description": "Páginas personalizadas com conteúdo exclusivo",
+    "resources": {
+      "images": {
+        "name": "Imagens",
+        "price": 8.70,
+        "description": "Galeria de imagens para a página"
+      },
+      "video": {
+        "name": "Vídeo",
+        "price": 10.43,
+        "description": "Vídeo integrado na página"
+      },
+      "carousel": {
+        "name": "Carrossel",
+        "price": 17.39,
+        "description": "Carrossel de imagens ou conteúdo"
+      },
+      "form": {
+        "name": "Formulário",
+        "price": 26.09,
+        "description": "Formulário de contato customizado"
+      }
+    }
+  },
   "pricing_rules": {
-    "cash_discount_percent": 10,
-    "installments_12_markup_percent": 10,
+    "cash_discount_percent": 15,
+    "installments_12_markup_percent": 15,
     "installments": 12
   }
 }

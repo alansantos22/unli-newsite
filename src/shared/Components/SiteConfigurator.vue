@@ -160,7 +160,7 @@
                   <i class="fas fa-plus"></i>
                 </button>
               </div>
-              <span class="counter-price">+R$ 8,25/mês por página</span>
+              <span class="counter-price">+R$ {{ customPageBasePriceMonthly.toFixed(2).replace('.', ',') }}/mês por página</span>
             </div>
 
             <!-- Box para cada página personalizada -->
@@ -195,7 +195,7 @@
                     <div class="resource-content">
                       <i class="fas fa-image"></i>
                       <span class="resource-name">Imagens</span>
-                      <span class="resource-price">+R$ 0,83/mês</span>
+                      <span class="resource-price">+R$ {{ customPageResourcePrices.images?.toFixed(2).replace('.', ',') || '0,00' }}/mês</span>
                     </div>
                   </label>
 
@@ -204,7 +204,7 @@
                     <div class="resource-content">
                       <i class="fas fa-video"></i>
                       <span class="resource-name">Vídeo</span>
-                      <span class="resource-price">+R$ 1,00/mês</span>
+                      <span class="resource-price">+R$ {{ customPageResourcePrices.video?.toFixed(2).replace('.', ',') || '0,00' }}/mês</span>
                     </div>
                   </label>
 
@@ -213,7 +213,7 @@
                     <div class="resource-content">
                       <i class="fas fa-images"></i>
                       <span class="resource-name">Carrossel</span>
-                      <span class="resource-price">+R$ 1,67/mês</span>
+                      <span class="resource-price">+R$ {{ customPageResourcePrices.carousel?.toFixed(2).replace('.', ',') || '0,00' }}/mês</span>
                     </div>
                   </label>
 
@@ -222,7 +222,7 @@
                     <div class="resource-content">
                       <i class="fas fa-envelope"></i>
                       <span class="resource-name">Formulário</span>
-                      <span class="resource-price">+R$ 2,50/mês</span>
+                      <span class="resource-price">+R$ {{ customPageResourcePrices.form?.toFixed(2).replace('.', ',') || '0,00' }}/mês</span>
                     </div>
                   </label>
                 </div>
@@ -1021,6 +1021,26 @@ export default {
     // Verificar se alguma página personalizada tem formulário
     hasFormResource() {
       return this.customPages.some(page => page.resources.form === true);
+    },
+    
+    // Preços mensais das páginas personalizadas (com taxa de 15%)
+    customPageBasePriceMonthly() {
+      const annual = this.config.custom_pages?.base_price || 0;
+      const withMarkup = annual * 1.15;
+      return withMarkup / 12;
+    },
+    
+    customPageResourcePrices() {
+      const resources = this.config.custom_pages?.resources || {};
+      const prices = {};
+      
+      Object.keys(resources).forEach(key => {
+        const annual = resources[key].price || 0;
+        const withMarkup = annual * 1.15;
+        prices[key] = withMarkup / 12;
+      });
+      
+      return prices;
     }
   },
   methods: {
@@ -1109,11 +1129,12 @@ export default {
     },
 
     calculateCustomPageTotal(page) {
-      let total = 99; // Base price
-      if (page.resources.image) total += 10;
-      if (page.resources.video) total += 12;
-      if (page.resources.carousel) total += 20;
-      if (page.resources.form) total += 30;
+      // Usar preços do config (valores anuais sem taxa)
+      let total = this.config.custom_pages.base_price;
+      if (page.resources.image) total += this.config.custom_pages.resources.images.price;
+      if (page.resources.video) total += this.config.custom_pages.resources.video.price;
+      if (page.resources.carousel) total += this.config.custom_pages.resources.carousel.price;
+      if (page.resources.form) total += this.config.custom_pages.resources.form.price;
       return total;
     },
     
