@@ -12,11 +12,11 @@
     <!-- Progress Bar -->
     <div class="progress-bar">
       <div 
-        v-for="(step, index) in steps" 
+        v-for="(step, index) in visibleSteps" 
         :key="index"
         :class="['progress-step', { 
-          active: currentStep === index + 1,
-          completed: currentStep > index + 1 
+          active: currentStep === index + stepOffset,
+          completed: currentStep > index + stepOffset 
         }]"
       >
         <div class="step-number">{{ index + 1 }}</div>
@@ -26,9 +26,11 @@
 
     <!-- Configurator Body -->
     <div class="configurator-body">
-      <!-- Etapa 1: Escolha do Produto -->
+      <!-- Etapa 1: Monte Seu Site (Personalização) -->
+      <!-- Nota: Etapa de escolha de produto existe mas fica oculta quando initialProduct está definido -->
       <transition name="fade" mode="out-in">
-        <div v-if="currentStep === 1" class="step-content step-product">
+        <!-- ETAPA 1: Escolha de Produto (OCULTA quando initialProduct existe) -->
+        <div v-if="currentStep === 1 && !initialProduct" class="step-content step-product">
           <h2 class="step-title">Escolha Seu Produto</h2>
           <p class="step-description">
             Selecione a opção ideal para seu negócio. 
@@ -40,16 +42,20 @@
               v-for="(product, key) in config.products"
               :key="key"
               :class="['product-card', { selected: selectedProduct === key }]"
-              @click="selectProduct(key)"
+              @click="selectedProduct = key"
             >
+              <div class="promo-badge">30% OFF</div>
               <div class="product-header">
                 <div class="product-icon">
-                  <i :class="getProductIcon(key)"></i>
+                  <i :class="key === 'landing' ? 'fas fa-file-alt' : 'fas fa-layer-group'"></i>
                 </div>
                 <h3 class="product-name">{{ product.name }}</h3>
                 <div class="product-price">
-                  <span class="price-label">A partir de</span>
-                  <span class="price-value">{{ formatPrice(product.base_price) }}</span>
+                  <span class="price-original">De {{ formatOriginalPrice(product.base_price / 12) }}</span>
+                  <div class="price-current">
+                    <span class="price-label">A partir de</span>
+                    <span class="price-value">{{ formatMonthlyPrice(product.base_price) }}</span>
+                  </div>
                 </div>
               </div>
               <p class="product-description">{{ product.description }}</p>
@@ -61,10 +67,26 @@
               </div>
             </div>
           </div>
+
+          <!-- Navegação Etapa 1 -->
+          <div class="step-navigation">
+            <button class="btn-back" disabled style="visibility: hidden;">
+              <i class="fas fa-arrow-left"></i>
+              Voltar
+            </button>
+            <button 
+              class="btn-next"
+              :disabled="!selectedProduct"
+              @click="nextStep"
+            >
+              Próximo
+              <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
         </div>
 
-        <!-- Etapa 2: Monte Seu Site -->
-        <div v-else-if="currentStep === 2" class="step-content step-addons">
+        <!-- ETAPA 2: Personalização (ou Etapa 1 visível quando initialProduct existe) -->
+        <div v-else-if="currentStep === (initialProduct ? 1 : 2)" class="step-content step-addons">
           <h2 class="step-title">Monte Seu Site</h2>
           <p class="step-description">
             Adicione páginas e conteúdo conforme sua necessidade.
@@ -88,6 +110,7 @@
                   v-model="selectedPages"
                 >
                 <div class="checkbox-content">
+                  <div class="promo-tag">-30%</div>
                   <div class="checkbox-info">
                     <span class="checkbox-name">
                       {{ page.name }}
@@ -96,7 +119,10 @@
                         <span class="tooltip-text">{{ getPageTooltip(key) }}</span>
                       </span>
                     </span>
-                    <span class="checkbox-price">+{{ formatMonthlyPrice(page.price) }}</span>
+                    <div class="checkbox-price">
+                      <span class="price-from">De {{ formatOriginalPrice(page.price / 12) }}</span>
+                      <span class="price-to">+{{ formatMonthlyPrice(page.price) }}</span>
+                    </div>
                   </div>
                   <div class="checkbox-mark">
                     <i class="fas fa-check"></i>
@@ -234,8 +260,12 @@
                         <i class="fas fa-info-circle"></i>
                         <span class="tooltip-text">{{ getContentTooltip(key) }}</span>
                       </span>
+                      <span class="promo-inline-badge">-30%</span>
                     </span>
-                    <span class="toggle-price">+{{ formatMonthlyPrice(content.price) }}</span>
+                    <div class="toggle-price">
+                      <span class="price-from">De {{ formatOriginalPrice(content.price / 12) }}</span>
+                      <span class="price-to">+{{ formatMonthlyPrice(content.price) }}</span>
+                    </div>
                   </div>
                   <div class="toggle-switch">
                     <span class="switch"></span>
@@ -253,16 +283,16 @@
             <div class="info-content">
               <h4>Incluído no Plano:</h4>
               <ul>
-                <li><i class="fas fa-check"></i> Suporte de disponibilidade</li>
-                <li><i class="fas fa-check"></i> Acesso exclusivo ao nosso sistema para alterações</li>
+                <li><i class="fas fa-check"></i> Suporte de disponibilidade contínua</li>
+                <li><i class="fas fa-check"></i> Acesso exclusivo ao nosso sistema para ajustes</li>
                 <li><i class="fas fa-check"></i> Domínio grátis (.com.br)</li>
-                <li><i class="fas fa-check"></i> Certificado SSL grátis (HTTPS)</li>
-                <li><i class="fas fa-check"></i> Otimização de SEO simples grátis</li>
-                <li><i class="fas fa-check"></i> Entrega em até 10 dias</li>
+                <li><i class="fas fa-check"></i> Certificado SSL gratuito (HTTPS)</li>
+                <li><i class="fas fa-check"></i> SEO básico otimizado sem custo</li>
+                <li><i class="fas fa-check"></i> Entrega em até 10 dias úteis</li>
                 <li><i class="fas fa-check"></i> Hospedagem anual incluída</li>
-                <li><i class="fas fa-check"></i> Design feito também para celulares</li>
-                <li><i class="fas fa-check"></i> Botão WhatsApp integrado</li>
-                <li><i class="fas fa-check"></i> Otimização de velocidade</li>
+                <li><i class="fas fa-check"></i> Design responsivo para celular e desktop</li>
+                <li><i class="fas fa-check"></i> Botão de WhatsApp integrado</li>
+                <li><i class="fas fa-check"></i> Otimização de performance</li>
               </ul>
             </div>
           </div>
@@ -295,22 +325,23 @@
             <p>E-commerce, integrações avançadas, área de login, etc.</p>
             <div class="question-actions">
               <button class="btn-standard" @click="proceedToCheckout">
-                Não, quero um site mais simples
+                Preciso apenas de um site para minha empresa
               </button>
               <button class="btn-custom" @click="openCustomForm">
-                Sim, quero um site mais completo
+                Na verdade, preciso de algo mais completo
               </button>
             </div>
             <div class="back-to-landing">
               <a @click="selectedProduct = 'landing'">
-                ← Na verdade, prefiro a landing page simples
+                ← Acho que prefiro a landing page simples
               </a>
             </div>
           </div>
         </div>
 
-        <!-- Etapa 3: Dados e Arquivos -->
-        <div v-else-if="currentStep === 3" class="step-content step-briefing">
+        <!-- Etapa 2: Dados e Arquivos (Checkout) -->
+        <!-- Etapa 3 quando não há initialProduct, Etapa 2 quando há -->
+        <div v-else-if="currentStep === (initialProduct ? 2 : 3)" class="step-content step-briefing">
           <h2 class="step-title">Dados e Arquivos</h2>
           <p class="step-description">
             Preencha as informações para criarmos seu site.
@@ -485,11 +516,64 @@
 
             <!-- Resumo do Pedido -->
             <div class="order-summary">
-              <h3>Resumo do Pedido</h3>
+              <div class="summary-header">
+                <h3>
+                  <i class="fas fa-shield-check"></i>
+                  Plano Anual PRO
+                </h3>
+              </div>
+              
+              <!-- Serviços Recorrentes Inclusos -->
+              <div class="included-services">
+                <div class="services-header">
+                  <i class="fas fa-check-double"></i>
+                  <h4>Serviços Contínuos Inclusos</h4>
+                </div>
+                <div class="service-item">
+                  <i class="fas fa-check-circle"></i>
+                  <span class="service-label">Hospedagem Premium</span>
+                  <span class="service-tag">12 meses</span>
+                </div>
+                <div class="service-item">
+                  <i class="fas fa-check-circle"></i>
+                  <span class="service-label">Domínio .com.br ou .com</span>
+                  <span class="service-tag">Incluso</span>
+                </div>
+                <div class="service-item">
+                  <i class="fas fa-check-circle"></i>
+                  <span class="service-label">Certificado SSL (HTTPS)</span>
+                  <span class="service-tag">Incluso</span>
+                </div>
+                <div class="service-item">
+                  <i class="fas fa-check-circle"></i>
+                  <span class="service-label">Monitoramento 24/7</span>
+                  <span class="service-tag">Incluso</span>
+                </div>
+                <div class="service-item">
+                  <i class="fas fa-check-circle"></i>
+                  <span class="service-label">Suporte Técnico</span>
+                  <span class="service-tag">12 meses</span>
+                </div>
+                <div class="service-item">
+                  <i class="fas fa-check-circle"></i>
+                  <span class="service-label">Criação e Design do Site</span>
+                  <span class="service-tag">Setup</span>
+                </div>
+              </div>
+              
+              <!-- Valor sem desconto -->
+              <div class="original-price-banner">
+                <span class="label">Sem a promoção você pagaria:</span>
+                <span class="value">{{ formatOriginalTotalPrice(subtotal) }}</span>
+              </div>
+              
               <div class="summary-items">
                 <div class="summary-item">
                   <span>{{ currentProductName }}</span>
-                  <span>{{ formatMonthlyPrice(basePrice) }}</span>
+                  <div class="item-prices">
+                    <span class="price-original-item">{{ formatOriginalPrice(basePrice / 12) }}</span>
+                    <span class="price-current-item">{{ formatMonthlyPrice(basePrice) }}</span>
+                  </div>
                 </div>
                 <div 
                   v-for="pageKey in validSelectedPages"
@@ -497,7 +581,10 @@
                   class="summary-item"
                 >
                   <span>{{ config.page_addons[pageKey].name }}</span>
-                  <span>{{ formatMonthlyPrice(config.page_addons[pageKey].price) }}</span>
+                  <div class="item-prices">
+                    <span class="price-original-item">{{ formatOriginalPrice(config.page_addons[pageKey].price / 12) }}</span>
+                    <span class="price-current-item">{{ formatMonthlyPrice(config.page_addons[pageKey].price) }}</span>
+                  </div>
                 </div>
                 <div 
                   v-for="(page, index) in customPages"
@@ -505,7 +592,10 @@
                   class="summary-item"
                 >
                   <span>Página Personalizada #{{ index + 1 }}</span>
-                  <span>{{ formatMonthlyPrice(calculateCustomPageTotal(page)) }}</span>
+                  <div class="item-prices">
+                    <span class="price-original-item">{{ formatOriginalPrice(calculateCustomPageTotal(page) / 12) }}</span>
+                    <span class="price-current-item">{{ formatMonthlyPrice(calculateCustomPageTotal(page)) }}</span>
+                  </div>
                 </div>
                 <div 
                   v-for="addonKey in validSelectedContentAddons"
@@ -513,18 +603,94 @@
                   class="summary-item"
                 >
                   <span>{{ config.content_addons[addonKey].name }}</span>
-                  <span>{{ formatMonthlyPrice(config.content_addons[addonKey].price) }}</span>
+                  <div class="item-prices">
+                    <span class="price-original-item">{{ formatOriginalPrice(config.content_addons[addonKey].price / 12) }}</span>
+                    <span class="price-current-item">{{ formatMonthlyPrice(config.content_addons[addonKey].price) }}</span>
+                  </div>
                 </div>
               </div>
               <div class="summary-total">
-                <div class="total-row installments">
-                  <span>12x no cartão <strong class="no-interest">sem juros</strong></span>
-                  <span class="highlight">12x de {{ formatPrice(installmentValue) }}</span>
+                <!-- Ancoragem de Preço: Quebrar para Mensal/Diário -->
+                <div class="price-anchoring">
+                  <div class="anchoring-label">💡 Seu departamento de TI por:</div>
+                  <div class="anchoring-values">
+                    <div class="anchoring-item">
+                      <div class="value">{{ formatPrice((subtotal * 1.15) / 12) }}</div>
+                      <div class="label">por mês</div>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="anchoring-item">
+                      <div class="value">{{ formatPrice((subtotal * 1.15) / 365) }}</div>
+                      <div class="label">por dia</div>
+                    </div>
+                  </div>
+                  <div class="anchoring-subtext">
+                    Menos que um café: sua empresa online 24/7
+                  </div>
                 </div>
-                <div class="total-row cash">
-                  <span>À vista (<strong class="discount-badge">Desconto de 15%</strong>)</span>
-                  <span class="highlight-success">{{ formatPrice(cashPrice) }}</span>
-                </div>
+                
+                <h4 class="payment-title">Escolha a forma de pagamento:</h4>
+                
+                <!-- Opção 1: À Vista (PRÉ-SELECIONADA) -->
+                <label 
+                  class="total-row cash featured"
+                  :class="{ selected: paymentMethod === 'cash' }"
+                >
+                  <input 
+                    type="radio" 
+                    value="cash" 
+                    v-model="paymentMethod"
+                  >
+                  <div class="payment-content">
+                    <div class="payment-header">
+                      <div class="payment-main-info">
+                        <span class="payment-label">💳 À vista (Pix/Boleto)</span>
+                        <span class="badge-recommended">✨ Mais Escolhido</span>
+                      </div>
+                      <div class="payment-prices">
+                        <span class="price-original-total">De {{ formatOriginalTotalAnnual(subtotal) }}</span>
+                        <span class="price-cash">{{ formatPrice(cashPrice) }}<small>/ano</small></span>
+                      </div>
+                    </div>
+                    <div class="payment-benefits">
+                      <span class="economy-tag-cash">🔥 Economize {{ formatPrice(savingsAmount) }} agora!</span>
+                      <span class="payment-note">✅ Plano ativo imediatamente após pagamento</span>
+                    </div>
+                  </div>
+                  <div class="radio-check">
+                    <i class="fas fa-check-circle"></i>
+                  </div>
+                </label>
+                
+                <!-- Opção 2: Parcelado -->
+                <label 
+                  class="total-row installments"
+                  :class="{ selected: paymentMethod === 'installments' }"
+                >
+                  <input 
+                    type="radio" 
+                    value="installments" 
+                    v-model="paymentMethod"
+                  >
+                  <div class="payment-content">
+                    <div class="payment-header">
+                      <div class="payment-main-info">
+                        <span class="payment-label">💳 Parcelado no Cartão</span>
+                      </div>
+                      <div class="payment-prices">
+                        <span class="price-installment">12x de {{ formatPrice(installmentValue) }}</span>
+                        <span class="price-total-installment">(Total anual: {{ formatPrice(installmentTotal) }})</span>
+                      </div>
+                    </div>
+                    <div class="payment-benefits">
+                      <span class="economy-tag"><strong class="no-interest">Sem juros</strong> • Plano de 12 meses</span>
+                      <span class="economy-tag">💰 Economize 30% vs. preço normal</span>
+                    </div>
+                  </div>
+                  <div class="radio-check">
+                    <i class="fas fa-check-circle"></i>
+                  </div>
+                </label>
               </div>
             </div>
 
@@ -533,10 +699,25 @@
                 <i class="fas fa-edit"></i>
                 Quero mudar alguma coisa
               </button>
-              <button type="submit" class="btn-submit" :disabled="isSubmitting">
-                <i class="fas fa-check-circle"></i>
-                {{ isSubmitting ? 'Processando...' : 'Finalizar Pedido' }}
+              <button 
+                type="submit" 
+                class="btn-submit" 
+                :class="{ 'btn-cash': paymentMethod === 'cash' }"
+                :disabled="isSubmitting"
+              >
+                <i class="fas fa-lock"></i>
+                {{ isSubmitting ? 'Processando...' : ctaText }}
               </button>
+            </div>
+            
+            <!-- Nota sobre renovação (transparência) -->
+            <div class="renewal-notice">
+              <i class="fas fa-info-circle"></i>
+              <div class="notice-content">
+                <strong>Plano de 12 meses:</strong> 
+                Todos os serviços (hospedagem, domínio, suporte e monitoramento) estão inclusos por 1 ano. 
+                Você será notificado 30 dias antes do vencimento para renovar ou cancelar.
+              </div>
             </div>
           </form>
         </div>
@@ -546,13 +727,17 @@
     <!-- Price Sidebar (sempre visível) -->
     <div class="price-sidebar">
       <div class="sidebar-header">
+        <div class="sidebar-promo-badge">30% OFF</div>
         <h3>Seu Pedido</h3>
       </div>
       
       <div class="sidebar-items">
         <div v-if="selectedProduct" class="sidebar-item">
           <span class="item-name">{{ currentProductName }}</span>
-          <span class="item-price">{{ formatMonthlyPrice(basePrice) }}</span>
+          <div class="item-price">
+            <span class="price-original-small">{{ formatOriginalPrice(basePrice / 12) }}</span>
+            <span class="price-current-small">{{ formatMonthlyPrice(basePrice) }}</span>
+          </div>
         </div>
         
         <!-- Páginas pré-definidas -->
@@ -562,7 +747,10 @@
           class="sidebar-item"
         >
           <span class="item-name">{{ config.page_addons[pageKey].name }}</span>
-          <span class="item-price">{{ formatMonthlyPrice(config.page_addons[pageKey].price) }}</span>
+          <div class="item-price">
+            <span class="price-original-small">{{ formatOriginalPrice(config.page_addons[pageKey].price / 12) }}</span>
+            <span class="price-current-small">{{ formatMonthlyPrice(config.page_addons[pageKey].price) }}</span>
+          </div>
         </div>
 
         <!-- Páginas personalizadas -->
@@ -572,7 +760,10 @@
           class="sidebar-item"
         >
           <span class="item-name">Página Personalizada #{{ index + 1 }}</span>
-          <span class="item-price">{{ formatMonthlyPrice(calculateCustomPageTotal(page)) }}</span>
+          <div class="item-price">
+            <span class="price-original-small">{{ formatOriginalPrice(calculateCustomPageTotal(page) / 12) }}</span>
+            <span class="price-current-small">{{ formatMonthlyPrice(calculateCustomPageTotal(page)) }}</span>
+          </div>
         </div>
 
         <div 
@@ -581,7 +772,10 @@
           class="sidebar-item"
         >
           <span class="item-name">{{ config.content_addons[addonKey].name }}</span>
-          <span class="item-price">{{ formatMonthlyPrice(config.content_addons[addonKey].price) }}</span>
+          <div class="item-price">
+            <span class="price-original-small">{{ formatOriginalPrice(config.content_addons[addonKey].price / 12) }}</span>
+            <span class="price-current-small">{{ formatMonthlyPrice(config.content_addons[addonKey].price) }}</span>
+          </div>
         </div>
       </div>
 
@@ -589,8 +783,11 @@
       <div class="sidebar-total">
         <div class="monthly-highlight">
           <span class="monthly-label">Total</span>
-          <span class="monthly-price">{{ formatMonthlyPrice(subtotal) }}</span>
-          <span class="monthly-hint">Pagamento anual</span>
+          <div class="total-prices">
+            <span class="total-original">De {{ formatOriginalPrice(subtotal / 12) }}</span>
+            <span class="total-current">{{ formatMonthlyPrice(subtotal) }}</span>
+          </div>
+          <span class="monthly-hint">Pagamento anual 🎉</span>
         </div>
       </div>
 
@@ -706,11 +903,18 @@ import PricingService from '@/core/services/PricingService';
 
 export default {
   name: 'SiteConfigurator',
+  props: {
+    initialProduct: {
+      type: String,
+      default: null,
+      validator: (value) => !value || ['landing', 'site_complete'].includes(value)
+    }
+  },
   data() {
     return {
       config: configData,
       currentStep: 1,
-      steps: ['Produto', 'Personalize', 'Checkout'],
+      steps: ['Personalize', 'Checkout'],
       
       // Seleções
       selectedProduct: null,
@@ -755,6 +959,9 @@ export default {
       isSubmitting: false,
       isSubmittingCustom: false,
       
+      // Pagamento
+      paymentMethod: 'cash', // 'cash' ou 'installments'
+      
       // Validação server-side
       serverValidatedPricing: null,
       serverAvailable: null, // null = não testado, true = online, false = offline
@@ -762,6 +969,24 @@ export default {
     };
   },
   async mounted() {
+    console.log('🔍 [SiteConfigurator] Mounted - initialProduct prop:', this.initialProduct);
+    console.log('🔍 [SiteConfigurator] Type of initialProduct:', typeof this.initialProduct);
+    
+    // Verificar se há produto pré-selecionado
+    if (this.initialProduct) {
+      console.log('✅ [SiteConfigurator] initialProduct existe:', this.initialProduct);
+      this.selectedProduct = this.initialProduct;
+      // Produto já selecionado, continuar no step 1 (personalização)
+      if (this.config.products[this.initialProduct]) {
+        console.log(`✅ Produto pré-selecionado: ${this.initialProduct}`);
+      }
+    } else {
+      // Se não houver produto selecionado, redirecionar para página de vendas
+      console.warn('⚠️ Nenhum produto selecionado. Redirecionando...');
+      this.$router.push('/site-vitrine#planos');
+      return; // Importante: parar execução aqui
+    }
+    
     // Verificar modo debug
     const debugMode = this.$store.state.ConfigModule?.debug;
     
@@ -808,6 +1033,18 @@ export default {
     }
   },
   computed: {
+    // Steps dinâmicos: mostra 2 quando initialProduct existe, 3 quando não
+    visibleSteps() {
+      return this.initialProduct 
+        ? ['Personalize', 'Checkout']  // Pula a etapa de escolha de produto
+        : ['Produto', 'Personalize', 'Checkout'];  // Mostra todas as etapas
+    },
+    
+    // Offset para cálculo correto de steps (1 quando tem initialProduct, 0 quando não)
+    stepOffset() {
+      return this.initialProduct ? 1 : 1; // Sempre começa em 1
+    },
+    
     // Filtered arrays para evitar v-if + v-for
     validSelectedPages() {
       console.log('🔍 [validSelectedPages] Computing...');
@@ -912,6 +1149,22 @@ export default {
     
     priceSource() {
       return this.serverValidatedPricing?.source || 'local';
+    },
+    
+    // Economia em R$ (diferença entre valor sem desconto e à vista)
+    savingsAmount() {
+      // Valor original inflacionado 30% + taxa 15%
+      const originalTotal = this.subtotal * 1.15 * 1.3;
+      // Diferença para à vista
+      return originalTotal - this.cashPrice;
+    },
+    
+    // Texto do CTA baseado na seleção
+    ctaText() {
+      if (this.paymentMethod === 'cash') {
+        return `🎯 Assinar Plano Anual - ${this.formatPrice(this.cashPrice)}`;
+      }
+      return '🎯 Assinar Plano Anual (12x sem juros)';
     }
   },
   methods: {
@@ -957,8 +1210,10 @@ export default {
       console.log('💰 Content Total:', this.contentTotal);
       console.log('💰 Subtotal:', this.subtotal);
       
-      this.currentStep = 3;
-      console.log('✅ [PRE-CHECKOUT DEBUG] Movido para step 3');
+      // Se initialProduct existe, vai do step 1 para 2
+      // Se não existe, vai do step 2 para 3
+      this.currentStep = this.initialProduct ? 2 : 3;
+      console.log(`✅ [PRE-CHECKOUT DEBUG] Movido para step ${this.currentStep} (checkout)`);
     },
 
     // Upgrade de Landing para Site Completo
@@ -972,22 +1227,6 @@ export default {
       // Redirecionar para seção de contato
       window.location.hash = 'contact';
       this.$emit('close');
-    },
-    
-    // Seleção de produto
-    selectProduct(key) {
-      console.log('🎯 [selectProduct] Selected:', key);
-      console.log('🎯 [selectProduct] Config products:', this.config?.products);
-      this.selectedProduct = key;
-      console.log('✅ [selectProduct] Product set, auto-advancing in 300ms...');
-      // Ir automaticamente para próxima etapa (menos cliques)
-      setTimeout(() => {
-        this.nextStep();
-      }, 300); // Delay para feedback visual
-    },
-    
-    getProductIcon(key) {
-      return key === 'landing' ? 'fas fa-file-alt' : 'fas fa-layer-group';
     },
     
     // Páginas personalizadas
@@ -1177,6 +1416,29 @@ export default {
     // Utils
     formatPrice(value) {
       return `R$ ${value.toFixed(2).replace('.', ',')}`;
+    },
+    
+    formatOriginalPrice(value) {
+      // value já vem como valor mensal
+      // Aplicar taxa de parcelamento 15% primeiro, depois inflacionar 30%
+      const withInstallmentFee = value * 1.15; // Taxa do gateway
+      const inflated = withInstallmentFee * 1.3; // Inflação de 30% para "De"
+      return `R$ ${inflated.toFixed(2).replace('.', ',')}`;
+    },
+    
+    formatOriginalTotalPrice(annualValue) {
+      // Calcula o valor total mensal SEM nenhum desconto (com taxa de 15% e inflacionado 30%)
+      const withMarkup = annualValue * 1.15;
+      const monthly = withMarkup / 12;
+      const inflated = monthly * 1.3;
+      return `R$ ${inflated.toFixed(2).replace('.', ',')}/mês`;
+    },
+    
+    formatOriginalTotalAnnual(annualValue) {
+      // Calcula o valor total ANUAL original (com taxa de 15% e inflacionado 30%)
+      const withMarkup = annualValue * 1.15;
+      const inflated = withMarkup * 1.3;
+      return `R$ ${inflated.toFixed(2).replace('.', ',')}`;
     },
 
     formatMonthlyPrice(annualValue) {
@@ -1424,112 +1686,142 @@ export default {
   margin-bottom: 40px;
 }
 
-// Etapa 1: Produtos
-.product-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 24px;
-  margin-bottom: 40px;
-}
-
-.product-card {
-  padding: 32px;
-  background: $white;
-  border: 3px solid $gray-light;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.3s;
-
-  &:hover {
-    border-color: $p-color;
-    transform: translateY(-4px);
-    box-shadow: 0 12px 32px rgba($p-color, 0.15);
+// Etapa 1: Escolha de Produto (oculta quando initialProduct existe)
+.step-product {
+  .product-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    margin-bottom: 40px;
   }
 
-  &.selected {
-    border-color: $p-color;
-    background: linear-gradient(135deg, rgba($p-color, 0.05) 0%, rgba($p-dark, 0.02) 100%);
-    box-shadow: 0 0 0 4px rgba($p-color, 0.1);
-  }
-
-  .product-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-
-    .product-icon {
-      width: 64px;
-      height: 64px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: $gradient-primary;
-      border-radius: 16px;
-
-      i {
-        font-size: 2rem;
-        color: $white;
-      }
-    }
-
-    .product-name {
-      font-size: 1.5rem;
+  .product-card {
+    padding: 32px;
+    background: $white;
+    border: 3px solid $gray-light;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    
+    .promo-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
       font-weight: 700;
-      color: $gray-darkness;
+      box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
     }
 
-    .product-price {
+    &:hover {
+      border-color: $p-color;
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba($p-color, 0.15);
+    }
+
+    &.selected {
+      border-color: $p-color;
+      background: linear-gradient(135deg, rgba($p-color, 0.05) 0%, rgba($p-dark, 0.02) 100%);
+      box-shadow: 0 0 0 4px rgba($p-color, 0.1);
+    }
+
+    .product-header {
       display: flex;
       flex-direction: column;
       align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
 
-      .price-value {
-        font-size: 2rem;
-        font-weight: 900;
-        color: $p-color;
+      .product-icon {
+        width: 64px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: $gradient-primary;
+        border-radius: 16px;
+
+        i {
+          font-size: 2rem;
+          color: $white;
+        }
       }
 
-      .price-label {
-        font-size: 0.85rem;
-        color: $gray-medium;
+      .product-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: $gray-darkness;
+      }
+
+      .product-price {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        
+        .price-original {
+          text-decoration: line-through;
+          color: $gray-medium;
+          font-size: 0.9rem;
+          opacity: 0.6;
+        }
+        
+        .price-current {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+
+          .price-value {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: $p-color;
+          }
+
+          .price-label {
+            font-size: 0.85rem;
+            color: $gray-medium;
+          }
+        }
       }
     }
-  }
 
-  .product-description {
-    text-align: center;
-    color: $gray-medium;
-    line-height: 1.6;
-    margin-bottom: 24px;
-  }
+    .product-description {
+      text-align: center;
+      color: $gray-medium;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
 
-  .product-action {
-    .btn-select {
-      width: 100%;
-      padding: 12px;
-      background: $p-color;
-      color: $white;
-      border: none;
-      border-radius: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.3s;
+    .product-action {
+      .btn-select {
+        width: 100%;
+        padding: 12px;
+        background: $p-color;
+        color: $white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.3s;
 
-      &:hover {
-        background: $p-dark;
-        transform: translateY(-2px);
+        &:hover {
+          background: $p-dark;
+          transform: translateY(-2px);
+        }
       }
     }
   }
 }
 
-// Etapa 2: Add-ons
+// Etapa 1/2: Personalização (Add-ons)
 .addon-section {
   margin-bottom: 40px;
 
@@ -1576,6 +1868,20 @@ export default {
     border: 2px solid $gray-light;
     border-radius: 12px;
     transition: all 0.3s;
+    position: relative;
+    
+    .promo-tag {
+      position: absolute;
+      top: -8px;
+      right: 16px;
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 8px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(255, 107, 107, 0.3);
+    }
 
     &:hover {
       border-color: $p-color;
@@ -1612,9 +1918,23 @@ export default {
     }
 
     .checkbox-price {
-      font-size: 0.9rem;
-      color: $p-color;
-      font-weight: 700;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+      
+      .price-from {
+        text-decoration: line-through;
+        color: $gray-medium;
+        font-size: 0.75rem;
+        opacity: 0.6;
+      }
+      
+      .price-to {
+        font-size: 0.9rem;
+        color: $p-color;
+        font-weight: 700;
+      }
     }
   }
 
@@ -1956,6 +2276,20 @@ export default {
   background: $white;
   border: 2px solid $gray-light;
   border-radius: 12px;
+  position: relative;
+  
+  .addon-promo-badge {
+    position: absolute;
+    top: -8px;
+    left: 16px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(255, 107, 107, 0.3);
+  }
 
   .addon-info {
     display: flex;
@@ -1971,9 +2305,23 @@ export default {
     }
 
     .addon-price {
-      font-size: 0.9rem;
-      color: $p-color;
-      font-weight: 700;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      
+      .addon-price-from {
+        text-decoration: line-through;
+        color: $gray-medium;
+        font-size: 0.75rem;
+        opacity: 0.6;
+      }
+      
+      .addon-price-to {
+        font-size: 0.9rem;
+        color: $p-color;
+        font-weight: 700;
+      }
     }
   }
 
@@ -2116,12 +2464,33 @@ export default {
           display: flex;
           align-items: center;
           gap: 8px;
+          
+          .promo-inline-badge {
+            display: inline-flex;
+            padding: 2px 6px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            font-weight: 700;
+          }
         }
 
         .toggle-price {
           font-size: 0.9rem;
           color: $p-color;
           font-weight: 700;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 2px;
+          
+          .price-from {
+            text-decoration: line-through;
+            color: $gray-medium;
+            font-size: 0.7rem;
+            opacity: 0.6;
+          }
         }
       }
 
@@ -2426,7 +2795,36 @@ export default {
   }
 }
 
-// Etapa 3: Briefing Form
+.renewal-notice {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+  background: rgba($accent-blue, 0.05);
+  border-left: 4px solid $accent-blue;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: $gray-medium;
+  margin-top: 24px;
+  
+  i {
+    color: $accent-blue;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  
+  .notice-content {
+    flex: 1;
+    
+    strong {
+      color: $gray-darkness;
+      font-weight: 600;
+    }
+  }
+}
+
+// Etapa 2: Briefing Form (Checkout)
 .briefing-form {
   .form-section {
     margin-bottom: 40px;
@@ -2553,12 +2951,127 @@ export default {
   background: $gray-lightness;
   border-radius: 16px;
   margin-bottom: 40px;
-
-  h3 {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: $gray-darkness;
+  border: 2px solid rgba($p-color, 0.15);
+  
+  .summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 20px;
+    
+    h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: $gray-darkness;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      
+      i {
+        color: $p-color;
+        font-size: 1.2rem;
+      }
+    }
+    
+    .promo-badge-summary {
+      background: linear-gradient(135deg, $p-color 0%, $p-dark 100%);
+      color: white;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba($p-color, 0.3);
+    }
+  }
+  
+  .included-services {
+    margin-bottom: 24px;
+    padding: 24px;
+    background: linear-gradient(135deg, rgba($p-color, 0.05) 0%, rgba($p-dark, 0.02) 100%);
+    border-radius: 12px;
+    border: 2px solid rgba($p-color, 0.15);
+    
+    .services-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid rgba($p-color, 0.1);
+      
+      i {
+        color: $p-color;
+        font-size: 1.1rem;
+      }
+      
+      h4 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: $gray-darkness;
+        margin: 0;
+      }
+    }
+    
+    .service-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      font-size: 0.9rem;
+      color: $gray-medium;
+      
+      &:not(:last-child) {
+        border-bottom: 1px solid rgba($gray-light, 0.5);
+      }
+      
+      i {
+        color: #10b981;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+      }
+      
+      .service-label {
+        flex: 1;
+        font-weight: 500;
+        color: $gray-darkness;
+      }
+      
+      .service-tag {
+        padding: 3px 10px;
+        background: rgba($p-color, 0.1);
+        color: $p-color;
+        border-radius: 10px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+    }
+  }
+  
+  .original-price-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba($gray-medium, 0.1);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border-left: 4px solid $gray-medium;
+    
+    .label {
+      font-size: 0.9rem;
+      color: $gray-medium;
+      font-weight: 600;
+    }
+    
+    .value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: $gray-medium;
+      text-decoration: line-through;
+    }
   }
 
   .summary-items {
@@ -2572,8 +3085,29 @@ export default {
     .summary-item {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       font-size: 0.95rem;
       color: $gray-medium;
+      
+      .item-prices {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+        
+        .price-original-item {
+          text-decoration: line-through;
+          color: $gray-medium;
+          font-size: 0.75rem;
+          opacity: 0.7;
+        }
+        
+        .price-current-item {
+          font-weight: 600;
+          color: $gray-darkness;
+          font-size: 0.95rem;
+        }
+      }
 
       span:last-child {
         font-weight: 600;
@@ -2583,53 +3117,285 @@ export default {
   }
 
   .summary-total {
-    .total-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 12px 0;
-
-      &.subtotal {
-        font-size: 1rem;
+    .price-anchoring {
+      text-align: center;
+      padding: 20px;
+      background: linear-gradient(135deg, rgba(#10b981, 0.1) 0%, rgba(#059669, 0.05) 100%);
+      border-radius: 12px;
+      margin-bottom: 24px;
+      border: 2px dashed rgba(#10b981, 0.3);
+      
+      .anchoring-label {
+        font-size: 0.9rem;
         color: $gray-medium;
+        margin-bottom: 12px;
+        font-weight: 600;
+      }
+      
+      .anchoring-values {
+        display: flex;
+        gap: 24px;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 12px;
+        
+        .anchoring-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          
+          .value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #10b981;
+            line-height: 1.2;
+          }
+          
+          .label {
+            font-size: 0.75rem;
+            color: $gray-medium;
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+        }
+        
+        .divider {
+          width: 1px;
+          height: 50px;
+          background: rgba($gray-medium, 0.3);
+        }
+      }
+      
+      .anchoring-subtext {
+        font-size: 0.85rem;
+        color: $gray-medium;
+        font-style: italic;
+      }
+    }
+    
+    .payment-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: $gray-darkness;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    
+    .total-row {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px;
+      border-radius: 16px;
+      margin: 12px 0;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 3px solid transparent;
+      
+      input[type="radio"] {
+        display: none;
+      }
+      
+      .payment-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        
+        .payment-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 16px;
+          
+          .payment-main-info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            
+            .payment-label {
+              font-size: 1.1rem;
+              font-weight: 700;
+              color: $gray-darkness;
+            }
+            
+            .badge-recommended {
+              display: inline-flex;
+              align-items: center;
+              gap: 4px;
+              background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+              color: #000;
+              padding: 4px 10px;
+              border-radius: 12px;
+              font-size: 0.75rem;
+              font-weight: 800;
+              width: fit-content;
+              box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+            }
+          }
+          
+          .payment-prices {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+            
+            .price-original-total {
+              text-decoration: line-through;
+              color: $gray-medium;
+              font-size: 0.95rem;
+              font-weight: 600;
+            }
+            
+            .price-cash {
+              font-size: 1.8rem;
+              font-weight: 900;
+              color: $success;
+              
+              small {
+                font-size: 0.7rem;
+                font-weight: 600;
+                opacity: 0.8;
+                margin-left: 4px;
+              }
+            }
+            
+            .price-installment {
+              font-size: 1.5rem;
+              font-weight: 800;
+              color: $p-color;
+            }
+            
+            .price-total-installment {
+              font-size: 0.85rem;
+              color: $gray-medium;
+            }
+          }
+        }
+        
+        .payment-benefits {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          
+          .payment-note {
+            font-size: 0.85rem;
+            color: $gray-medium;
+            font-style: italic;
+          }
+        }
+      }
+      
+      .radio-check {
+        width: 28px;
+        height: 28px;
+        border: 2px solid $gray-light;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+        
+        i {
+          font-size: 1.2rem;
+          color: $white;
+          opacity: 0;
+          transition: all 0.3s;
+        }
+      }
+      
+      &.selected {
+        .radio-check {
+          background: $p-color;
+          border-color: $p-color;
+          
+          i {
+            opacity: 1;
+          }
+        }
       }
 
       &.installments {
-        padding: 16px;
-        background: $white;
-        border-radius: 12px;
-        margin: 8px 0;
+        background: rgba($gray-light, 0.3);
+        border-color: rgba($gray-light, 0.5);
+        
+        &:hover {
+          background: $white;
+          border-color: $p-color;
+          box-shadow: 0 4px 12px rgba($p-color, 0.15);
+        }
+        
+        &.selected {
+          background: $white;
+          border-color: $p-color;
+          box-shadow: 0 4px 16px rgba($p-color, 0.2);
+          
+          .radio-check {
+            background: $p-color;
+            border-color: $p-color;
+          }
+        }
 
         .no-interest {
           color: $accent-green;
           font-weight: 900;
-          font-size: 1.05em;
-          letter-spacing: 0.3px;
-        }
-
-        .highlight {
-          font-size: 1.3rem;
-          font-weight: 800;
-          color: $p-color;
         }
       }
 
       &.cash {
-        padding: 16px;
-        background: rgba($success, 0.1);
-        border-radius: 12px;
-
-        .discount-badge {
-          color: $success;
-          font-weight: 900;
-          font-size: 1.05em;
-          letter-spacing: 0.3px;
+        background: rgba($success, 0.08);
+        border: 3px solid rgba($success, 0.4);
+        
+        &:hover {
+          background: rgba($success, 0.12);
+          border-color: $success;
+          box-shadow: 0 6px 20px rgba($success, 0.25);
+          transform: translateY(-2px);
         }
-
-        .highlight-success {
-          font-size: 1.3rem;
+        
+        &.featured {
+          box-shadow: 0 6px 24px rgba($success, 0.3);
+        }
+        
+        &.selected {
+          background: rgba($success, 0.15);
+          border-color: $success;
+          box-shadow: 0 8px 28px rgba($success, 0.35);
+          
+          .radio-check {
+            background: $success;
+            border-color: $success;
+          }
+        }
+        
+        .economy-tag-cash {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 0.9rem;
+          color: $success;
           font-weight: 800;
-          color: $success;
+          background: rgba($success, 0.2);
+          padding: 6px 12px;
+          border-radius: 10px;
+          width: fit-content;
+          animation: pulse 2s ease-in-out infinite;
         }
+      }
+      
+      .economy-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.85rem;
+        color: $p-color;
+        font-weight: 600;
+        background: rgba($p-color, 0.1);
+        padding: 4px 10px;
+        border-radius: 8px;
+        width: fit-content;
       }
     }
   }
@@ -2660,6 +3426,19 @@ export default {
     opacity: 0.6;
     cursor: not-allowed;
   }
+  
+  &.btn-cash {
+    background: linear-gradient(135deg, $success 0%, darken($success, 10%) 100%);
+    font-size: 1.15rem;
+    padding: 20px;
+    box-shadow: 0 6px 20px rgba($success, 0.4);
+    animation: pulse 2s ease-in-out infinite;
+    
+    &:hover:not(:disabled) {
+      box-shadow: 0 10px 30px rgba($success, 0.5);
+      transform: translateY(-3px);
+    }
+  }
 }
 
 // Price Sidebar
@@ -2677,6 +3456,21 @@ export default {
   }
 
   .sidebar-header {
+    position: relative;
+    
+    .sidebar-promo-badge {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+      animation: pulse 2s ease-in-out infinite;
+    }
     padding: 24px;
     background: $gradient-primary;
     color: $white;
@@ -2697,6 +3491,25 @@ export default {
       justify-content: space-between;
       padding: 12px 0;
       border-bottom: 1px solid $gray-light;
+      
+      .item-price {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+        
+        .price-original-small {
+          text-decoration: line-through;
+          color: $gray-medium;
+          font-size: 0.7rem;
+          opacity: 0.6;
+        }
+        
+        .price-current-small {
+          font-weight: 600;
+          color: $gray-darkness;
+        }
+      }
 
       &:last-child {
         border-bottom: none;
@@ -2731,10 +3544,35 @@ export default {
         display: block;
         font-size: 0.9rem;
         color: $gray-medium;
-        margin-bottom: 8px;
+        margin-bottom: 12px;
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+      }
+      
+      .total-prices {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: 8px;
+        
+        .total-original {
+          text-decoration: line-through;
+          color: $gray-medium;
+          font-size: 1.2rem;
+          opacity: 0.6;
+          font-weight: 600;
+        }
+        
+        .total-current {
+          font-size: 2.5rem;
+          font-weight: 900;
+          background: $gradient-primary;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          line-height: 1.2;
+        }
       }
 
       .monthly-price {
@@ -2977,5 +3815,10 @@ export default {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
 }
 </style>

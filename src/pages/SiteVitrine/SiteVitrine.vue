@@ -24,12 +24,12 @@
             <div class="price-box">
               <span class="price-label">Investimento Anual</span>
               <span class="price-value">~R$ 49,90<span class="price-period">/Mês</span></span>
-              <span class="price-subtext">~R$ 599/ano</span>
+              <span class="price-subtext">R$ 599/ano a vista</span>
             </div>
           </div>
 
           <div class="hero-actions">
-            <a href="#configurador" class="btn-primary">
+            <a href="#planos" class="btn-primary">
               <i class="fas fa-rocket"></i>
               Criar meu site agora
             </a>
@@ -136,15 +136,10 @@
       <div class="section-container">
         <div class="section-header">
           <span class="section-badge">Autoridade</span>
-          <h2 class="section-title">Feito por uma empresa com histórico de entrega</h2>
+          <h2 class="section-title">Não se aventure com freelas: contrate uma empresa com 5 anos de entrega</h2>
           <p class="section-description">
             A Unli tem <strong>5 anos de empresa</strong> e experiência real entregando projetos para negócios exigentes. 
             Aqui, você contrata um <strong>processo validado</strong>, com padrão de qualidade e previsibilidade de entrega.
-          </p>
-          <p class="section-description">
-            <a href="https://unli.com.br" target="_blank" rel="noopener" style="color: #6C5CE7; font-weight: 600;">
-              <i class="fas fa-arrow-right"></i> Saiba mais em unli.com.br
-            </a>
           </p>
         </div>
 
@@ -172,10 +167,10 @@
                 <i class="fas fa-check-circle"></i>
               </div>
               <div class="include-content">
-                <h4 class="include-title">Domínio + Hospedagem + SSL</h4>
+                <h4 class="include-title">Domínio + Hospedagem + SSL Inclusos</h4>
                 <p class="include-description">
                   Seu próprio endereço na internet (ex: suaempresa.com.br), servidor rápido e seguro, 
-                  e certificado SSL (cadeado HTTPS) inclusos.
+                  e certificado SSL (cadeado HTTPS) inclusos. <strong>Sem surpresas na fatura.</strong>
                 </p>
               </div>
             </div>
@@ -200,7 +195,7 @@
               <div class="include-content">
                 <h4 class="include-title">Estrutura completa (seções essenciais)</h4>
                 <p class="include-description">
-                  Páginas prontas: Home, Serviços, Sobre e Contato/WhatsApp. 
+                  Seções estratégicas: Home, Serviços, Sobre e Contato/WhatsApp. 
                   Estrutura completa para apresentar sua empresa profissionalmente.
                 </p>
               </div>
@@ -213,7 +208,7 @@
               <div class="include-content">
                 <h4 class="include-title">Publicação e configurações técnicas</h4>
                 <p class="include-description">
-                  DNS configurado, emails @seudominio.com.br, Google Analytics instalado, integração WhatsApp. 
+                  DNS configurado, integração WhatsApp. 
                   Tudo pronto para uso imediato.
                 </p>
               </div>
@@ -224,10 +219,10 @@
                 <i class="fas fa-check-circle"></i>
               </div>
               <div class="include-content">
-                <h4 class="include-title">Acesso ao sistema para editar textos</h4>
+                <h4 class="include-title">Painel administrativo para editar conteúdo</h4>
                 <p class="include-description">
-                  Você tem acesso completo ao sistema para editar textos, informações e conteúdos a qualquer momento, 
-                  sem depender de ninguém.
+                  Você tem acesso completo ao painel para editar textos, preços e informações livremente, quando quiser. 
+                  Alterações complexas de design/estrutura ficam para nossa revisão anual inclusa.
                 </p>
               </div>
             </div>
@@ -305,15 +300,18 @@
         </div>
 
         <div class="pricing-cards">
-          <!-- Plano Principal -->
-          <div class="pricing-card featured" data-scroll>
-            <div class="pricing-badge">Plano Completo</div>
+          <!-- Plano Básico -->
+          <div class="pricing-card" data-scroll>
+            <div class="promo-badge-card">30% OFF</div>
             <div class="pricing-header">
               <h3 class="pricing-name">Site Vitrine Profissional</h3>
               <div class="pricing-price">
-                <span class="price-currency">R$</span>
-                <span class="price-amount">599</span>
-                <span class="price-period">/ano</span>
+                <div class="price-original">De R$ 779/ano</div>
+                <div class="price-wrapper">
+                  <span class="price-currency">R$</span>
+                  <span class="price-amount">599</span>
+                  <span class="price-period">/ano</span>
+                </div>
               </div>
               <p class="pricing-description">~R$ 49,90/mês — Tudo incluso</p>
             </div>
@@ -321,18 +319,16 @@
             <ul class="pricing-features">
               <li><i class="fas fa-check"></i> <strong>Domínio + Hospedagem + SSL</strong></li>
               <li><i class="fas fa-check"></i> <strong>Design profissional e responsivo</strong></li>
-              <li><i class="fas fa-check"></i> <strong>Páginas essenciais</strong> (Home, Serviços, Sobre, Contato)</li>
-              <li><i class="fas fa-check"></i> <strong>Integração WhatsApp</strong> e Formulário</li>
-              <li><i class="fas fa-check"></i> <strong>Google Analytics</strong> configurado</li>
-              <li><i class="fas fa-check"></i> <strong>Emails profissionais</strong> @seudominio.com.br</li>
-              <li><i class="fas fa-check"></i> <strong>Publicação completa</strong> (DNS, SSL, tudo pronto)</li>
-              <li><i class="fas fa-check"></i> <strong>Sistema para você editar</strong> textos quando quiser</li>
+              <li><i class="fas fa-check"></i> <strong>Página única</strong></li>
+              <li><i class="fas fa-check"></i> <strong>Integração WhatsApp</strong></li>
+              <li><i class="fas fa-check"></i> <strong>Publicação completa</strong></li>
+                <li><i class="fas fa-check"></i> <strong>Área do cliente para editar seus conteúdos</strong></li>
             </ul>
 
-            <a href="#configurador" class="pricing-button">
+            <router-link to="/configurador?plan=landing" class="pricing-button secondary">
               <i class="fas fa-rocket"></i>
               Quero meu site
-            </a>
+            </router-link>
 
             <div class="pricing-guarantee">
               <i class="fas fa-shield-alt"></i>
@@ -340,31 +336,36 @@
             </div>
           </div>
 
-          <!-- Site Mais Personalizado -->
-          <div class="pricing-card addon" data-scroll>
+          <!-- Site Mais Personalizado - POPULAR -->
+          <div class="pricing-card featured" data-scroll>
+            <div class="pricing-badge">Mais Popular</div>
+            <div class="promo-badge-card">30% OFF</div>
             <div class="pricing-header">
               <h3 class="pricing-name">Site Mais Personalizado</h3>
               <div class="pricing-price">
-                <span class="price-text">A partir de</span>
-                <span class="price-currency">R$</span>
-                <span class="price-amount">619</span>
-                <span class="price-period">/ano</span>
+                <div class="price-original">De R$ 805/ano</div>
+                <div class="price-wrapper">
+                  <span class="price-text">A partir de</span>
+                  <span class="price-currency">R$</span>
+                  <span class="price-amount">619</span>
+                  <span class="price-period">/ano</span>
+                </div>
               </div>
               <p class="pricing-description">Configure páginas e recursos extras</p>
             </div>
 
             <ul class="pricing-features">
-              <li class="included"><i class="fas fa-plus-circle"></i> <strong>Tudo do plano completo +</strong></li>
+              <li class="included"><i class="fas fa-plus-circle"></i> <strong>Tudo do plano básico +</strong></li>
               <li><i class="fas fa-check"></i> Escolha quantas páginas precisar</li>
               <li><i class="fas fa-check"></i> Adicione vídeos e documentos</li>
               <li><i class="fas fa-check"></i> Personalize o visual</li>
               <li><i class="fas fa-check"></i> Configurador interativo</li>
             </ul>
 
-            <a href="#configurador" class="pricing-button">
+            <router-link to="/configurador?plan=site_complete" class="pricing-button">
               <i class="fas fa-cog"></i>
               Configurar meu site
-            </a>
+            </router-link>
 
             <div class="pricing-guarantee">
               <i class="fas fa-shield-alt"></i>
@@ -390,6 +391,7 @@
               <li><i class="fas fa-check"></i> Integrações complexas</li>
               <li><i class="fas fa-check"></i> Backend / Painel admin</li>
               <li><i class="fas fa-check"></i> Funcionalidades customizadas</li>
+              <li><i class="fas fa-check"></i> Alterações ilimitadas</li>
             </ul>
 
             <a href="#contact" class="pricing-button">
@@ -411,10 +413,10 @@
       <div class="section-container">
         <div class="section-header">
           <span class="section-badge">Transparência</span>
-          <h2 class="section-title">Regras do Plano: Clareza e Objetividade</h2>
+          <h2 class="section-title">Como garantimos entrega em 7 dias e preço acessível</h2>
           <p class="section-description">
-            Para manter o valor acessível e a entrega rápida, 
-            este plano funciona com um escopo objetivo e regras claras.
+            Nosso processo otimizado permite entregar sites de alta qualidade 
+            rapidamente e com o melhor custo-benefício do mercado.
           </p>
         </div>
 
@@ -436,46 +438,46 @@
 
           <div class="policy-card" data-scroll>
             <div class="policy-icon">
-              <i class="fas fa-life-ring"></i>
+              <i class="fas fa-shield-alt"></i>
             </div>
-            <h3 class="policy-title">Suporte de Disponibilidade</h3>
+            <h3 class="policy-title">Garantia de Site Online</h3>
             <p class="policy-description">
-              Suporte técnico incluído para <strong>indisponibilidade do site</strong> 
-              (site fora do ar, instabilidade, erro de carregamento).
+              <strong>Monitoramos seu site</strong> para garantir que ele esteja sempre no ar. 
+              Qualquer instabilidade técnica, erro de carregamento ou problema de hospedagem é por nossa conta.
             </p>
             <div class="policy-note">
-              Mudanças de conteúdo/layout não fazem parte do suporte 
-              e podem ser contratadas como add-on.
+              💡 Foque no seu negócio, nós cuidamos da parte técnica. 
+              Suporte prioritário para garantir seu site funcionando 24/7.
             </div>
           </div>
 
           <div class="policy-card" data-scroll>
             <div class="policy-icon">
-              <i class="fas fa-edit"></i>
+              <i class="fas fa-sync-alt"></i>
             </div>
-            <h3 class="policy-title">Alterações Inclusas</h3>
+            <h3 class="policy-title">Atualização Anual Garantida</h3>
             <p class="policy-description">
-              <strong>1 alteração por ano</strong> inclusa: atualização de conteúdo 
-              como trocar texto, imagem, telefone, horário ou links.
+              Para manter seu site sempre atual, garantimos <strong>uma atualização completa 
+              de conteúdo por ano</strong>. Atualize textos, fotos, horários e informações de contato.
             </p>
             <div class="policy-note">
-              Alterações adicionais podem ser contratadas à parte 
-              como pacote ou add-on.
+              💡 Pequenos ajustes de contato (telefone, e-mail, redes sociais) podem 
+              ser solicitados a qualquer momento. Para atualizações urgentes, temos pacotes Express super acessíveis.
             </div>
           </div>
 
           <div class="policy-card" data-scroll>
             <div class="policy-icon">
-              <i class="fas fa-list-check"></i>
+              <i class="fas fa-bullseye"></i>
             </div>
-            <h3 class="policy-title">Escopo Fechado</h3>
+            <h3 class="policy-title">Foco em Alta Conversão</h3>
             <p class="policy-description">
-              O plano cobre <strong>site single page</strong> conforme especificado. 
-              Necessidades além do escopo viram add-on ou projeto sob proposta.
+              Desenvolvemos <strong>Landing Pages otimizadas</strong> (Single Page) focadas 
+              exclusivamente em apresentar seu negócio e converter visitantes em clientes. Sem distrações.
             </p>
             <div class="policy-note">
-              Exemplos fora do escopo: e-commerce, área de login, 
-              múltiplas páginas, integrações complexas.
+              💡 Precisa de e-commerce, área de membros ou múltiplas páginas? 
+              Temos planos específicos para necessidades avançadas.
             </div>
           </div>
         </div>
@@ -658,7 +660,7 @@
           </div>
 
           <div class="cta-actions">
-            <a href="#configurador" class="btn-primary large">
+            <a href="#planos" class="btn-primary large">
               <i class="fas fa-rocket"></i>
               Quero meu site
             </a>
@@ -676,25 +678,7 @@
       </div>
     </section>
 
-    <!-- Configurador Automatizado -->
-    <section id="configurador" class="configurator-section" data-scroll>
-      <div class="section-container">
-        <div class="configurator-intro">
-          <span class="section-badge">Fácil e Rápido</span>
-          <h2 class="section-title">Monte Seu Site em 3 Passos</h2>
-          <p class="section-description">
-            Escolha o tipo, personalize add-ons, preencha os dados e pague. 
-            <strong>Simples, direto e eficiente.</strong> 
-            Seu site pronto em até 10 dias.
-          </p>
-        </div>
-        
-        <SiteConfigurator 
-          @order-submitted="handleOrderSubmitted"
-          @custom-request="handleCustomRequest"
-        />
-      </div>
-    </section>
+
 
     <!-- Contact Section (Reusable) -->
     <section id="contact" class="contact-section" data-scroll>
@@ -810,17 +794,22 @@
         </div>
       </div>
     </section>
+
+    <!-- WhatsApp Flutuante -->
+    <a href="https://wa.me/5511968354238?text=Olá! Vi a página de Site Vitrine e gostaria de saber mais sobre os planos." 
+       class="whatsapp-float"
+       target="_blank"
+       rel="noopener noreferrer"
+       aria-label="Contato via WhatsApp">
+      <i class="fab fa-whatsapp"></i>
+      <span class="whatsapp-text">Fale Conosco</span>
+    </a>
   </div>
 </template>
 
 <script>
-import { SiteConfigurator } from '@/shared/Components';
-
 export default {
   name: 'SiteVitrine',
-  components: {
-    SiteConfigurator
-  },
   data() {
     return {
       form: {
@@ -838,29 +827,6 @@ export default {
     this.initSmoothScroll();
   },
   methods: {
-    handleOrderSubmitted(orderPayload) {
-      console.log('Pedido recebido:', orderPayload);
-      
-      // TODO: Enviar para backend
-      // this.$http.post('/api/orders', orderPayload)
-      //   .then(response => {
-      //     window.location.href = response.data.payment_url;
-      //   });
-      
-      alert('Pedido recebido! Em produção, isso redirecionaria para o gateway de pagamento.');
-    },
-    
-    handleCustomRequest(customData) {
-      console.log('Orçamento personalizado:', customData);
-      
-      // TODO: Enviar para CRM/Email
-      // this.$http.post('/api/custom-requests', customData)
-      //   .then(() => {
-      //     alert('Solicitação enviada! Entraremos em contato em até 24h.');
-      //   });
-      
-      alert('Solicitação de orçamento enviada! Em produção, isso enviaria para o CRM.');
-    },
     
     initScrollAnimations() {
       const observerOptions = {
@@ -1045,6 +1011,21 @@ export default {
       margin-bottom: 40px;
 
       .price-box {
+        position: relative;
+        
+        .promo-badge {
+          position: absolute;
+          top: -12px;
+          right: -12px;
+          background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+          color: white;
+          padding: 6px 14px;
+          border-radius: 20px;
+          font-size: 0.85rem;
+          font-weight: 700;
+          box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+          animation: pulse 2s ease-in-out infinite;
+        }
         display: inline-flex;
         flex-direction: column;
         padding: 24px 32px;
@@ -1218,6 +1199,11 @@ export default {
 @keyframes pulse {
   0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
   50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+@keyframes pulse-badge {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
 }
 
 // ==========================================
@@ -1555,6 +1541,20 @@ export default {
     transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
+    
+    .promo-badge-card {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+      z-index: 1;
+    }
 
     &.featured {
       border: 3px solid $p-color;
@@ -1618,9 +1618,24 @@ export default {
 
       .pricing-price {
         display: flex;
-        align-items: baseline;
-        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
         margin-bottom: 16px;
+        
+        .price-original {
+          text-decoration: line-through;
+          color: $gray-medium;
+          font-size: 1.3rem;
+          font-weight: 600;
+          opacity: 0.6;
+        }
+        
+        .price-wrapper {
+          display: flex;
+          align-items: baseline;
+          justify-content: center;
+        }
 
         .price-currency {
           font-size: 1.5rem;
@@ -2596,52 +2611,65 @@ export default {
 }
 
 // ==========================================
-// CONFIGURATOR SECTION
+// WHATSAPP FLUTUANTE
 // ==========================================
-.configurator-section {
-  padding: 100px 20px;
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+.whatsapp-float {
+  position: fixed !important;
+  bottom: 30px !important;
+  right: 30px !important;
+  z-index: 1001 !important;
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #25d366, #128c7e);
+  color: white !important;
+  text-decoration: none;
+  padding: 15px 20px;
+  border-radius: 50px;
+  box-shadow: 0 6px 25px rgba(37, 211, 102, 0.4);
+  transition: all 0.3s ease;
+  animation: pulseWhatsapp 3s infinite;
+  font-weight: 600;
+  font-size: 16px;
+  opacity: 1 !important;
+  visibility: visible !important;
 
-  .configurator-intro {
-    text-align: center;
-    margin-bottom: 60px;
+  &:hover {
+    transform: scale(1.1) translateY(-5px);
+    box-shadow: 0 8px 30px rgba(37, 211, 102, 0.6);
+    text-decoration: none;
+  }
 
-    .section-badge {
-      display: inline-block;
-      padding: 8px 20px;
-      background: rgba($p-color, 0.1);
-      border: 1px solid rgba($p-color, 0.3);
-      border-radius: 50px;
-      color: $p-color;
-      font-size: 0.9rem;
-      font-weight: 600;
-      margin-bottom: 16px;
+  i {
+    font-size: 24px;
+    animation: bounce 2s infinite;
+  }
+
+  .whatsapp-text {
+    @media (max-width: 768px) {
+      display: none;
     }
+  }
+}
 
-    .section-title {
-      font-size: 2.5rem;
-      font-weight: 800;
-      color: $gray-darkness;
-      line-height: 1.3;
-      margin-bottom: 16px;
+@keyframes pulseWhatsapp {
+  0%, 100% {
+    box-shadow: 0 6px 25px rgba(37, 211, 102, 0.4);
+  }
+  50% {
+    box-shadow: 0 8px 35px rgba(37, 211, 102, 0.7);
+  }
+}
 
-      @media (max-width: 768px) {
-        font-size: 2rem;
-      }
-    }
-
-    .section-description {
-      font-size: 1.1rem;
-      color: $gray-medium;
-      line-height: 1.8;
-      max-width: 700px;
-      margin: 0 auto;
-
-      strong {
-        color: $p-color;
-        font-weight: 600;
-      }
-    }
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-5px);
+  }
+  60% {
+    transform: translateY(-3px);
   }
 }
 

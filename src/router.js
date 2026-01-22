@@ -28,5 +28,10 @@ export default [
         path: "/site-vitrine",
         name: "SiteVitrine",
         component: () => import("./pages/SiteVitrine/SiteVitrine.vue")
+    },
+    {
+        path: "/configurador",
+        name: "ConfiguradorPage",
+        component: () => import("./pages/ConfiguradorPage/ConfiguradorPage.vue")
     }
 ]
