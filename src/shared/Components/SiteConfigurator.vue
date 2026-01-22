@@ -338,30 +338,54 @@
           </div>
         </div>
 
-        <!-- Etapa 2: Dados e Arquivos (Checkout) -->
+        <!-- Etapa 2: Finalizar Pedido (Checkout Simplificado) -->
         <!-- Etapa 3 quando não há initialProduct, Etapa 2 quando há -->
-        <div v-else-if="currentStep === (initialProduct ? 2 : 3)" class="step-content step-briefing">
-          <h2 class="step-title">Dados e Arquivos</h2>
+        <div v-else-if="currentStep === (initialProduct ? 2 : 3)" class="step-content step-checkout">
+          <h2 class="step-title">Finalizar Pedido</h2>
           <p class="step-description">
-            Preencha as informações para criarmos seu site.
+            Apenas mais alguns dados para processar seu pagamento.
+            <strong>Você receberá um link por e-mail para configurar seu site após o pagamento.</strong>
           </p>
 
-          <form class="briefing-form" @submit.prevent="submitOrder">
-            <!-- Dados Básicos -->
+          <form class="checkout-form" @submit.prevent="submitOrder">
+            <!-- Informações de Contato -->
             <div class="form-section">
-              <h3 class="form-section-title">Informações da Empresa</h3>
+              <h3 class="form-section-title">
+                <i class="fas fa-user"></i>
+                Seus Dados para Contato
+              </h3>
               
+              <div class="info-box">
+                <i class="fas fa-info-circle"></i>
+                <p>Enviaremos um <strong>link</strong> para este e-mail onde você poderá configurar todo o conteúdo do seu site de forma rápida e guiada.</p>
+              </div>
+
               <div class="form-row">
                 <div class="form-group">
-                  <label>Nome da Empresa *</label>
+                  <label>Seu Nome Completo *</label>
                   <input 
                     type="text" 
-                    v-model="briefing.company_name"
-                    placeholder="Ex: UNLI Studio"
+                    v-model="briefing.customer_name"
+                    placeholder="Ex: João Silva"
                     required
                   >
                 </div>
 
+                <div class="form-group">
+                  <label>E-mail *</label>
+                  <input 
+                    type="email" 
+                    v-model="briefing.email"
+                    placeholder="seu@email.com"
+                    required
+                  >
+                  <small class="field-hint">
+                    💡 Você receberá o link de configuração neste e-mail
+                  </small>
+                </div>
+              </div>
+
+              <div class="form-row">
                 <div class="form-group">
                   <label>WhatsApp *</label>
                   <input 
@@ -370,186 +394,35 @@
                     placeholder="(00) 00000-0000"
                     required
                   >
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label>E-mail *</label>
-                  <input 
-                    type="email" 
-                    v-model="briefing.email"
-                    placeholder="contato@empresa.com"
-                    required
-                  >
+                  <small class="field-hint">
+                    Para enviarmos atualizações sobre seu pedido
+                  </small>
                 </div>
 
                 <div class="form-group">
-                  <label>Endereço</label>
+                  <label>CPF/CNPJ (opcional)</label>
                   <input 
                     type="text" 
-                    v-model="briefing.address"
-                    placeholder="Rua, Número, Cidade - UF"
+                    v-model="briefing.document"
+                    placeholder="000.000.000-00"
                   >
                 </div>
-              </div>
-            </div>
-
-            <!-- Links -->
-            <div class="form-section">
-              <h3 class="form-section-title">Links e Redes Sociais</h3>
-              
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Instagram</label>
-                  <input 
-                    type="url" 
-                    v-model="briefing.instagram"
-                    placeholder="https://instagram.com/sua_empresa"
-                  >
-                </div>
-
-                <div class="form-group">
-                  <label>Google Maps</label>
-                  <input 
-                    type="url" 
-                    v-model="briefing.google_maps"
-                    placeholder="Link do Google Maps"
-                  >
-                </div>
-              </div>
-            </div>
-
-            <!-- Estilo -->
-            <div class="form-section">
-              <h3 class="form-section-title">Estilo Visual</h3>
-              <div class="style-options">
-                <label
-                  v-for="style in styles"
-                  :key="style.value"
-                  :class="['style-card', { selected: briefing.style === style.value }]"
-                >
-                  <input 
-                    type="radio" 
-                    name="style"
-                    :value="style.value"
-                    v-model="briefing.style"
-                  >
-                  <div class="style-content">
-                    <i :class="style.icon"></i>
-                    <span>{{ style.label }}</span>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- Conteúdo -->
-            <div class="form-section">
-              <h3 class="form-section-title">Conteúdo do Site</h3>
-              
-              <div class="form-group">
-                <label>Texto da Página Principal *</label>
-                <textarea 
-                  v-model="briefing.main_content"
-                  rows="6"
-                  placeholder="Descreva sua empresa, serviços, diferenciais..."
-                  required
-                ></textarea>
-                <small>Inclua: apresentação, serviços, diferenciais, CTA</small>
-              </div>
-
-              <!-- Textos de Páginas Adicionais -->
-              <div 
-                v-for="pageKey in validSelectedPages"
-                :key="pageKey"
-                class="form-group"
-              >
-                <label>Texto: {{ config.page_addons[pageKey].name }}</label>
-                <textarea 
-                  v-model="briefing.page_contents[pageKey]"
-                  rows="4"
-                  :placeholder="`Descreva o conteúdo para a página ${config.page_addons[pageKey].name}...`"
-                ></textarea>
-              </div>
-            </div>
-
-            <!-- Uploads -->
-            <div class="form-section">
-              <h3 class="form-section-title">Arquivos</h3>
-              
-              <!-- Vídeo (se selecionado) -->
-              <div v-if="selectedContentAddons.includes('video')" class="form-group">
-                <label>Upload de Vídeo</label>
-                <input 
-                  type="file" 
-                  accept="video/*"
-                  @change="handleVideoUpload"
-                  class="file-input"
-                >
-                <small>Formato aceito: MP4, MOV, AVI (máx. 50MB)</small>
-              </div>
-
-              <!-- PDF (se selecionado) -->
-              <div v-if="selectedContentAddons.includes('pdf')" class="form-group">
-                <label>Upload de PDF</label>
-                <input 
-                  type="file" 
-                  accept="application/pdf"
-                  @change="handlePdfUpload"
-                  class="file-input"
-                >
-                <small>Formato aceito: PDF (máx. 10MB)</small>
-              </div>
-
-              <!-- Imagens (links) -->
-              <div class="form-group">
-                <label>Links de Imagens</label>
-                <textarea 
-                  v-model="briefing.image_links"
-                  rows="3"
-                  placeholder="Cole os links das imagens (um por linha)"
-                ></textarea>
-                <small>Pode ser de Google Drive, Dropbox, etc.</small>
-              </div>
-            </div>
-
-            <!-- Detalhes do Formulário (se selecionado) -->
-            <div v-if="hasFormResource" class="form-section">
-              <h3 class="form-section-title">
-                <i class="fas fa-list-check"></i>
-                Campos do Formulário
-              </h3>
-              
-              <div class="form-group">
-                <label>Quais campos você quer no formulário? *</label>
-                <textarea 
-                  v-model="briefing.form_fields"
-                  rows="6"
-                  placeholder="Ex: Nome, E-mail, Telefone, Assunto, Mensagem, Data desejada, Orçamento aproximado"
-                  maxlength="1500"
-                  required
-                ></textarea>
-                <small>Liste os campos que deseja incluir no formulário de contato (um por linha ou separados por vírgula)</small>
-                <span class="char-count">{{ (briefing.form_fields || '').length }}/1500 caracteres</span>
-              </div>
-
-              <div class="form-group">
-                <label>Onde enviar os dados do formulário?</label>
-                <input 
-                  type="email" 
-                  v-model="briefing.form_recipient_email"
-                  :placeholder="briefing.email || 'email@empresa.com'"
-                >
-                <small>Deixe em branco para usar o e-mail principal da empresa</small>
               </div>
             </div>
 
             <!-- Resumo do Pedido -->
-            <div class="order-summary">
+            <div class="form-section order-summary-section">
+              <h3 class="form-section-title">
+                <i class="fas fa-receipt"></i>
+                Resumo do Pedido
+              </h3>
+
               <!-- Header Compacto com Toggle -->
               <div class="summary-header">
                 <div class="product-info">
-                  <h3>Plano Anual PRO</h3>
+                  <h3>
+                    Plano Anual PRO
+                  </h3>
                   <p class="product-summary">Site + Hospedagem + Domínio + SSL</p>
                 </div>
                 <button 
@@ -601,14 +474,23 @@
               
               <!-- Preço com Badge do Café Inline -->
               <div class="price-display">
-                <span class="label">Total Anual:</span>
+                <!-- Ancoragem de Preço -->
+                <div class="price-anchorage">
+                  <span class="label-from">De</span>
+                  <span class="old-price">{{ formatOriginalPrice(installmentTotal) }}</span>
+                </div>
+                
+                <span class="label">Por apenas:</span>
                 <div class="values">
                   <span class="final-price">{{ formatPrice(cashPrice) }}</span>
                   <span class="coffee-badge">
                     ☕ R$ {{ dailyPrice }} / dia
                   </span>
                 </div>
-                <span class="savings-text">💰 Economia de {{ formatPrice(savingsAmount) }}</span>
+                <p class="savings-text">
+                  <i class="fas fa-piggy-bank"></i>
+                  Você economiza <strong>{{ formatPrice(getTotalSavings()) }}</strong> escolhendo Pix!
+                </p>
               </div>
               
               <!-- Seletor de Pagamento Compacto -->
@@ -625,15 +507,17 @@
                       <span class="radio-label">
                         <i class="fas fa-qrcode"></i> Pagar via Pix
                       </span>
-                      <span class="discount-tag">-15% OFF</span>
+                      <span class="discount-tag extra-discount">45% OFF</span>
                     </div>
                     <button 
                       type="submit"
-                      class="btn-pay-now"
+                      class="btn-pay-now btn-pix"
                       :disabled="isSubmitting"
                     >
-                      <i class="fas fa-lock"></i>
-                      {{ isSubmitting ? 'Processando...' : `Pagar ${formatPrice(cashPrice)}` }}
+                      <span class="btn-main-text">
+                        <i class="fas fa-lock"></i>
+                        {{ isSubmitting ? 'Processando...' : `Garantir Desconto de ${formatPrice(getPixExtraSavings())}` }}
+                      </span>
                     </button>
                   </div>
                 </label>
@@ -650,6 +534,7 @@
                       <span class="radio-label">
                         <i class="fas fa-credit-card"></i> Cartão em 12x
                       </span>
+                      <span class="discount-tag">30% OFF</span>
                     </div>
                     <p class="payment-details">
                       12x de {{ formatPrice(installmentValue) }} <strong>sem juros</strong>
@@ -659,8 +544,13 @@
                       class="btn-pay-now"
                       :disabled="isSubmitting"
                     >
-                      <i class="fas fa-lock"></i>
-                      {{ isSubmitting ? 'Processando...' : 'Pagar Parcelado' }}
+                      <span class="btn-main-text">
+                        <i class="fas fa-lock"></i>
+                        {{ isSubmitting ? 'Processando...' : 'Assinar Plano Anual (12x)' }}
+                      </span>
+                      <span class="btn-sub-text">
+                        Compra segura e protegida
+                      </span>
                     </button>
                   </div>
                 </label>
@@ -669,9 +559,9 @@
 
             <!-- Botão de Voltar (Navegação Simples) -->
             <div class="step-navigation-back">
-              <button type="button" class="btn-back" @click="currentStep = 2">
+              <button type="button" class="btn-back" @click="previousStep">
                 <i class="fas fa-arrow-left"></i>
-                Voltar para personalização
+                Voltar
               </button>
             </div>
             
@@ -887,30 +777,14 @@ export default {
       selectedContentAddons: [], // ['video', 'pdf']
       customPages: [], // Array de objetos: [{ description: '', resources: { image: false, video: false, carousel: false, form: false } }]
       
-      // Briefing
+      // Briefing (Apenas dados para checkout/pagamento)
+      // O briefing completo será coletado via OnboardingWizard após o pagamento
       briefing: {
-        company_name: '',
-        whatsapp: '',
+        customer_name: '',
         email: '',
-        address: '',
-        instagram: '',
-        google_maps: '',
-        style: '',
-        main_content: '',
-        page_contents: {},
-        image_links: '',
-        video_file: null,
-        pdf_file: null,
-        form_fields: '',
-        form_recipient_email: ''
+        whatsapp: '',
+        document: '' // CPF/CNPJ opcional
       },
-      
-      // Estilos disponíveis
-      styles: [
-        { value: 'modern', label: 'Moderno', icon: 'fas fa-rocket' },
-        { value: 'elegant', label: 'Elegante', icon: 'fas fa-gem' },
-        { value: 'tech', label: 'Tech/Cyber', icon: 'fas fa-microchip' }
-      ],
       
       // Modal personalizado
       showCustomModal: false,
@@ -1153,7 +1027,7 @@ export default {
     // Navegação
     nextStep() {
       console.log('🔄 [nextStep] Current step:', this.currentStep);
-      if (this.currentStep < 3) {
+      if (this.currentStep < 2) { // Agora temos apenas 2 steps: Personalize e Checkout
         this.currentStep++;
         console.log('✅ [nextStep] Moved to step:', this.currentStep);
       } else {
@@ -1429,6 +1303,22 @@ export default {
       const withMarkup = annualValue * 1.15;
       const monthly = withMarkup / 12;
       return `R$ ${monthly.toFixed(2).replace('.', ',')}/mês`;
+    },
+    
+    getOriginalPrice() {
+      // Calcula o preço original antes do desconto (para ancoragem)
+      // Usa o installmentTotal como base (sem desconto)
+      return this.installmentTotal;
+    },
+    
+    getTotalSavings() {
+      // Economia total ao escolher Pix vs preço original
+      return this.getOriginalPrice() - this.cashPrice;
+    },
+    
+    getPixExtraSavings() {
+      // Economia extra do Pix vs Cartão
+      return this.installmentTotal - this.cashPrice;
     },
     
     // Tooltips informativos
@@ -2847,22 +2737,70 @@ export default {
   }
 }
 
-// Etapa 2: Briefing Form (Checkout)
-.briefing-form {
+// Etapa 2: Checkout Form Simplificado (Apenas dados de pagamento)
+.checkout-form {
+  .info-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 20px;
+    background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+    border-left: 4px solid #4caf50;
+    border-radius: 12px;
+    margin-bottom: 30px;
+
+    i {
+      color: #4caf50;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: $gray-darkness;
+
+      strong {
+        color: #2e7d32;
+      }
+    }
+  }
+
+  .field-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.85rem;
+    color: $gray-medium;
+    font-style: italic;
+  }
+
   .form-section {
     margin-bottom: 40px;
     padding-bottom: 40px;
     border-bottom: 2px solid $gray-light;
+
+    &.order-summary-section {
+      border-bottom: none;
+    }
 
     &:last-of-type {
       border-bottom: none;
     }
 
     .form-section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
       font-size: 1.3rem;
       font-weight: 700;
       color: $gray-darkness;
       margin-bottom: 24px;
+
+      i {
+        color: $p-color;
+      }
     }
   }
 
@@ -2911,72 +2849,357 @@ export default {
       font-size: 0.85rem;
       color: $gray-medium;
     }
-    
-    .char-count {
-      display: block;
-      margin-top: 6px;
-      font-size: 0.85rem;
-      color: $gray-medium;
-      text-align: right;
-    }
-
-    .file-input {
-      padding: 12px;
-      font-size: 0.95rem;
-    }
   }
 
-  .style-options {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-
-    @media (max-width: 768px) {
-      grid-template-columns: 1fr;
-    }
-
-    .style-card {
-      padding: 24px;
-      background: $white;
-      border: 3px solid $gray-light;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.3s;
-      text-align: center;
-
-      &:hover {
-        border-color: $p-color;
-      }
-
-      &.selected {
-        border-color: $p-color;
-        background: rgba($p-color, 0.05);
-      }
-
-      input[type="radio"] {
-        display: none;
-      }
-
-      .style-content {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-
-        i {
-          font-size: 2.5rem;
-          color: $p-color;
-        }
-
-        span {
-          font-weight: 600;
+  // Estilos para a seção de resumo do pedido dentro do checkout
+  .order-summary-section {
+    // Header Compacto com Toggle
+    .summary-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      gap: 12px;
+      position: relative;
+      
+      .product-info {
+        flex: 1;
+        
+        h3 {
+          font-size: 1.3rem;
+          font-weight: 700;
           color: $gray-darkness;
+          margin: 0 0 4px 0;
+          line-height: 1.3;
+          
+          @media (max-width: 768px) {
+            font-size: 1.1rem;
+          }
+        }
+        
+        .product-summary {
+          font-size: 0.9rem;
+          color: $gray-medium;
+          margin: 0;
+          line-height: 1.4;
+          
+          @media (max-width: 768px) {
+            font-size: 0.85rem;
+          }
+        }
+      }
+      
+      .btn-toggle-details {
+        background: transparent;
+        border: 2px solid $gray-light;
+        color: $p-color;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        
+        &:hover {
+          border-color: $p-color;
+          background: rgba($p-color, 0.05);
+        }
+        
+        i {
+          font-size: 0.75rem;
+          transition: transform 0.3s;
+        }
+        
+        &.open i {
+          transform: rotate(180deg);
+        }
+        
+        @media (max-width: 768px) {
+          font-size: 0.8rem;
+          padding: 6px 12px;
+        }
+      }
+    }
+    
+    // Accordion com animação
+    .included-services {
+      overflow: hidden;
+      transition: max-height 0.4s ease, opacity 0.3s ease, margin 0.3s ease;
+      
+      &.collapsed {
+        max-height: 0;
+        opacity: 0;
+        margin-bottom: 0;
+      }
+      
+      &.expanded {
+        max-height: 800px;
+        opacity: 1;
+        margin-bottom: 20px;
+      }
+      
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 16px 0 0 0;
+        display: grid;
+        gap: 10px;
+        
+        li {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 10px 12px;
+          background: $gray-lightness;
+          border-radius: 8px;
+          font-size: 0.9rem;
+          color: $gray-darkness;
+          line-height: 1.4;
+          
+          @media (max-width: 768px) {
+            font-size: 0.85rem;
+            padding: 8px 10px;
+            gap: 10px;
+          }
+          
+          i {
+            color: #4caf50;
+            font-size: 1rem;
+            flex-shrink: 0;
+          }
+          
+          strong {
+            color: $p-color;
+            font-weight: 600;
+          }
+        }
+      }
+    }
+    
+    // Divider
+    .divider {
+      border: none;
+      border-top: 2px solid $gray-light;
+      margin: 20px 0;
+      
+      @media (max-width: 768px) {
+        margin: 16px 0;
+      }
+    }
+    
+    // Preço com Badge do Café Inline
+    .price-display {
+      padding: 20px;
+      background: linear-gradient(135deg, rgba($p-color, 0.05) 0%, rgba($p-dark, 0.02) 100%);
+      border-radius: 12px;
+      margin-bottom: 20px;
+      
+      @media (max-width: 768px) {
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      
+      .label {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: $gray-medium;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        
+        @media (max-width: 768px) {
+          font-size: 0.85rem;
+        }
+      }
+      
+      .values {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 12px;
+        
+        .final-price {
+          font-size: 2.2rem;
+          font-weight: 800;
+          color: $p-color;
+          line-height: 1;
+          
+          @media (max-width: 768px) {
+            font-size: 1.8rem;
+          }
+        }
+        
+        .coffee-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 12px;
+          background: linear-gradient(135deg, #6F4E37 0%, #8B4513 100%);
+          color: white;
+          border-radius: 20px;
+          font-size: 0.85rem;
+          font-weight: 600;
+          box-shadow: 0 2px 8px rgba(111, 78, 55, 0.3);
+          white-space: nowrap;
+          
+          @media (max-width: 768px) {
+            font-size: 0.8rem;
+            padding: 5px 10px;
+          }
+        }
+      }
+      
+      .savings-text {
+        display: block;
+        font-size: 0.9rem;
+        color: #4caf50;
+        font-weight: 600;
+        
+        @media (max-width: 768px) {
+          font-size: 0.85rem;
+        }
+      }
+    }
+    
+    // Seletor de Pagamento dentro do resumo
+    .payment-selector {
+      display: grid;
+      gap: 12px;
+      
+      .payment-option {
+        position: relative;
+        cursor: pointer;
+        
+        input[type="radio"] {
+          display: none;
+        }
+        
+        .payment-content {
+          padding: 16px;
+          border: 2px solid $gray-light;
+          border-radius: 12px;
+          transition: all 0.3s;
+          background: $white;
+          
+          @media (max-width: 768px) {
+            padding: 14px;
+          }
+          
+          &:hover {
+            border-color: $p-color;
+            box-shadow: 0 2px 8px rgba($p-color, 0.1);
+          }
+        }
+        
+        input[type="radio"]:checked + .payment-content {
+          border-color: $p-color;
+          background: linear-gradient(135deg, rgba($p-color, 0.05) 0%, rgba($p-dark, 0.02) 100%);
+          box-shadow: 0 4px 12px rgba($p-color, 0.15);
+          
+          .btn-pay-now {
+            display: flex;
+          }
+        }
+        
+        .radio-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 12px;
+          
+          .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            color: $gray-darkness;
+            font-size: 1rem;
+            
+            @media (max-width: 768px) {
+              font-size: 0.95rem;
+            }
+            
+            i {
+              font-size: 1.1rem;
+              color: $p-color;
+            }
+          }
+          
+          .discount-tag {
+            padding: 4px 10px;
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+          }
+        }
+        
+        .btn-pay-now {
+          display: none;
+          width: 100%;
+          padding: 14px;
+          background: $gradient-primary;
+          color: $white;
+          border: none;
+          border-radius: 10px;
+          font-size: 1rem;
+          font-weight: 700;
+          cursor: pointer;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          transition: all 0.3s;
+          
+          @media (max-width: 768px) {
+            font-size: 0.95rem;
+            padding: 12px;
+          }
+          
+          i {
+            font-size: 0.9rem;
+          }
+          
+          &:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba($p-color, 0.4);
+          }
+          
+          &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
+        }
+        
+        .payment-details {
+          font-size: 0.85rem;
+          color: $gray-medium;
+          line-height: 1.4;
+          margin: 0 0 12px 0;
+          
+          @media (max-width: 768px) {
+            font-size: 0.8rem;
+          }
+          
+          strong {
+            color: #4caf50;
+            font-weight: 700;
+          }
         }
       }
     }
   }
 }
 
+// Estilos para .order-summary (usado no sidebar)
 .order-summary {
   padding: 24px;
   background: $white;
@@ -2995,8 +3218,9 @@ export default {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
     gap: 12px;
+    position: relative;
     
     .product-info {
       flex: 1;
@@ -3005,11 +3229,30 @@ export default {
         font-size: 1.3rem;
         font-weight: 700;
         color: $gray-darkness;
-        margin: 0 0 4px 0;
+        margin: 0 0 8px 0;
         line-height: 1.3;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
         
         @media (max-width: 768px) {
           font-size: 1.1rem;
+        }
+        
+        .badge-special-offer {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 4px 10px;
+          background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+          color: white;
+          font-size: 0.75rem;
+          font-weight: 700;
+          border-radius: 6px;
+          box-shadow: 0 2px 8px rgba(255, 107, 107, 0.4);
+          animation: pulse 2s ease-in-out infinite;
+          white-space: nowrap;
         }
       }
       
@@ -3129,21 +3372,43 @@ export default {
   
   // Preço com Badge do Café Inline
   .price-display {
-    padding: 20px;
-    background: linear-gradient(135deg, rgba($p-color, 0.05) 0%, rgba($p-dark, 0.02) 100%);
+    padding: 24px;
+    background: linear-gradient(135deg, rgba($p-color, 0.08) 0%, rgba($p-dark, 0.05) 100%);
     border-radius: 12px;
     margin-bottom: 20px;
+    border: 2px solid rgba($p-color, 0.15);
     
     @media (max-width: 768px) {
-      padding: 16px;
+      padding: 18px;
       margin-bottom: 16px;
+    }
+    
+    .price-anchorage {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      
+      .label-from {
+        font-size: 0.8rem;
+        color: $gray-medium;
+        font-weight: 500;
+      }
+      
+      .old-price {
+        font-size: 1.05rem;
+        color: $gray-medium;
+        text-decoration: line-through;
+        font-weight: 600;
+        opacity: 0.7;
+      }
     }
     
     .label {
       display: block;
       font-size: 0.9rem;
       font-weight: 600;
-      color: $gray-medium;
+      color: $gray-darkness;
       margin-bottom: 8px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -3193,13 +3458,31 @@ export default {
     }
     
     .savings-text {
-      display: block;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 16px;
+      padding: 10px 16px;
+      background: linear-gradient(135deg, rgba(#4caf50, 0.15) 0%, rgba(#4caf50, 0.08) 100%);
+      border-radius: 8px;
+      border-left: 3px solid #4caf50;
       font-size: 0.9rem;
-      color: #4caf50;
-      font-weight: 600;
+      color: #2e7d32;
+      font-weight: 700;
+      
+      i {
+        font-size: 1rem;
+      }
+      
+      strong {
+        font-size: 1.05rem;
+        color: #1b5e20;
+      }
       
       @media (max-width: 768px) {
         font-size: 0.85rem;
+        padding: 8px 12px;
       }
     }
   }
@@ -3269,49 +3552,89 @@ export default {
         }
         
         .discount-tag {
-          padding: 4px 10px;
+          padding: 5px 12px;
           background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
           color: white;
-          border-radius: 6px;
-          font-size: 0.75rem;
+          border-radius: 8px;
+          font-size: 0.72rem;
           font-weight: 700;
           text-transform: uppercase;
+          box-shadow: 0 3px 10px rgba(76, 175, 80, 0.4);
+          animation: pulse 2s ease-in-out infinite;
+          
+          &.extra-discount {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            box-shadow: 0 3px 10px rgba(255, 107, 107, 0.4);
+          }
         }
       }
       
       .btn-pay-now {
         display: none;
         width: 100%;
-        padding: 14px;
+        padding: 16px 20px;
         background: $gradient-primary;
         color: $white;
         border: none;
-        border-radius: 10px;
-        font-size: 1rem;
+        border-radius: 12px;
+        font-size: 1.05rem;
         font-weight: 700;
         cursor: pointer;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 8px;
+        gap: 4px;
         transition: all 0.3s;
+        box-shadow: 0 4px 14px rgba($p-color, 0.35);
         
         @media (max-width: 768px) {
           font-size: 0.95rem;
-          padding: 12px;
+          padding: 14px 16px;
         }
         
-        i {
-          font-size: 0.9rem;
+        .btn-main-text {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 1.05rem;
+          
+          @media (max-width: 768px) {
+            font-size: 0.95rem;
+          }
+          
+          i {
+            font-size: 1rem;
+          }
+        }
+        
+        .btn-sub-text {
+          font-size: 0.8rem;
+          font-weight: 500;
+          opacity: 0.9;
+          
+          @media (max-width: 768px) {
+            font-size: 0.75rem;
+          }
         }
         
         &:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba($p-color, 0.4);
+          transform: translateY(-3px);
+          box-shadow: 0 8px 20px rgba($p-color, 0.45);
         }
         
         &:disabled {
           opacity: 0.6;
           cursor: not-allowed;
+        }
+        
+        &.btn-pix {
+          background: linear-gradient(135deg, #4caf50 0%, darken(#4caf50, 10%) 100%);
+          box-shadow: 0 6px 16px rgba(#4caf50, 0.45);
+          animation: pulse 2s ease-in-out infinite;
+          
+          &:hover {
+            box-shadow: 0 8px 22px rgba(#4caf50, 0.55);
+          }
         }
       }
       
