@@ -351,12 +351,52 @@
     <!-- PIX QR Code Modal -->
     <div v-if="showQRCode" class="qr-modal">
       <div class="qr-content">
-        <h3><i class="fas fa-qrcode"></i> Escaneie o QR Code</h3>
+        <div class="qr-header">
+          <h3><i class="fas fa-qrcode"></i> Escaneie o QR Code</h3>
+          <div class="status-indicator" :class="{ 
+            'pending': !successMessage.includes('confirmado'),
+            'checking': successMessage.includes('Aguardando')
+          }">
+            <div class="status-dot"></div>
+            <span>{{ successMessage.includes('confirmado') ? 'Pagamento Confirmado' : 'Aguardando Pagamento' }}</span>
+          </div>
+        </div>
+        
         <div class="qr-code">
           <img v-if="qrCodeUrl" :src="qrCodeUrl" alt="QR Code PIX" />
+          <div v-if="successMessage.includes('Aguardando')" class="scanning-animation">
+            <div class="scan-line"></div>
+          </div>
         </div>
-        <p class="qr-instruction">Use o app do seu banco para escanear</p>
-        <button @click="closeQRModal" class="close-qr">Fechar</button>
+        
+        <div class="qr-info">
+          <div class="amount-info">
+            <span class="amount-label">Valor:</span>
+            <span class="amount-value">R$ {{ transactionAmount.toFixed(2).replace('.', ',') }}</span>
+          </div>
+          
+          <div class="instructions">
+            <h4><i class="fas fa-mobile-alt"></i> Como pagar:</h4>
+            <ol>
+              <li>Abra o app do seu banco</li>
+              <li>Escaneie o QR Code acima</li>
+              <li>Confirme o pagamento</li>
+              <li>Aguarde a confirmação automática</li>
+            </ol>
+          </div>
+          
+          <div class="security-note">
+            <i class="fas fa-shield-alt"></i>
+            <span>PIX é instantâneo e seguro. O pagamento será confirmado automaticamente.</span>
+          </div>
+        </div>
+        
+        <div class="qr-actions">
+          <button @click="closeQRModal" class="close-qr">
+            <i class="fas fa-times"></i>
+            Cancelar
+          </button>
+        </div>
       </div>
     </div>
 
@@ -371,7 +411,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, nextTick, reactive } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 // =============================================
@@ -615,26 +655,53 @@ const processCreditCardPayment = async () => {
     const formData = cardForm.getCardFormData()
     console.log('💳 Dados do cartão obtidos:', formData)
 
-    // Process payment (simulate for now)
+    // Preparar dados para envio ao backend
+    const paymentData = {
+      order_id: orderId,
+      payment_method: 'credit_card',
+      transaction_amount: transactionAmount.value,
+      installments: paymentMethod.value === 'installments' ? (formData.installments || 1) : 1,
+      token: formData.token,
+      payment_method_id: formData.payment_method_id,
+      payer: {
+        name: formData.cardholderName,
+        email: formData.cardholderEmail,
+        identification: {
+          type: formData.identificationType,
+          number: formData.identificationNumber
+        }
+      }
+    }
+
     successMessage.value = 'Processando pagamento...'
     
-    // Simulate processing delay
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    // Enviar para o backend (API real)
+    const response = await fetch('/api/process_payment.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(paymentData)
+    })
+
+    const result = await response.json()
     
-    // Simulate successful payment
-    successMessage.value = 'Pagamento aprovado com sucesso!'
+    if (!response.ok) {
+      throw new Error(result.message || 'Erro no processamento')
+    }
+
+    console.log('💳 Resposta do pagamento:', result)
     
-    // Redirect to success page after 2 seconds
-    setTimeout(() => {
-      router.push({
-        name: 'configurador',
-        query: { 
-          success: 'true',
-          orderId: orderId,
-          paymentType: 'credit_card'
-        }
-      })
-    }, 2000)
+    if (result.success && result.payment_id) {
+      // Pagamento criado, iniciar polling para verificar status
+      successMessage.value = 'Pagamento enviado. Aguardando confirmação...'
+      
+      // Iniciar verificação de status
+      startPaymentStatusPolling(result.payment_id, 'credit')
+      
+    } else {
+      throw new Error(result.message || 'Falha no processamento do pagamento')
+    }
 
   } catch (error) {
     console.error('❌ Erro no pagamento com cartão:', error)
@@ -646,19 +713,59 @@ const processCreditCardPayment = async () => {
 
 const processPixPayment = async () => {
   try {
+    // Validar dados obrigatórios
+    if (!formData.pix.email || !identificationType.value || !identificationNumber.value) {
+      throw new Error('Preencha todos os campos obrigatórios')
+    }
+
+    // Preparar dados para envio ao backend
+    const paymentData = {
+      order_id: orderId,
+      payment_method: 'pix',
+      transaction_amount: transactionAmount.value,
+      payer: {
+        email: formData.pix.email,
+        identification: {
+          type: identificationType.value,
+          number: identificationNumber.value
+        }
+      }
+    }
+
     successMessage.value = 'Gerando código PIX...'
 
-    // Simulate PIX generation
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    // Enviar para o backend (API real)
+    const response = await fetch('/api/process_payment.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(paymentData)
+    })
+
+    const result = await response.json()
     
-    // Generate QR code (simulation)
-    const pixCode = `PIX_${orderId}_${Date.now()}`
-    qrCodeUrl.value = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(pixCode)}`
-    showQRCode.value = true
+    if (!response.ok) {
+      throw new Error(result.message || 'Erro na geração do PIX')
+    }
+
+    console.log('📱 Resposta do PIX:', result)
     
-    successMessage.value = 'QR Code gerado! Escaneie com seu app bancário.'
-    
-    console.log('📱 PIX QR Code gerado:', pixCode)
+    if (result.success && result.qr_code) {
+      // PIX gerado com sucesso
+      qrCodeUrl.value = result.qr_code_base64 || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(result.qr_code)}`
+      showQRCode.value = true
+      
+      successMessage.value = 'QR Code gerado! Escaneie com seu app bancário.'
+      
+      // Iniciar polling para verificar quando o pagamento for confirmado
+      if (result.payment_id) {
+        startPaymentStatusPolling(result.payment_id, 'pix')
+      }
+      
+    } else {
+      throw new Error(result.message || 'Falha na geração do código PIX')
+    }
 
   } catch (error) {
     console.error('❌ Erro no pagamento PIX:', error)
@@ -671,6 +778,93 @@ const processPixPayment = async () => {
 const closeQRModal = () => {
   showQRCode.value = false
   qrCodeUrl.value = ''
+  stopPaymentStatusPolling()
+}
+
+// =============================================
+// POLLING DE STATUS DE PAGAMENTO
+// =============================================
+let statusPollingInterval = null
+let pollingAttempts = 0
+const maxPollingAttempts = 120 // 10 minutos (5s * 120)
+
+const startPaymentStatusPolling = (paymentId, method) => {
+  console.log('🔄 Iniciando polling de status:', { paymentId, method })
+  
+  pollingAttempts = 0
+  
+  statusPollingInterval = setInterval(async () => {
+    pollingAttempts++
+    
+    try {
+      const response = await fetch(`/api/check_payment_status.php?payment_id=${paymentId}&order_id=${orderId}`)
+      const result = await response.json()
+      
+      console.log('📊 Status check:', result)
+      
+      if (result.ok && result.status) {
+        if (result.status === 'paid') {
+          // Pagamento aprovado
+          stopPaymentStatusPolling()
+          successMessage.value = '✅ Pagamento confirmado! Redirecionando...'
+          errorMessage.value = ''
+          
+          setTimeout(() => {
+            router.push({
+              name: 'configurador',
+              query: { 
+                success: 'true',
+                orderId: orderId,
+                paymentId: paymentId,
+                paymentType: method
+              }
+            })
+          }, 2000)
+          
+        } else if (result.status === 'failed') {
+          // Pagamento rejeitado
+          stopPaymentStatusPolling()
+          errorMessage.value = 'Pagamento foi rejeitado. Tente novamente.'
+          successMessage.value = ''
+          showQRCode.value = false
+          
+        } else if (result.status === 'pending') {
+          // Ainda pendente, continuar polling
+          if (method === 'pix') {
+            successMessage.value = '⏳ Aguardando pagamento PIX...'
+          } else {
+            successMessage.value = '⏳ Pagamento em análise...'
+          }
+        }
+      }
+      
+      // Parar polling após muitas tentativas
+      if (pollingAttempts >= maxPollingAttempts) {
+        stopPaymentStatusPolling()
+        errorMessage.value = 'Tempo limite excedido. Verifique o status do pagamento em sua conta.'
+        successMessage.value = ''
+      }
+      
+    } catch (error) {
+      console.error('❌ Erro no polling:', error)
+      
+      // Em caso de erro, continuar tentando por algumas vezes
+      if (pollingAttempts >= 5) {
+        stopPaymentStatusPolling()
+        errorMessage.value = 'Erro ao verificar status do pagamento'
+      }
+    }
+    
+  }, 5000) // Verificar a cada 5 segundos
+}
+
+const stopPaymentStatusPolling = () => {
+  if (statusPollingInterval) {
+    clearInterval(statusPollingInterval)
+    statusPollingInterval = null
+    pollingAttempts = 0
+    console.log('⏹️ Polling de status interrompido')
+  }
 }
 
 // =============================================
@@ -685,6 +879,11 @@ onMounted(async () => {
   setTimeout(async () => {
     await initializeMercadoPago()
   }, 500)
+})
+
+// Limpar polling quando componente for desmontado
+onUnmounted(() => {
+  stopPaymentStatusPolling()
 })
 </script>
 
@@ -1450,67 +1649,284 @@ $gray-900: #0a0a0a;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  backdrop-filter: blur(4px);
 
   .qr-content {
     background: white;
-    padding: 2rem;
-    border-radius: 16px;
+    padding: 2.5rem;
+    border-radius: 24px;
     text-align: center;
-    max-width: 400px;
+    max-width: 480px;
     width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease-out;
 
-    h3 {
-      margin: 0 0 1.5rem 0;
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: $gray-900;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
+    .qr-header {
+      margin-bottom: 2rem;
 
-      i {
-        color: #e91e63;
+      h3 {
+        margin: 0 0 1rem 0;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: $gray-900;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+
+        i {
+          color: #e91e63;
+          font-size: 1.6rem;
+        }
+      }
+
+      .status-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin: 0 auto;
+        max-width: fit-content;
+
+        .status-dot {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          animation: pulse 2s infinite;
+        }
+
+        &.pending {
+          background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.05));
+          color: #d97706;
+          border: 1px solid rgba(251, 191, 36, 0.3);
+
+          .status-dot {
+            background: #f59e0b;
+          }
+        }
+
+        &.checking {
+          background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05));
+          color: #2563eb;
+          border: 1px solid rgba(59, 130, 246, 0.3);
+
+          .status-dot {
+            background: #3b82f6;
+          }
+        }
       }
     }
 
     .qr-code {
-      margin: 1.5rem 0;
+      margin: 2rem 0;
       display: flex;
       justify-content: center;
+      position: relative;
 
       img {
-        width: 200px;
-        height: 200px;
-        border: 2px solid $gray-200;
+        width: 240px;
+        height: 240px;
+        border: 3px solid $gray-200;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      }
+
+      .scanning-animation {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+
+        .scan-line {
+          position: absolute;
+          top: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 200px;
+          height: 2px;
+          background: linear-gradient(90deg, transparent, #e91e63, transparent);
+          animation: scanAnimation 2s linear infinite;
+        }
+      }
+    }
+
+    .qr-info {
+      text-align: left;
+      margin: 2rem 0;
+
+      .amount-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background: linear-gradient(135deg, rgba($primary-color, 0.05), rgba($primary-color, 0.02));
         border-radius: 12px;
+        border: 1px solid rgba($primary-color, 0.15);
+        margin-bottom: 1.5rem;
+
+        .amount-label {
+          font-size: 0.9rem;
+          color: $gray-600;
+          font-weight: 500;
+        }
+
+        .amount-value {
+          font-size: 1.3rem;
+          font-weight: 700;
+          color: $primary-color;
+        }
+      }
+
+      .instructions {
+        margin-bottom: 1.5rem;
+
+        h4 {
+          margin: 0 0 1rem 0;
+          font-size: 1rem;
+          font-weight: 600;
+          color: $gray-900;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+
+          i {
+            color: $primary-color;
+          }
+        }
+
+        ol {
+          margin: 0;
+          padding-left: 0;
+          list-style: none;
+          counter-reset: step;
+
+          li {
+            margin-bottom: 0.75rem;
+            padding-left: 2.5rem;
+            position: relative;
+            color: $gray-700;
+            line-height: 1.4;
+            counter-increment: step;
+
+            &::before {
+              content: counter(step);
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 1.8rem;
+              height: 1.8rem;
+              background: linear-gradient(135deg, $primary-color, $primary-dark);
+              color: white;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 0.8rem;
+              font-weight: 700;
+            }
+
+            &:last-child {
+              margin-bottom: 0;
+            }
+          }
+        }
+      }
+
+      .security-note {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem;
+        background: linear-gradient(135deg, rgba($success-color, 0.05), rgba($success-color, 0.02));
+        border: 1px solid rgba($success-color, 0.2);
+        border-radius: 12px;
+        font-size: 0.85rem;
+        color: $gray-700;
+
+        i {
+          color: $success-color;
+          font-size: 1rem;
+        }
       }
     }
 
-    .qr-instruction {
-      margin: 1rem 0 1.5rem 0;
-      color: $gray-600;
-      font-size: 0.9rem;
-    }
+    .qr-actions {
+      margin-top: 2rem;
 
-    .close-qr {
-      padding: 0.75rem 1.5rem;
-      background: $gray-600;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
+      .close-qr {
+        padding: 0.875rem 2rem;
+        background: $gray-600;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0 auto;
 
-      &:hover {
-        background: $gray-800;
+        &:hover {
+          background: $gray-800;
+          transform: translateY(-1px);
+        }
+
+        i {
+          font-size: 0.9rem;
+        }
       }
     }
+  }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes scanAnimation {
+  0% {
+    top: 10px;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    top: calc(100% - 10px);
+    opacity: 0;
   }
 }
 
