@@ -2244,6 +2244,8 @@ export default {
         // Tentar criar pedido no servidor
         const result = await PricingService.createOrder(orderData);
         
+        console.log('📦 [submitOrder] Resultado do pedido:', result);
+        
         if (result.ok) {
           // Sucesso: pedido criado no servidor
           console.log('✅ Pedido criado:', result.order_id);

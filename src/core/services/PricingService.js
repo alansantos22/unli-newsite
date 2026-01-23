@@ -247,6 +247,8 @@ class PricingService {
     }
 
     try {
+      console.log('📤 [createOrder] Enviando pedido:', orderData);
+      
       const response = await fetch(`${API_BASE_URL}/order_create.php`, {
         method: 'POST',
         headers: { 
@@ -256,7 +258,18 @@ class PricingService {
         body: JSON.stringify(orderData)
       });
 
+      console.log('📥 [createOrder] Response status:', response.status, response.statusText);
+      
+      // Se não for 200, tentar ler o texto da resposta
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('❌ [createOrder] Erro HTTP:', response.status, text);
+        throw new Error(`HTTP ${response.status}: ${text.substring(0, 200)}`);
+      }
+
       const data = await response.json();
+      
+      console.log('📥 [createOrder] Response data:', data);
       
       if (data.ok) {
         this.serverAvailable = true;

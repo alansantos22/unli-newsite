@@ -328,10 +328,54 @@ function compute_price(array $selection, array $cfg): array {
  * @param array $briefing Dados enviados pelo cliente
  * @return array Erros de validação (vazio se OK)
  */
+/**
+ * Valida briefing básico (apenas para checkout - antes do pagamento)
+ */
+function validate_checkout_briefing(array $briefing): array {
+    $errors = [];
+    
+    // Tentar diferentes nomes para o campo nome da empresa/pessoa
+    $companyName = $briefing['company_name'] ?? 
+                   $briefing['name'] ?? 
+                   $briefing['full_name'] ?? 
+                   $briefing['customer_name'] ?? '';
+    
+    if (empty($companyName)) {
+        $errors[] = "Campo obrigatório: Nome completo";
+    }
+    
+    // Validar email se fornecido (aceita diferentes nomes)
+    $email = $briefing['email'] ?? 
+             $briefing['company_email'] ?? 
+             $briefing['customer_email'] ?? '';
+             
+    if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors[] = "E-mail inválido";
+    }
+    
+    // Validar WhatsApp/telefone se fornecido (aceita diferentes nomes)
+    $phone = $briefing['whatsapp'] ?? 
+             $briefing['phone'] ?? 
+             $briefing['company_phone'] ?? 
+             $briefing['customer_phone'] ?? '';
+             
+    if (!empty($phone)) {
+        $cleanPhone = preg_replace('/\D/', '', $phone);
+        if (strlen($cleanPhone) < 10) {
+            $errors[] = "Telefone inválido (mínimo 10 dígitos)";
+        }
+    }
+    
+    return $errors;
+}
+
+/**
+ * Valida briefing completo (para onboarding - após pagamento)
+ */
 function validate_briefing(array $briefing): array {
     $errors = [];
     
-    // Campos obrigatórios
+    // Campos obrigatórios completos
     $required = ['company_name', 'whatsapp', 'email', 'style', 'main_content'];
     foreach ($required as $field) {
         if (empty($briefing[$field])) {

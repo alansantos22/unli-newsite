@@ -12,30 +12,60 @@ if (!defined('DB_CONFIG_ACCESS')) {
     define('DB_CONFIG_ACCESS', true);
 }
 
-require_once __DIR__ . '/../db.config.php';
+// Tentar carregar configuração do banco de dados (opcional)
+$db_config_path = __DIR__ . '/../db.config.php';
+if (file_exists($db_config_path)) {
+    require_once $db_config_path;
+    define('DB_AVAILABLE', true);
+} else {
+    // DB não configurado - modo somente arquivo
+    define('DB_AVAILABLE', false);
+    error_log("⚠️ [database] db.config.php não encontrado - operando sem banco de dados");
+}
 
 /**
  * Obtém conexão PDO com o banco de dados
  * 
- * @return PDO Instância da conexão
+ * @return PDO|null Instância da conexão ou null se não configurado
  * @throws PDOException se falhar
  */
 function get_db_connection() {
     static $pdo = null;
+    static $attempted = false;
+    
+    // Se DB não está disponível, retornar null
+    if (!defined('DB_AVAILABLE') || !DB_AVAILABLE) {
+        return null;
+    }
     
     if ($pdo !== null) {
         return $pdo;
     }
     
+    if ($attempted) {
+        return null;
+    }
+    
+    $attempted = true;
+    
     try {
+        // Verificar se as constantes básicas existem
+        if (!defined('DB_HOST') || !defined('DB_NAME') || !defined('DB_USER') || !defined('DB_PASS')) {
+            error_log("⚠️ [database] Constantes de conexão não definidas");
+            return null;
+        }
+        
+        $charset = defined('DB_CHARSET') ? DB_CHARSET : 'utf8mb4';
+        $collate = defined('DB_COLLATE') ? DB_COLLATE : 'utf8mb4_unicode_ci';
+        
         $dsn = sprintf(
             'mysql:host=%s;dbname=%s;charset=%s',
             DB_HOST,
             DB_NAME,
-            DB_CHARSET
+            $charset
         );
         
-        if (DB_PORT) {
+        if (defined('DB_PORT') && DB_PORT) {
             $dsn .= ';port=' . DB_PORT;
         }
         
@@ -43,7 +73,7 @@ function get_db_connection() {
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
-            PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES " . DB_CHARSET . " COLLATE " . DB_COLLATE
+            PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES " . $charset . " COLLATE " . $collate
         ];
         
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
@@ -51,8 +81,8 @@ function get_db_connection() {
         return $pdo;
         
     } catch (PDOException $e) {
-        error_log("Database connection error: " . $e->getMessage());
-        throw new Exception("Erro ao conectar ao banco de dados");
+        error_log("⚠️ [database] Erro ao conectar: " . $e->getMessage());
+        return null;
     }
 }
 
@@ -60,17 +90,24 @@ function get_db_connection() {
  * Salva um pedido no banco de dados (status inicial: pending)
  * 
  * @param array $orderData Dados do pedido
- * @return int|false ID do pedido inserido ou false em caso de erro
+ * @return array|false ['id' => int, 'token' => string] ou false se não disponível/erro
  */
 function save_order_to_db($orderData) {
     try {
         $pdo = get_db_connection();
         
+        // Se DB não está disponível, retornar false silenciosamente
+        if ($pdo === null) {
+            error_log("⚠️ [database] Banco de dados não disponível - pedido salvo apenas em arquivo");
+            return false;
+        }
+        
         // Gerar token único para onboarding
         $token = bin2hex(random_bytes(32));
         
         // Preparar dados para inserção
-        $sql = "INSERT INTO " . DB_PREFIX . "orders (
+        $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+        $sql = "INSERT INTO " . $prefix . "orders (
             customer_name,
             email,
             phone,
@@ -143,7 +180,12 @@ function update_payment_status($orderId, $status, $paymentId = null) {
     try {
         $pdo = get_db_connection();
         
-        $sql = "UPDATE " . DB_PREFIX . "orders 
+        if ($pdo === null) {
+            return false;
+        }
+        
+        $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+        $sql = "UPDATE " . $prefix . "orders 
                 SET payment_status = :status,
                     payment_id = :payment_id,
                     updated_at = CURRENT_TIMESTAMP
@@ -173,7 +215,12 @@ function get_order_by_id($orderId) {
     try {
         $pdo = get_db_connection();
         
-        $sql = "SELECT * FROM " . DB_PREFIX . "orders 
+        if ($pdo === null) {
+            return false;
+        }
+        
+        $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+        $sql = "SELECT * FROM " . $prefix . "orders 
                 WHERE JSON_EXTRACT(order_details, '$.order_id') = :order_id
                 LIMIT 1";
         
@@ -198,7 +245,12 @@ function get_order_by_token($token) {
     try {
         $pdo = get_db_connection();
         
-        $sql = "SELECT * FROM " . DB_PREFIX . "orders 
+        if ($pdo === null) {
+            return false;
+        }
+        
+        $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+        $sql = "SELECT * FROM " . $prefix . "orders 
                 WHERE onboarding_token = :token
                 LIMIT 1";
         
@@ -225,7 +277,12 @@ function update_onboarding_status($token, $status, $briefingData = null) {
     try {
         $pdo = get_db_connection();
         
-        $sql = "UPDATE " . DB_PREFIX . "orders 
+        if ($pdo === null) {
+            return false;
+        }
+        
+        $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+        $sql = "UPDATE " . $prefix . "orders 
                 SET onboarding_status = :status,
                     updated_at = CURRENT_TIMESTAMP";
         
@@ -253,18 +310,23 @@ function update_onboarding_status($token, $status, $briefingData = null) {
 }
 
 /**
- * Lista pedidos com filtros
+ * Lista pedidos do banco de dados com filtros
  * 
  * @param array $filters Filtros (payment_status, onboarding_status, etc.)
  * @param int $limit Limite de resultados
  * @param int $offset Offset para paginação
  * @return array Lista de pedidos
  */
-function list_orders($filters = [], $limit = 20, $offset = 0) {
+function list_orders_from_db($filters = [], $limit = 20, $offset = 0) {
     try {
         $pdo = get_db_connection();
         
-        $sql = "SELECT * FROM " . DB_PREFIX . "orders WHERE 1=1";
+        if ($pdo === null) {
+            return [];
+        }
+        
+        $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+        $sql = "SELECT * FROM " . $prefix . "orders WHERE 1=1";
         $params = [];
         
         if (!empty($filters['payment_status'])) {
