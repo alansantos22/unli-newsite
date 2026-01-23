@@ -931,6 +931,40 @@
       </transition>
     </div>
 
+    <!-- Mobile Price Bar (fixed bottom) -->
+    <div class="mobile-price-bar">
+      <div class="mobile-price-content">
+        <div class="mobile-price-info">
+          <div class="mobile-price-total">
+            <span class="mobile-price-label">Total</span>
+            <div class="mobile-price-values">
+              <span class="mobile-price-original">De {{ formatOriginalPrice(subtotal / 12) }}</span>
+              <span class="mobile-price-current">{{ formatMonthlyPrice(subtotal) }}</span>
+            </div>
+          </div>
+        </div>
+        <button 
+          v-if="!isCheckoutStep"
+          class="mobile-btn-next"
+          :disabled="!canProceed"
+          @click="nextStep"
+        >
+          <span>Próximo</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+        <button 
+          v-else
+          type="button"
+          class="mobile-btn-finish"
+          :disabled="!canProceed"
+          @click="scrollToOrderSummary"
+        >
+          <span>Ir para resumo do pedido</span>
+          <i class="fas fa-arrow-down"></i>
+        </button>
+      </div>
+    </div>
+
     <!-- Price Sidebar (sempre visível) -->
     <div class="price-sidebar">
       <div class="sidebar-header">
@@ -1490,9 +1524,42 @@ export default {
       });
       
       return prices;
+    },
+    
+    // Verificar se pode prosseguir para próximo step
+    canProceed() {
+      if (this.currentStep === 1 && !this.initialProduct) {
+        return !!this.selectedProduct;
+      }
+      if ((this.currentStep === 2 && !this.initialProduct) || (this.currentStep === 1 && this.initialProduct)) {
+        return !!this.selectedProduct || this.selectedPages.length > 0 || this.customPages.length > 0;
+      }
+      return true;
+    },
+    
+    // Verifica se estamos na etapa de checkout
+    isCheckoutStep() {
+      return this.currentStep === (this.initialProduct ? 2 : 3);
+    },
+    
+    // Total de steps
+    totalSteps() {
+      return this.initialProduct ? 2 : 3;
     }
   },
   methods: {
+    // ========== SCROLL FUNCTIONS ==========
+    
+    scrollToOrderSummary() {
+      const orderSummary = document.querySelector('.order-summary-section');
+      if (orderSummary) {
+        orderSummary.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }
+    },
+    
     // ========== CONTROLE DE VÍDEOS ==========
     
     updateVideoBasicSelection() {
@@ -2142,6 +2209,51 @@ export default {
 <style lang="scss" scoped>
 @import '@/assets/sass/settings/__colors.scss';
 
+// Global responsive fixes
+* {
+  box-sizing: border-box;
+}
+
+// Prevent horizontal overflow mas permitir sticky
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+// Garantir que o viewport permita sticky
+html {
+  height: 100%;
+}
+
+body {
+  min-height: 100%;
+  position: relative;
+}
+
+// Base responsive utilities
+.configurator-container {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+// Font size adjustments for very small screens
+@media (max-width: 320px) {
+  * {
+    font-size: 12px !important;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+  }
+  
+  button {
+    font-size: 12px !important;
+    padding: 8px 12px !important;
+  }
+}
+
 // Seção introdutória (renderizada no pai)
 .configurator-intro {
   text-align: center;
@@ -2186,18 +2298,42 @@ export default {
   }
 }
 
-// Container principal
+// Container principal - Mobile First
 .site-configurator {
   position: relative;
-  display: grid;
-  grid-template-columns: 1fr 350px;
-  gap: 40px;
-  max-width: 1400px;
+  display: block;
+  width: 100%;
+  max-width: 100vw;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 15px 10px 120px 10px; // Espaço para mobile price bar
+  min-height: 100vh;
 
-  @media (max-width: 1024px) {
-    grid-template-columns: 1fr;
+  // Garantir que todos os filhos não causem overflow
+  * {
+    box-sizing: border-box;
+    max-width: 100%;
+    overflow-wrap: break-word;
+  }
+
+  // Tablets
+  @media (min-width: 768px) {
+    padding: 20px 15px;
+  }
+
+  // Desktop
+  @media (min-width: 1024px) {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 40px;
+    max-width: 1400px;
+    padding: 40px 20px;
+    align-items: start; // Importante para o sticky funcionar
+    min-height: 150vh; // Altura suficiente para criar scroll
+    overflow: visible; // Garantir que sticky funcione
+  }
+
+  @media (min-width: 1200px) {
+    padding: 40px 30px;
   }
 }
 
@@ -2271,13 +2407,43 @@ export default {
   }
 }
 
+.configurator-body {
+  min-height: calc(100vh - 200px);
+  width: 100%;
+
+  @media (min-width: 1024px) {
+    min-height: 200vh; // Altura extra para garantir scroll
+    width: 100%;
+  }
+}
+
 // Progress Bar
 .progress-bar {
   grid-column: 1 / -1;
   display: flex;
   justify-content: center;
-  gap: 40px;
-  margin-bottom: 40px;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 0 8px;
+  overflow-x: auto;
+  max-width: 100vw;
+
+  @media (min-width: 480px) {
+    gap: 24px;
+    margin-bottom: 24px;
+    padding: 0 10px;
+  }
+
+  @media (min-width: 768px) {
+    gap: 40px;
+    margin-bottom: 40px;
+    padding: 0;
+    overflow-x: visible;
+  }
+
+  @media (min-width: 1024px) {
+    grid-column: 1 / -1;
+  }
 
   .progress-step {
     display: flex;
@@ -2293,8 +2459,8 @@ export default {
     }
 
     .step-number {
-      width: 48px;
-      height: 48px;
+      width: 36px;
+      height: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -2302,8 +2468,20 @@ export default {
       background: $gray-light;
       color: $gray-medium;
       font-weight: 700;
-      font-size: 1.2rem;
+      font-size: 0.9rem;
       transition: all 0.3s;
+
+      @media (min-width: 480px) {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+      }
+
+      @media (min-width: 768px) {
+        width: 48px;
+        height: 48px;
+        font-size: 1.2rem;
+      }
     }
 
     &.active .step-number {
@@ -2334,42 +2512,104 @@ export default {
 // Body do configurador
 .configurator-body {
   min-height: 600px;
+  width: 100%;
+  max-width: 100%;
+
+  @media (max-width: 768px) {
+    min-height: 400px;
+  }
 }
 
 .step-content {
   animation: fadeIn 0.3s;
+  width: 100%;
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .step-title {
-  font-size: 2rem;
+  font-size: 1.4rem;
   font-weight: 800;
   color: $gray-darkness;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+  line-height: 1.2;
+  word-wrap: break-word;
+
+  @media (min-width: 480px) {
+    font-size: 1.6rem;
+    margin-bottom: 10px;
+  }
+
+  @media (min-width: 768px) {
+    font-size: 2rem;
+    margin-bottom: 12px;
+  }
 }
 
 .step-description {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   color: $gray-medium;
-  margin-bottom: 40px;
+  margin-bottom: 20px;
+  line-height: 1.5;
+  word-wrap: break-word;
+
+  @media (min-width: 480px) {
+    font-size: 1rem;
+    margin-bottom: 24px;
+  }
+
+  @media (min-width: 768px) {
+    font-size: 1.1rem;
+    margin-bottom: 40px;
+  }
 }
 
 // Etapa 1: Escolha de Produto (oculta quando initialProduct existe)
 .step-product {
   .product-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 24px;
-    margin-bottom: 40px;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+
+    @media (min-width: 480px) {
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    @media (min-width: 1024px) {
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
   }
 
   .product-card {
-    padding: 32px;
+    padding: 20px;
     background: $white;
     border: 3px solid $gray-light;
-    border-radius: 20px;
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s;
     position: relative;
+    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+
+    @media (min-width: 480px) {
+      padding: 24px;
+      border-radius: 16px;
+    }
+
+    @media (min-width: 768px) {
+      padding: 32px;
+      border-radius: 20px;
+    }
     
     .promo-badge {
       position: absolute;
@@ -2515,24 +2755,46 @@ export default {
 
   .package-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 24px;
-    margin-bottom: 24px;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
 
-    @media (max-width: 768px) {
-      grid-template-columns: 1fr;
+    @media (min-width: 480px) {
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+    }
+
+    @media (min-width: 1024px) {
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     }
   }
 
   .package-card {
     position: relative;
-    padding: 32px 24px;
+    padding: 20px 16px;
     background: $white;
     border: 3px solid $gray-light;
-    border-radius: 20px;
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+
+    @media (min-width: 480px) {
+      padding: 24px 20px;
+      border-radius: 16px;
+    }
+
+    @media (min-width: 768px) {
+      padding: 32px 24px;
+      border-radius: 20px;
+    }
 
     &::before {
       content: '';
@@ -2952,7 +3214,15 @@ export default {
 // Checkboxes para páginas pré-definidas
 .addon-checkboxes {
   display: grid;
-  gap: 12px;
+  gap: 8px;
+
+  @media (min-width: 480px) {
+    gap: 10px;
+  }
+
+  @media (min-width: 768px) {
+    gap: 12px;
+  }
 }
 
 .checkbox-item {
@@ -2986,12 +3256,24 @@ export default {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 20px;
+    padding: 12px 16px;
     background: $white;
     border: 2px solid $gray-light;
-    border-radius: 12px;
+    border-radius: 8px;
     transition: all 0.3s;
     position: relative;
+    width: 100%;
+    max-width: 100%;
+    
+    @media (min-width: 480px) {
+      padding: 14px 18px;
+      border-radius: 10px;
+    }
+
+    @media (min-width: 768px) {
+      padding: 16px 20px;
+      border-radius: 12px;
+    }
     
     .promo-tag {
       position: absolute;
@@ -3150,6 +3432,21 @@ export default {
     transition: opacity 0.3s, visibility 0.3s;
     text-align: left;
     pointer-events: none;
+    max-width: 90vw;
+
+    @media (max-width: 768px) {
+      width: 200px;
+      font-size: 0.8rem;
+      padding: 8px 12px;
+      max-width: 80vw;
+    }
+
+    @media (max-width: 768px) {
+      width: 200px;
+      font-size: 0.8rem;
+      padding: 8px 12px;
+      max-width: 80vw;
+    }
 
     &::after {
       content: '';
@@ -3186,6 +3483,11 @@ export default {
     color: $gray-darkness;
     flex: 1;
     min-width: 200px;
+
+    @media (max-width: 768px) {
+      min-width: 100%;
+      margin-bottom: 8px;
+    }
   }
 
   .counter-controls {
@@ -3661,6 +3963,11 @@ export default {
     cursor: pointer;
     transition: all 0.3s;
 
+    @media (max-width: 768px) {
+      padding: 15px;
+      border-radius: 8px;
+    }
+
     &:has(input:checked) {
       border-color: $p-color;
       background: rgba($p-color, 0.05);
@@ -3675,6 +3982,10 @@ export default {
         display: block;
         padding: 20px;
         cursor: pointer;
+
+        @media (max-width: 768px) {
+          padding: 15px;
+        }
       }
       
       &:has(.video-toggle input:checked) {
@@ -3691,11 +4002,24 @@ export default {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 12px;
+
+      @media (max-width: 768px) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
 
       .toggle-info {
         display: flex;
         flex-direction: column;
         gap: 4px;
+        flex: 1;
+        min-width: 0;
+
+        @media (max-width: 768px) {
+          width: 100%;
+        }
 
         .toggle-name {
           font-weight: 600;
@@ -3703,6 +4027,9 @@ export default {
           display: flex;
           align-items: center;
           gap: 8px;
+          flex-wrap: wrap;
+          word-wrap: break-word;
+          max-width: 100%;
           
           .promo-inline-badge {
             display: inline-flex;
@@ -3712,6 +4039,7 @@ export default {
             border-radius: 6px;
             font-size: 0.65rem;
             font-weight: 700;
+            white-space: nowrap;
           }
         }
 
@@ -3723,12 +4051,14 @@ export default {
           flex-direction: column;
           align-items: flex-start;
           gap: 2px;
+          min-width: 0;
           
           .price-from {
             text-decoration: line-through;
             color: $gray-medium;
             font-size: 0.7rem;
             opacity: 0.6;
+            white-space: nowrap;
           }
         }
       }
@@ -3738,6 +4068,11 @@ export default {
         height: 28px;
         background: $gray-light;
         border-radius: 14px;
+        flex-shrink: 0;
+
+        @media (max-width: 768px) {
+          align-self: flex-end;
+        }
         position: relative;
         transition: background 0.3s;
 
@@ -3770,6 +4105,10 @@ export default {
   padding: 0 20px 20px;
   border-top: 1px solid rgba($gray-light, 0.5);
   margin-top: 15px;
+
+  @media (max-width: 768px) {
+    padding: 0 15px 15px;
+  }
   
   .quantity-label {
     display: block;
@@ -3777,6 +4116,11 @@ export default {
     color: $gray-darkness;
     margin: 12px 0;
     font-size: 0.9rem;
+
+    @media (max-width: 768px) {
+      font-size: 0.85rem;
+      margin: 8px 0;
+    }
   }
   
   .quantity-input-wrapper {
@@ -3784,6 +4128,11 @@ export default {
     align-items: center;
     gap: 8px;
     margin-bottom: 12px;
+
+    @media (max-width: 768px) {
+      gap: 6px;
+      margin-bottom: 8px;
+    }
     
     .quantity-btn {
       width: 36px;
@@ -3796,6 +4145,12 @@ export default {
       font-size: 1.1rem;
       cursor: pointer;
       transition: all 0.3s;
+
+      @media (max-width: 768px) {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+      }
       
       &:hover:not(:disabled) {
         background: $p-color;
@@ -3816,6 +4171,12 @@ export default {
       text-align: center;
       font-weight: 600;
       font-size: 1rem;
+
+      @media (max-width: 768px) {
+        width: 60px;
+        height: 32px;
+        font-size: 0.9rem;
+      }
       
       &:focus {
         border-color: $p-color;
@@ -3829,6 +4190,11 @@ export default {
     flex-direction: column;
     gap: 4px;
     font-size: 0.85rem;
+
+    @media (max-width: 768px) {
+      font-size: 0.8rem;
+      gap: 2px;
+    }
     
     .unit-price {
       color: $gray-medium;
@@ -4180,20 +4546,46 @@ export default {
 .step-navigation {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
-  margin-top: 40px;
+  gap: 12px;
+  margin-top: 24px;
+
+  @media (min-width: 480px) {
+    gap: 16px;
+    margin-top: 32px;
+  }
+
+  @media (min-width: 768px) {
+    margin-top: 40px;
+  }
 
   button {
-    padding: 16px 32px;
+    padding: 12px 20px;
     border: none;
-    border-radius: 12px;
-    font-size: 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     transition: all 0.3s;
+    flex: 1;
+    justify-content: center;
+    max-width: 200px;
+
+    @media (min-width: 480px) {
+      padding: 14px 24px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      flex: none;
+    }
+
+    @media (min-width: 768px) {
+      padding: 16px 32px;
+      border-radius: 12px;
+      font-size: 1rem;
+      gap: 10px;
+    }
 
     &:disabled {
       opacity: 0.5;
@@ -4420,11 +4812,16 @@ export default {
 
   .form-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    grid-template-columns: 1fr;
+    gap: 16px;
 
-    @media (max-width: 768px) {
-      grid-template-columns: 1fr;
+    @media (min-width: 480px) {
+      gap: 18px;
+    }
+
+    @media (min-width: 768px) {
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
     }
   }
 
@@ -4442,18 +4839,41 @@ export default {
     textarea,
     select {
       width: 100%;
-      padding: 14px 16px;
-      font-size: 1rem;
+      max-width: 100%;
+      padding: 12px 14px;
+      font-size: 0.9rem;
       color: $gray-darkness;
       background: $white;
       border: 2px solid $gray-light;
-      border-radius: 12px;
+      border-radius: 8px;
       transition: all 0.3s;
+      box-sizing: border-box;
+
+      @media (min-width: 480px) {
+        padding: 13px 15px;
+        font-size: 0.95rem;
+        border-radius: 10px;
+      }
+
+      @media (min-width: 768px) {
+        padding: 14px 16px;
+        font-size: 1rem;
+        border-radius: 12px;
+      }
 
       &:focus {
         outline: none;
         border-color: $p-color;
         box-shadow: 0 0 0 4px rgba($p-color, 0.1);
+      }
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+      
+      @media (min-width: 768px) {
+        min-height: 120px;
       }
     }
 
@@ -5372,18 +5792,168 @@ export default {
   }
 }
 
+// Mobile Price Bar (fixed bottom)
+.mobile-price-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, $white 0%, #f8f9ff 100%);
+  border-top: 1px solid rgba($p-color, 0.2);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+  z-index: 1000;
+  padding: 15px;
+  display: block;
+
+  @media (min-width: 1024px) {
+    display: none;
+  }
+
+  .mobile-price-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 100%;
+    gap: 15px;
+  }
+
+  .mobile-price-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mobile-price-total {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .mobile-price-label {
+    font-size: 0.8rem;
+    color: $gray-medium;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .mobile-price-values {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .mobile-price-original {
+    font-size: 0.75rem;
+    color: $gray-medium;
+    text-decoration: line-through;
+    opacity: 0.7;
+  }
+
+  .mobile-price-current {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: $p-color;
+  }
+
+  .mobile-btn-next,
+  .mobile-btn-finish {
+    background: linear-gradient(135deg, $p-color 0%, $p-dark 100%);
+    color: $white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 120px;
+    justify-content: center;
+    white-space: nowrap;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba($p-color, 0.4);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    i {
+      font-size: 0.8rem;
+    }
+  }
+
+  .mobile-btn-finish {
+    background: linear-gradient(135deg, $success 0%, darken($success, 10%) 100%);
+    
+    &:hover:not(:disabled) {
+      box-shadow: 0 8px 20px rgba($success, 0.4);
+    }
+  }
+
+  // Responsividade específica mobile
+  @media (max-width: 480px) {
+    padding: 12px 10px;
+    
+    .mobile-price-content {
+      gap: 10px;
+    }
+    
+    .mobile-price-current {
+      font-size: 1rem;
+    }
+    
+    .mobile-btn-next,
+    .mobile-btn-finish {
+      padding: 10px 16px;
+      font-size: 0.85rem;
+      min-width: 100px;
+    }
+  }
+
+  @media (max-width: 320px) {
+    .mobile-price-label {
+      font-size: 0.7rem;
+    }
+    
+    .mobile-price-current {
+      font-size: 0.9rem;
+    }
+    
+    .mobile-btn-next,
+    .mobile-btn-finish {
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      min-width: 80px;
+    }
+  }
+}
+
 // Price Sidebar
 .price-sidebar {
-  position: sticky;
-  top: 100px;
-  height: fit-content;
-  background: $white;
-  border-radius: 20px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-  overflow: hidden;
+  display: none;
 
-  @media (max-width: 1024px) {
-    display: none;
+  @media (min-width: 1024px) {
+    display: block;
+    position: -webkit-sticky;
+    position: sticky;
+    top: 120px;
+    height: fit-content;
+    max-height: calc(100vh - 40px);
+    background: $white;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow-y: auto;
+    z-index: 100;
+    align-self: start;
+    flex-shrink: 0;
+    width: 350px;
   }
 
   .sidebar-header {
