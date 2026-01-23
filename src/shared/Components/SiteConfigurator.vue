@@ -387,8 +387,112 @@
               Tipos de Arquivos Aceitos
             </h3>
             <div class="addon-toggles">
+              <!-- Vídeo Básico -->
+              <div v-if="config.content_addons.video_basic" class="toggle-item video-addon">
+                <label class="video-toggle">
+                  <input
+                    type="checkbox"
+                    value="video_basic"
+                    v-model="selectedContentAddons"
+                    @change="updateVideoBasicSelection"
+                  >
+                  <div class="toggle-content">
+                    <div class="toggle-info">
+                      <span class="toggle-name">
+                        {{ config.content_addons.video_basic.name }}
+                        <span class="addon-tooltip">
+                          <i class="fas fa-info-circle"></i>
+                          <span class="tooltip-text">{{ config.content_addons.video_basic.description }}</span>
+                        </span>
+                        <span class="promo-inline-badge">-30%</span>
+                      </span>
+                      <div class="toggle-price">
+                        <span class="price-from">De {{ formatOriginalPrice(config.content_addons.video_basic.price_per_unit / 12) }}</span>
+                        <span class="price-to">+{{ formatMonthlyPrice(config.content_addons.video_basic.price_per_unit) }}</span>
+                      </div>
+                    </div>
+                    <div class="toggle-switch">
+                      <span class="switch"></span>
+                    </div>
+                  </div>
+                </label>
+                
+                <!-- Input de quantidade para Vídeo Básico -->
+                <div v-if="videoBasicSelected" class="quantity-input-section">
+                  <label class="quantity-label">Quantidade:</label>
+                  <div class="quantity-input-wrapper">
+                    <button type="button" class="quantity-btn" @click="decreaseVideoBasic" :disabled="videoBasicQuantity <= 1">-</button>
+                    <input 
+                      type="number" 
+                      v-model.number="videoBasicQuantity"
+                      :min="config.content_addons.video_basic.min_quantity"
+                      :max="config.content_addons.video_basic.max_quantity"
+                      class="quantity-input"
+                    >
+                    <button type="button" class="quantity-btn" @click="increaseVideoBasic" :disabled="videoBasicQuantity >= 10">+</button>
+                  </div>
+                  <div class="quantity-info">
+                    <span class="unit-price">R$ {{ (config.content_addons.video_basic.price_per_unit / 12).toFixed(2).replace('.', ',') }}/mês por vídeo</span>
+                    <span class="total-price">Total: R$ {{ ((config.content_addons.video_basic.price_per_unit * videoBasicQuantity) / 12).toFixed(2).replace('.', ',') }}/mês</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Vídeo Pro -->
+              <div v-if="config.content_addons.video_pro" class="toggle-item video-addon pro-addon">
+                <label class="video-toggle">
+                  <input
+                    type="checkbox"
+                    value="video_pro"
+                    v-model="selectedContentAddons"
+                    @change="updateVideoProSelection"
+                  >
+                  <div class="toggle-content">
+                    <div class="toggle-info">
+                      <span class="toggle-name">
+                        {{ config.content_addons.video_pro.name }}
+                        <span class="premium-badge">PRO</span>
+                        <span class="addon-tooltip">
+                          <i class="fas fa-info-circle"></i>
+                          <span class="tooltip-text">{{ config.content_addons.video_pro.description }}</span>
+                        </span>
+                        <span class="promo-inline-badge">-30%</span>
+                      </span>
+                      <div class="toggle-price">
+                        <span class="price-from">De {{ formatOriginalPrice(config.content_addons.video_pro.price_per_unit / 12) }}</span>
+                        <span class="price-to">+{{ formatMonthlyPrice(config.content_addons.video_pro.price_per_unit) }}</span>
+                      </div>
+                    </div>
+                    <div class="toggle-switch">
+                      <span class="switch"></span>
+                    </div>
+                  </div>
+                </label>
+                
+                <!-- Input de quantidade para Vídeo Pro -->
+                <div v-if="videoProSelected" class="quantity-input-section">
+                  <label class="quantity-label">Quantidade:</label>
+                  <div class="quantity-input-wrapper">
+                    <button type="button" class="quantity-btn" @click="decreaseVideoPro" :disabled="videoProQuantity <= 1">-</button>
+                    <input 
+                      type="number" 
+                      v-model.number="videoProQuantity"
+                      :min="config.content_addons.video_pro.min_quantity"
+                      :max="config.content_addons.video_pro.max_quantity"
+                      class="quantity-input"
+                    >
+                    <button type="button" class="quantity-btn" @click="increaseVideoPro" :disabled="videoProQuantity >= 10">+</button>
+                  </div>
+                  <div class="quantity-info">
+                    <span class="unit-price">R$ {{ (config.content_addons.video_pro.price_per_unit / 12).toFixed(2).replace('.', ',') }}/mês por vídeo</span>
+                    <span class="total-price">Total: R$ {{ ((config.content_addons.video_pro.price_per_unit * videoProQuantity) / 12).toFixed(2).replace('.', ',') }}/mês</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Outros addons (PDF, etc.) -->
               <label
-                v-for="(content, key) in config.content_addons"
+                v-for="(content, key) in nonVideoContentAddons"
                 :key="key"
                 class="toggle-item"
               >
@@ -408,8 +512,8 @@
                       <span class="promo-inline-badge">-30%</span>
                     </span>
                     <div class="toggle-price">
-                      <span class="price-from">De {{ formatOriginalPrice(content.price / 12) }}</span>
-                      <span class="price-to">+{{ formatMonthlyPrice(content.price) }}</span>
+                      <span class="price-from">De {{ formatOriginalPrice((content.price || content.price_per_unit) / 12) }}</span>
+                      <span class="price-to">+{{ formatMonthlyPrice(content.price || content.price_per_unit) }}</span>
                     </div>
                   </div>
                   <div class="toggle-switch">
@@ -417,6 +521,52 @@
                   </div>
                 </div>
               </label>
+              
+              <!-- Informação sobre YouTube (aparece quando qualquer vídeo é selecionado) -->
+              <div v-if="videoBasicSelected || videoProSelected" class="youtube-info-section">
+                <div class="youtube-info">
+                  <i class="fab fa-youtube"></i>
+                  <span><strong>Dica:</strong> Vídeos do YouTube ou links de incorporação são tratados como Vídeo Básico (O Pro é cobrado a mais pelo armazenamento e mantenção do arquivo)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Limites de Upload -->
+          <div class="upload-limits-info">
+            <div class="info-header">
+              <i class="fas fa-cloud-upload-alt"></i>
+              <span>Limites de Upload por Arquivo</span>
+            </div>
+            <div class="limits-grid">
+              <div class="limit-item">
+                <i class="fas fa-images"></i>
+                <span class="limit-type">Imagens</span>
+                <span class="limit-value">3MB máx</span>
+                <span class="limit-note">Múltiplas</span>
+              </div>
+              <div class="limit-item">
+                <i class="fas fa-file-pdf"></i>
+                <span class="limit-type">PDFs</span>
+                <span class="limit-value">15MB máx</span>
+                <span class="limit-note">Múltiplos</span>
+              </div>
+              <div class="limit-item basic-plan">
+                <i class="fas fa-video"></i>
+                <span class="limit-type">Vídeo Básico</span>
+                <span class="limit-value">50MB máx</span>
+                <span class="limit-note">1 unidade</span>
+              </div>
+              <div class="limit-item pro-plan">
+                <i class="fas fa-video"></i>
+                <span class="limit-type">Vídeo Pro</span>
+                <span class="limit-value">1GB máx</span>
+                <span class="limit-note premium-note">1 unidade</span>
+              </div>
+            </div>
+            <div class="video-plans-note">
+              <i class="fas fa-info-circle"></i>
+              <span>Você pode contratar múltiplas unidades de vídeo (ex: 3x Vídeo Básico + 2x Vídeo Pro)</span>
             </div>
           </div>
 
@@ -823,6 +973,31 @@
           </div>
         </div>
 
+        <!-- Vídeo Básico -->
+        <div v-if="videoBasicSelected && config.content_addons.video_basic" class="sidebar-item">
+          <span class="item-name">
+            {{ config.content_addons.video_basic.name }}
+            <small v-if="videoBasicQuantity > 1">({{ videoBasicQuantity }} unidades)</small>
+          </span>
+          <div class="item-price">
+            <span class="price-original-small">{{ formatOriginalPrice((config.content_addons.video_basic.price_per_unit * videoBasicQuantity) / 12) }}</span>
+            <span class="price-current-small">{{ formatMonthlyPrice(config.content_addons.video_basic.price_per_unit * videoBasicQuantity) }}</span>
+          </div>
+        </div>
+
+        <!-- Vídeo Pro -->
+        <div v-if="videoProSelected && config.content_addons.video_pro" class="sidebar-item">
+          <span class="item-name">
+            {{ config.content_addons.video_pro.name }}
+            <small v-if="videoProQuantity > 1">({{ videoProQuantity }} unidades)</small>
+          </span>
+          <div class="item-price">
+            <span class="price-original-small">{{ formatOriginalPrice((config.content_addons.video_pro.price_per_unit * videoProQuantity) / 12) }}</span>
+            <span class="price-current-small">{{ formatMonthlyPrice(config.content_addons.video_pro.price_per_unit * videoProQuantity) }}</span>
+          </div>
+        </div>
+
+        <!-- Outros addons -->
         <div 
           v-for="addonKey in validSelectedContentAddons"
           :key="addonKey"
@@ -830,8 +1005,8 @@
         >
           <span class="item-name">{{ config.content_addons[addonKey].name }}</span>
           <div class="item-price">
-            <span class="price-original-small">{{ formatOriginalPrice(config.content_addons[addonKey].price / 12) }}</span>
-            <span class="price-current-small">{{ formatMonthlyPrice(config.content_addons[addonKey].price) }}</span>
+            <span class="price-original-small">{{ formatOriginalPrice((config.content_addons[addonKey].price || config.content_addons[addonKey].price_per_unit) / 12) }}</span>
+            <span class="price-current-small">{{ formatMonthlyPrice(config.content_addons[addonKey].price || config.content_addons[addonKey].price_per_unit) }}</span>
           </div>
         </div>
       </div>
@@ -978,8 +1153,12 @@ export default {
       // Seleções
       selectedProduct: null,
       selectedPages: [], // Array de strings: ['about', 'services', ...]
-      selectedContentAddons: [], // ['video', 'pdf']
+      selectedContentAddons: [], // ['video_basic', 'video_pro', 'pdf']
       customPages: [], // Array de objetos: [{ description: '', resources: { image: false, video: false, carousel: false, form: false } }]
+      
+      // Controle de vídeos (quantidades separadas)
+      videoBasicQuantity: 1,
+      videoProQuantity: 1,
       
       // Pacote Pré-definido selecionado
       selectedPackage: null, // 'essential', 'authority', 'enterprise' ou null (personalizado)
@@ -1172,6 +1351,24 @@ export default {
       return this.selectedProduct ? this.config.products[this.selectedProduct].name : '';
     },
     
+    // Filtrar addons excluindo vídeo (que tem tratamento especial)
+    nonVideoContentAddons() {
+      if (!this.config.content_addons) return {};
+      
+      // eslint-disable-next-line no-unused-vars
+      const { video_basic, video_pro, ...others } = this.config.content_addons;
+      return others;
+    },
+    
+    // Controle de vídeos
+    videoBasicSelected() {
+      return this.selectedContentAddons.includes('video_basic');
+    },
+    
+    videoProSelected() {
+      return this.selectedContentAddons.includes('video_pro');
+    },
+    
     basePrice() {
       return this.selectedProduct ? this.config.products[this.selectedProduct].base_price : 0;
     },
@@ -1191,9 +1388,23 @@ export default {
     },
     
     contentTotal() {
-      return this.validSelectedContentAddons.reduce((sum, key) => {
-        return sum + (this.config.content_addons[key]?.price || 0);
+      let total = 0;
+      
+      // Calcular outros addons (não-vídeo)
+      total += this.validSelectedContentAddons.reduce((sum, key) => {
+        return sum + (this.config.content_addons[key]?.price || this.config.content_addons[key]?.price_per_unit || 0);
       }, 0);
+      
+      // Adicionar vídeos se selecionados
+      if (this.videoBasicSelected && this.config.content_addons.video_basic) {
+        total += this.config.content_addons.video_basic.price_per_unit * this.videoBasicQuantity;
+      }
+      
+      if (this.videoProSelected && this.config.content_addons.video_pro) {
+        total += this.config.content_addons.video_pro.price_per_unit * this.videoProQuantity;
+      }
+      
+      return total;
     },
     
     subtotal() {
@@ -1282,6 +1493,44 @@ export default {
     }
   },
   methods: {
+    // ========== CONTROLE DE VÍDEOS ==========
+    
+    updateVideoBasicSelection() {
+      if (!this.videoBasicSelected) {
+        this.videoBasicQuantity = 1;
+      }
+    },
+    
+    updateVideoProSelection() {
+      if (!this.videoProSelected) {
+        this.videoProQuantity = 1;
+      }
+    },
+    
+    increaseVideoBasic() {
+      if (this.videoBasicQuantity < 10) {
+        this.videoBasicQuantity++;
+      }
+    },
+    
+    decreaseVideoBasic() {
+      if (this.videoBasicQuantity > 1) {
+        this.videoBasicQuantity--;
+      }
+    },
+    
+    increaseVideoPro() {
+      if (this.videoProQuantity < 10) {
+        this.videoProQuantity++;
+      }
+    },
+    
+    decreaseVideoPro() {
+      if (this.videoProQuantity > 1) {
+        this.videoProQuantity--;
+      }
+    },
+    
     // ========== PACOTES PRÉ-DEFINIDOS ==========
     
     // Selecionar pacote pré-definido
@@ -1440,20 +1689,120 @@ export default {
     // Upload handlers
     handleVideoUpload(event) {
       const file = event.target.files[0];
-      if (file && file.size <= 50 * 1024 * 1024) { // 50MB
-        this.briefing.video_file = file;
+      if (!file) return;
+
+      // Verificar se vídeo está selecionado
+      const hasVideo = this.videoSelected;
+      
+      if (!hasVideo || !this.selectedVideoTier) {
+        alert('⚠️ Primeiro selecione um plano de vídeo antes de fazer upload:\n\n• 1 vídeo: até 50MB - R$ 35/ano\n• 2 vídeos: até 50MB cada - R$ 70/ano\n• 3-5 vídeos: até 1GB cada - R$ 105-175/ano\n\nVá na seção "Tipos de Arquivos Aceitos" e escolha a quantidade de vídeos.');
+        event.target.value = '';
+        return;
+      }
+
+      // Usar limite do tier selecionado
+      const maxSize = this.selectedVideoTier.max_file_size;
+      const planName = this.selectedVideoTier.name;
+      const maxSizeText = this.selectedVideoTier.max_file_size > 100000000 ? '1GB' : '50MB';
+
+      // Calcular tamanho do arquivo em MB ou GB para exibição
+      const fileSizeBytes = file.size;
+      let fileSizeDisplay;
+      
+      if (fileSizeBytes >= 1024 * 1024 * 1024) {
+        fileSizeDisplay = `${(fileSizeBytes / (1024 * 1024 * 1024)).toFixed(2)}GB`;
       } else {
-        alert('Arquivo muito grande. Máximo 50MB.');
+        fileSizeDisplay = `${(fileSizeBytes / (1024 * 1024)).toFixed(1)}MB`;
+      }
+
+      // Validar tamanho ANTES de aceitar o arquivo
+      if (file.size <= maxSize) {
+        this.briefing.video_file = file;
+        console.log(`✅ Vídeo aceito no plano ${planName}:`, file.name, `(${fileSizeDisplay})`);
+        
+        // Feedback positivo para o usuário
+        setTimeout(() => {
+          alert(`✅ Vídeo carregado com sucesso!\n\nArquivo: ${file.name}\nTamanho: ${fileSizeDisplay}\nPlano: ${planName}`);
+        }, 100);
+      } else {
+        // Feedback detalhado sobre o problema
+        const isBasicPlan = this.selectedVideoTier.max_file_size <= 31457280;
+        const upgradeText = isBasicPlan ? 'upgrade para 3+ vídeos (até 1GB cada)' : 'considere comprimir o vídeo';
+        
+        alert(`❌ Arquivo muito grande para o plano ${planName}\n\n` +
+              `📁 Arquivo: ${file.name}\n` +
+              `📊 Tamanho: ${fileSizeDisplay}\n` +
+              `🚫 Limite do plano: ${maxSizeText}\n\n` +
+              `💡 Dicas:\n` +
+              `• Para vídeos até ${maxSizeText}: use o plano ${planName}\n` +
+              `• Para vídeos maiores: ${upgradeText}`);
+        
         event.target.value = '';
       }
     },
     
     handlePdfUpload(event) {
-      const file = event.target.files[0];
-      if (file && file.size <= 10 * 1024 * 1024) { // 10MB
-        this.briefing.pdf_file = file;
-      } else {
-        alert('Arquivo muito grande. Máximo 10MB.');
+      const files = Array.from(event.target.files);
+      const validFiles = [];
+      const errorMessages = [];
+      
+      for (const file of files) {
+        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        
+        if (file && file.size <= 15 * 1024 * 1024) { // 15MB
+          validFiles.push(file);
+        } else {
+          errorMessages.push(`• ${file.name}: ${fileSizeMB}MB (limite: 15MB)`);
+        }
+      }
+      
+      if (validFiles.length > 0) {
+        // Se já existem arquivos, adiciona aos existentes
+        if (!this.briefing.pdf_files) {
+          this.briefing.pdf_files = [];
+        }
+        this.briefing.pdf_files = [...this.briefing.pdf_files, ...validFiles];
+        
+        // Feedback positivo
+        const successMsg = `✅ ${validFiles.length} PDF(s) carregado(s) com sucesso!`;
+        console.log(successMsg, validFiles.map(f => f.name));
+      }
+      
+      if (errorMessages.length > 0) {
+        alert(`⚠️ Alguns arquivos PDF excederam o limite:\n\n${errorMessages.join('\n')}\n\n📊 Limite por arquivo: 15MB\n📁 Arquivos válidos foram adicionados`);
+        event.target.value = '';
+      }
+    },
+
+    handleImageUpload(event) {
+      const files = Array.from(event.target.files);
+      const validFiles = [];
+      const errorMessages = [];
+      
+      for (const file of files) {
+        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        
+        if (file && file.size <= 3 * 1024 * 1024) { // 3MB
+          validFiles.push(file);
+        } else {
+          errorMessages.push(`• ${file.name}: ${fileSizeMB}MB (limite: 3MB)`);
+        }
+      }
+      
+      if (validFiles.length > 0) {
+        // Se já existem arquivos, adiciona aos existentes
+        if (!this.briefing.image_files) {
+          this.briefing.image_files = [];
+        }
+        this.briefing.image_files = [...this.briefing.image_files, ...validFiles];
+        
+        // Feedback positivo
+        const successMsg = `✅ ${validFiles.length} imagem(ns) carregada(s) com sucesso!`;
+        console.log(successMsg, validFiles.map(f => f.name));
+      }
+      
+      if (errorMessages.length > 0) {
+        alert(`⚠️ Algumas imagens excederam o limite:\n\n${errorMessages.join('\n')}\n\n📊 Limite por arquivo: 3MB\n📁 Imagens válidas foram adicionadas`);
         event.target.value = '';
       }
     },
@@ -1781,8 +2130,8 @@ export default {
     
     getContentTooltip(key) {
       const tooltips = {
-        video: 'Por padrão, o site suporta apenas imagens. Ative esta opção se você precisa subir vídeos institucionais ou de produtos diretamente no site.',
-        pdf: 'Habilita o envio de arquivos PDF para seus clientes baixarem. Ideal para disponibilizar cardápios, catálogos e tabelas. Sem isso, o site aceita apenas imagens e textos.'
+        video: 'Sistema de upload de vídeos com opções de quantidade. De 1 vídeo básico (50MB) até 5 vídeos profissionais (1GB cada). Suporta também incorporação via YouTube/Vimeo.',
+        pdf: 'Habilita o envio de múltiplos arquivos PDF para seus clientes baixarem. Ideal para disponibilizar cardápios, catálogos e tabelas. Sem isso, o site aceita apenas imagens e textos. Limite: máximo 15MB por arquivo, múltiplos arquivos permitidos.'
       };
       return tooltips[key] || 'Recurso adicional';
     }
@@ -3316,6 +3665,23 @@ export default {
       border-color: $p-color;
       background: rgba($p-color, 0.05);
     }
+    
+    // Estilos específicos para vídeo addon
+    &.video-addon {
+      padding: 0;
+      cursor: default;
+      
+      .video-toggle {
+        display: block;
+        padding: 20px;
+        cursor: pointer;
+      }
+      
+      &:has(.video-toggle input:checked) {
+        border-color: $p-color;
+        background: rgba($p-color, 0.05);
+      }
+    }
 
     input[type="checkbox"] {
       display: none;
@@ -3395,6 +3761,141 @@ export default {
       .switch {
         left: 26px;
       }
+    }
+  }
+}
+
+// Estilos para inputs de quantidade de vídeo
+.quantity-input-section {
+  padding: 0 20px 20px;
+  border-top: 1px solid rgba($gray-light, 0.5);
+  margin-top: 15px;
+  
+  .quantity-label {
+    display: block;
+    font-weight: 600;
+    color: $gray-darkness;
+    margin: 12px 0;
+    font-size: 0.9rem;
+  }
+  
+  .quantity-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    
+    .quantity-btn {
+      width: 36px;
+      height: 36px;
+      border: 2px solid $p-color;
+      background: $white;
+      color: $p-color;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      
+      &:hover:not(:disabled) {
+        background: $p-color;
+        color: $white;
+      }
+      
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+    
+    .quantity-input {
+      width: 80px;
+      height: 36px;
+      border: 2px solid $gray-light;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 1rem;
+      
+      &:focus {
+        border-color: $p-color;
+        outline: none;
+      }
+    }
+  }
+  
+  .quantity-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.85rem;
+    
+    .unit-price {
+      color: $gray-medium;
+    }
+    
+    .total-price {
+      color: $p-color;
+      font-weight: 700;
+    }
+  }
+}
+
+// Addon Pro styling
+.pro-addon {
+  border-color: #ff8c00 !important;
+  
+  &:has(input:checked) {
+    border-color: #ff8c00 !important;
+    background: rgba(#ff8c00, 0.05) !important;
+  }
+  
+  .toggle-name {
+    .premium-badge {
+      background: linear-gradient(135deg, #ff8c00 0%, #ff7700 100%);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.6rem;
+      font-weight: 700;
+      margin-left: 6px;
+    }
+  }
+  
+  .toggle-price {
+    color: #ff8c00 !important;
+  }
+  
+  .toggle-switch {
+    input:checked ~ .toggle-content .toggle-switch {
+      background: #ff8c00 !important;
+    }
+  }
+}
+
+// Seção de informação do YouTube
+.youtube-info-section {
+  margin-top: 12px;
+  
+  .youtube-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px;
+    background: rgba(#ff0000, 0.05);
+    border: 1px solid rgba(#ff0000, 0.2);
+    border-radius: 12px;
+    font-size: 0.9rem;
+    color: $gray-darkness;
+    
+    .fa-youtube {
+      color: #ff0000;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+    
+    span {
+      line-height: 1.4;
     }
   }
 }
@@ -5250,5 +5751,124 @@ export default {
 @keyframes pulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.05); }
+}
+
+// Seção de limites de upload
+.upload-limits-info {
+  background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
+  border: 1px solid #e1e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 25px 0;
+  
+  .info-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    color: #2d3748;
+    font-weight: 600;
+    
+    i {
+      color: #4285f4;
+      font-size: 18px;
+    }
+  }
+  
+  .limits-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+  }
+  
+  .limit-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 15px 10px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e8f0ff;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(66, 133, 244, 0.1);
+    }
+    
+    i {
+      font-size: 24px;
+      margin-bottom: 8px;
+      color: #4285f4;
+    }
+    
+    .limit-type {
+      font-size: 14px;
+      color: #4a5568;
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+    
+    .limit-value {
+      font-size: 12px;
+      color: #718096;
+      font-weight: 600;
+      background: #f0f4f8;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 4px;
+    }
+    
+    .limit-note {
+      font-size: 10px;
+      color: #4285f4;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      
+      &.premium-note {
+        color: #ff6b35;
+        font-weight: 600;
+      }
+    }
+    
+    &.basic-plan {
+      border-left: 3px solid #4285f4;
+    }
+    
+    &.pro-plan {
+      border-left: 3px solid #ff6b35;
+      background: linear-gradient(135deg, #fff5f2 0%, #ffeee8 100%);
+      
+      .limit-type {
+        color: #d63500;
+        font-weight: 600;
+      }
+      
+      .limit-value {
+        background: #ff6b35;
+        color: white;
+      }
+    }
+  }
+  
+  .video-plans-note {
+    margin-top: 15px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #e8f4fd 0%, #d4edda 100%);
+    border-radius: 8px;
+    border-left: 4px solid #17a2b8;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #155724;
+    
+    i {
+      color: #17a2b8;
+      font-size: 14px;
+    }
+  }
 }
 </style>

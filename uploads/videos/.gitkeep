@@ -1,0 +1,15 @@
+# Uploads de Vídeos
+
+Diretório para armazenar vídeos enviados pelos usuários.
+
+## Formatos Aceitos
+
+- MP4
+- WebM
+- OGG
+- MOV
+- AVI
+
+## Tamanho Máximo
+
+100MB por arquivo

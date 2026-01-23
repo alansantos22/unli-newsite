@@ -1,0 +1,124 @@
+{
+  "briefingSchema": {
+    "version": "1.0.0",
+    "timestamp": "",
+    "orderToken": "",
+    
+    "identidadeVital": {
+      "companyName": "",
+      "slogan": "",
+      "logo": {
+        "uploaded": false,
+        "url": "",
+        "filename": ""
+      },
+      "hasNoLogo": false
+    },
+    
+    "contatoLocalizacao": {
+      "whatsapp": "",
+      "instagram": "",
+      "facebook": "",
+      "email": "",
+      "address": "",
+      "noPhysicalLocation": false
+    },
+    
+    "conteudo": {
+      "description": "",
+      "services": [
+        {
+          "name": "",
+          "description": ""
+        },
+        {
+          "name": "",
+          "description": ""
+        },
+        {
+          "name": "",
+          "description": ""
+        }
+      ],
+      "about": "",
+      "differentials": []
+    },
+    
+    "estiloVisual": {
+      "primaryColor": "",
+      "secondaryColor": "",
+      "style": "",
+      "inspiration": ""
+    },
+    
+    "funcionalidades": {
+      "sections": [],
+      "features": {
+        "whatsappButton": true,
+        "contactForm": false,
+        "map": false,
+        "gallery": false,
+        "testimonials": false,
+        "blog": false,
+        "ecommerce": false
+      }
+    },
+    
+    "midiaConteudo": {
+      "images": [
+        {
+          "name": "",
+          "filename": "",
+          "url": "",
+          "size": 0,
+          "type": "",
+          "category": "",
+          "description": ""
+        }
+      ],
+      "videos": [
+        {
+          "name": "",
+          "filename": "",
+          "url": "",
+          "size": 0,
+          "type": "",
+          "duration": 0,
+          "category": "",
+          "description": ""
+        }
+      ],
+      "pdfs": [
+        {
+          "name": "",
+          "filename": "",
+          "url": "",
+          "size": 0,
+          "category": "",
+          "description": ""
+        }
+      ]
+    },
+    
+    "seo": {
+      "keywords": [],
+      "metaDescription": "",
+      "targetAudience": ""
+    },
+    
+    "observacoes": {
+      "additionalInfo": "",
+      "preferences": "",
+      "deadline": "",
+      "priority": "normal"
+    }
+  },
+  
+  "metadata": {
+    "formVersion": "1.0.0",
+    "submittedAt": "",
+    "lastModified": "",
+    "completionPercentage": 0,
+    "status": "draft"
+  }
+}

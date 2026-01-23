@@ -25,7 +25,7 @@ Options -Indexes
 </FilesMatch>
 
 # Permite apenas arquivos PHP de API pública
-<FilesMatch "^(process_payment|webhook-payment|webhook_mercadopago|price|order_create|payment_create|migrate)\.php$">
+<FilesMatch "^(process_payment|webhook-payment|webhook_mercadopago|price|order_create|payment_create|migrate|debug-migrate|test-php)\.php$">
     Order Allow,Deny
     Allow from all
 </FilesMatch>

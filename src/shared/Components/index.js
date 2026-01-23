@@ -18,5 +18,10 @@ export { default as ExperiencePreview } from './ExperiencePreview.vue';
 export { default as PriceCalculator } from './PriceCalculator.vue';
 export { default as SiteConfigurator } from './SiteConfigurator.vue';
 
+// Componentes de Upload
+export { default as ImageUploader } from './ImageUploader.vue';
+export { default as VideoUploader } from './VideoUploader.vue';
+export { default as PDFUploader } from './PDFUploader.vue';
+
 // Uso:
-// import { HeroModern, LazyImage, ModernCard, TimelineSection, BenefitsGameSection, ExperiencePreview, PriceCalculator, SiteConfigurator } from '@/shared/Components';
+// import { HeroModern, LazyImage, ModernCard, TimelineSection, BenefitsGameSection, ExperiencePreview, PriceCalculator, SiteConfigurator, ImageUploader, VideoUploader, PDFUploader } from '@/shared/Components';

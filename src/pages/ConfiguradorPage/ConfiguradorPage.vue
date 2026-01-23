@@ -147,7 +147,7 @@ export default {
 .configurador-header {
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 9999;
   background: $white;
   border-bottom: 1px solid $gray-light;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);

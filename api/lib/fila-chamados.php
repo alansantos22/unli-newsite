@@ -99,6 +99,11 @@ function createTicketForSale($orderData) {
         $payload['category_id'] = (int) FILA_CHAMADOS_CATEGORY_ID;
     }
     
+    // Adicionar username se configurado
+    if (defined('FILA_CHAMADOS_USERNAME') && !empty(FILA_CHAMADOS_USERNAME)) {
+        $payload['username'] = FILA_CHAMADOS_USERNAME;
+    }
+    
     // Fazer requisição para API
     $result = makeFilaChamadosRequest($payload);
     
@@ -375,6 +380,16 @@ function testFilaChamadosConnection() {
         'subject' => 'Teste de Conexão com API',
         'message' => 'Este é um ticket de teste gerado automaticamente para validar a integração.'
     ];
+    
+    // Adicionar categoria se configurada
+    if (defined('FILA_CHAMADOS_CATEGORY_ID') && FILA_CHAMADOS_CATEGORY_ID !== null) {
+        $testPayload['category_id'] = (int) FILA_CHAMADOS_CATEGORY_ID;
+    }
+    
+    // Adicionar username se configurado
+    if (defined('FILA_CHAMADOS_USERNAME') && !empty(FILA_CHAMADOS_USERNAME)) {
+        $testPayload['username'] = FILA_CHAMADOS_USERNAME;
+    }
     
     $result = makeFilaChamadosRequest($testPayload);
     

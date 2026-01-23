@@ -1,0 +1,15 @@
+# Uploads de Imagens
+
+Diretório para armazenar imagens enviadas pelos usuários.
+
+## Formatos Aceitos
+
+- PNG
+- JPG/JPEG
+- GIF
+- WebP
+- SVG
+
+## Tamanho Máximo
+
+5MB por arquivo

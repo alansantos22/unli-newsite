@@ -14,27 +14,88 @@
  * ✅ Suporta rollback
  */
 
+// CONFIGURAÇÃO DE ERROS - SEMPRE MOSTRAR
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/migration-error.log');
+
+// LOG INICIAL - TESTAR SE PHP ESTÁ FUNCIONANDO
+$debug_log = __DIR__ . '/migration-debug.log';
+file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] INICIO: PHP executando\n", FILE_APPEND);
+
 // ============================================
 // PROTEÇÃO COM SENHA (ALTERE ESTA SENHA!)
 // ============================================
-$MIGRATION_PASSWORD = 'unli2026secure';
+file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] PASSO 1: Definindo senha\n", FILE_APPEND);
+$MIGRATION_PASSWORD = 'Unli2026secure';
+
+file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] PASSO 2: Verificando parâmetros GET\n", FILE_APPEND);
+file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] GET password: " . ($_GET['password'] ?? 'NÃO DEFINIDO') . "\n", FILE_APPEND);
+file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] Senha esperada: {$MIGRATION_PASSWORD}\n", FILE_APPEND);
 
 // Verificar senha
 if (!isset($_GET['password']) || $_GET['password'] !== $MIGRATION_PASSWORD) {
+    file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] ERRO: Senha inválida ou não fornecida\n", FILE_APPEND);
     http_response_code(401);
     die('🚫 Acesso negado! Use: migrate.php?password=SUA_SENHA');
 }
 
+file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] PASSO 3: Senha validada com sucesso\n", FILE_APPEND);
+
 // ============================================
 // CONFIGURAÇÃO
 // ============================================
+file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] PASSO 4: Iniciando configuração do banco\n", FILE_APPEND);
+
+file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] PASSO 4.1: Definindo DB_CONFIG_ACCESS\n", FILE_APPEND);
 define('DB_CONFIG_ACCESS', true);
-require_once __DIR__ . '/db.config.php';
+
+file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] PASSO 4.2: Tentando incluir db.config.php\n", FILE_APPEND);
+$config_path = __DIR__ . '/db.config.php';
+file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] Caminho config: {$config_path}\n", FILE_APPEND);
+file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] Arquivo existe: " . (file_exists($config_path) ? 'SIM' : 'NÃO') . "\n", FILE_APPEND);
+
+if (!file_exists($config_path)) {
+    file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] ERRO FATAL: db.config.php não encontrado!\n", FILE_APPEND);
+    die('❌ Erro: Arquivo db.config.php não encontrado em: ' . $config_path);
+}
+
+try {
+    require_once $config_path;
+    file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] PASSO 4.3: db.config.php incluído com sucesso\n", FILE_APPEND);
+} catch (Exception $e) {
+    file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] ERRO ao incluir config: " . $e->getMessage() . "\n", FILE_APPEND);
+    die('❌ Erro ao incluir configuração: ' . $e->getMessage());
+} catch (Error $e) {
+    file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] ERRO FATAL ao incluir config: " . $e->getMessage() . "\n", FILE_APPEND);
+    die('❌ Erro fatal ao incluir configuração: ' . $e->getMessage());
+}
+
+file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] PASSO 4.4: Verificando constantes definidas\n", FILE_APPEND);
+$required_constants = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS', 'DB_CHARSET', 'DB_PREFIX'];
+foreach ($required_constants as $const) {
+    if (!defined($const)) {
+        file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] ERRO: Constante {$const} não definida\n", FILE_APPEND);
+        die("❌ Erro: Constante {$const} não definida no arquivo de configuração");
+    } else {
+        $value = ($const === 'DB_PASS') ? '***' : constant($const);
+        file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] Constante {$const} = {$value}\n", FILE_APPEND);
+    }
+}
 
 // Conectar ao banco
+file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] PASSO 5: Tentando conectar ao banco de dados\n", FILE_APPEND);
+file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] Host: " . DB_HOST . "\n", FILE_APPEND);
+file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] Database: " . DB_NAME . "\n", FILE_APPEND);
+file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] User: " . DB_USER . "\n", FILE_APPEND);
+
 try {
+    $dsn = sprintf('mysql:host=%s;dbname=%s;charset=%s', DB_HOST, DB_NAME, DB_CHARSET);
+    file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] DSN: {$dsn}\n", FILE_APPEND);
+    
     $pdo = new PDO(
-        sprintf('mysql:host=%s;dbname=%s;charset=%s', DB_HOST, DB_NAME, DB_CHARSET),
+        $dsn,
         DB_USER,
         DB_PASS,
         [
@@ -42,23 +103,38 @@ try {
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
         ]
     );
+    file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] PASSO 5.1: Conexão PDO estabelecida com sucesso!\n", FILE_APPEND);
+    
+    // Testar conexão
+    $version = $pdo->query("SELECT VERSION()")->fetchColumn();
+    file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] MySQL Version: {$version}\n", FILE_APPEND);
+    
 } catch (PDOException $e) {
+    file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] ERRO PDO: " . $e->getMessage() . "\n", FILE_APPEND);
     die('❌ Erro de conexão: ' . $e->getMessage());
+} catch (Exception $e) {
+    file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] ERRO geral na conexão: " . $e->getMessage() . "\n", FILE_APPEND);
+    die('❌ Erro geral na conexão: ' . $e->getMessage());
 }
 
 // ============================================
 // FUNÇÕES AUXILIARES
 // ============================================
 
+file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] PASSO 6: Definindo funções auxiliares\n", FILE_APPEND);
+
 $logs = [];
 
 function log_message($message, $type = 'info') {
-    global $logs;
+    global $logs, $debug_log;
     $logs[] = [
         'type' => $type,
         'message' => $message,
         'time' => date('H:i:s')
     ];
+    
+    // Log também no arquivo de debug
+    file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] LOG[{$type}]: {$message}\n", FILE_APPEND);
 }
 
 function table_exists($pdo, $tableName) {
@@ -244,17 +320,24 @@ function rollback_orders_table($pdo) {
 // EXECUTAR MIGRATIONS
 // ============================================
 
+file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] PASSO 7: Iniciando execução das migrations\n", FILE_APPEND);
+
 $action = $_GET['action'] ?? 'migrate';
+file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] Ação selecionada: {$action}\n", FILE_APPEND);
 
 if ($action === 'rollback') {
+    file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] Executando ROLLBACK\n", FILE_APPEND);
     log_message("🔄 Iniciando ROLLBACK...", 'warning');
     rollback_orders_table($pdo);
     
 } else {
+    file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] Executando MIGRATIONS\n", FILE_APPEND);
     log_message("🚀 Iniciando MIGRATIONS...");
     migrate_orders_table($pdo);
     log_message("🎉 Migrations concluídas!");
 }
+
+file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] PASSO 8: Migrations executadas, iniciando exibição HTML\n", FILE_APPEND);
 
 // ============================================
 // EXIBIR RESULTADOS

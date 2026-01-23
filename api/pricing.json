@@ -18,43 +18,130 @@
   "page_addons": {
     "about": {
       "name": "Sobre Nós",
-      "price": 199
+      "price": 59,
+      "description": "História, missão, valores e equipe da empresa"
     },
     "services": {
       "name": "Serviços",
-      "price": 249
+      "price": 119,
+      "description": "Apresentação detalhada dos serviços oferecidos"
     },
     "portfolio": {
       "name": "Portfólio",
-      "price": 299
+      "price": 159,
+      "description": "Galeria de projetos e trabalhos realizados"
     },
     "faq": {
       "name": "FAQ",
-      "price": 179
+      "price": 89,
+      "description": "Perguntas frequentes e respostas"
     },
     "contact": {
       "name": "Contato",
-      "price": 149
+      "price": 129,
+      "description": "Formulário de contato e informações"
+    },
+    "blog": {
+      "name": "Blog de Notícias",
+      "price": 349,
+      "description": "Área de gestão de posts e artigos otimizados para SEO",
+      "isNew": true,
+      "isPremium": true
+    },
+    "showcase": {
+      "name": "Vitrine de Produtos",
+      "price": 449,
+      "description": "Catálogo online com galeria e detalhes dos produtos (sem carrinho, checkout ou sistema de compra online)",
+      "isNew": true,
+      "isPremium": true
     }
   },
   "content_addons": {
-    "video": {
-      "name": "Vídeo",
-      "price": 79,
+    "video_basic": {
+      "name": "Vídeo Básico",
+      "price_per_unit": 35,
       "allowed_uploads": ["video/*"],
-      "max_size_mb": 50
+      "max_file_size": 52428800,
+      "description": "Vídeos de até 50MB cada",
+      "supports_quantity": true,
+      "min_quantity": 1,
+      "max_quantity": 10
+    },
+    "video_pro": {
+      "name": "Vídeo Pro",
+      "price_per_unit": 120,
+      "allowed_uploads": ["video/*"],
+      "max_file_size": 1073741824,
+      "description": "Vídeos profissionais de até 1GB cada",
+      "supports_quantity": true,
+      "min_quantity": 1,
+      "max_quantity": 10,
+      "isPremium": true
     },
     "pdf": {
-      "name": "PDF",
-      "price": 49,
-      "allowed_uploads": ["application/pdf"],
-      "max_size_mb": 10
+      "name": "Suporte a Documentos (PDF)",
+      "price": 15,
+      "allowed_uploads": ["application/pdf"]
+    }
+  },
+  "custom_pages": {
+    "base_price": 134,
+    "description": "Páginas personalizadas com conteúdo exclusivo",
+    "resources": {
+      "images": {
+        "name": "Imagens",
+        "price": 9,
+        "description": "Galeria de imagens para a página"
+      },
+      "video": {
+        "name": "Vídeo",
+        "price": 12,
+        "description": "Vídeo integrado na página"
+      },
+      "carousel": {
+        "name": "Carrossel",
+        "price": 18,
+        "description": "Carrossel de imagens ou conteúdo"
+      },
+      "form": {
+        "name": "Formulário",
+        "price": 35,
+        "description": "Formulário de contato customizado"
+      },
+      "testimonials": {
+        "name": "Depoimentos",
+        "price": 20,
+        "description": "Seção de depoimentos de clientes"
+      }
     }
   },
   "pricing_rules": {
-    "cash_discount_percent": 10,
-    "installments_12_markup_percent": 10,
+    "cash_discount_percent": 15,
+    "installments_12_markup_percent": 15,
     "installments": 12
+  },
+  "predefined_packages": {
+    "essential": {
+      "name": "Essencial",
+      "tagline": "Para quem presta serviços e precisa ser encontrado",
+      "icon": "🏢",
+      "pages": ["about", "services", "contact"],
+      "ideal_for": "Advogados, Clínicas, Consultores"
+    },
+    "authority": {
+      "name": "Autoridade",
+      "tagline": "Mostre seu trabalho e tire dúvidas para fechar contratos",
+      "icon": "🚀",
+      "pages": ["about", "services", "contact", "portfolio", "faq"],
+      "ideal_for": "Arquitetos, Agências, Engenharia, Reformas"
+    },
+    "enterprise": {
+      "name": "Ecossistema Digital",
+      "tagline": "Atraia tráfego com Blog e exiba seus produtos online",
+      "icon": "💎",
+      "pages": ["about", "services", "contact", "portfolio", "faq", "blog", "showcase"],
+      "ideal_for": "Lojas, Importadoras, Indústrias"
+    }
   },
   "limits": {
     "extra_pages_max_for_checkout": 5,
