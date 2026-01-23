@@ -43,5 +43,10 @@ export default [
         path: "/test-checkout",
         name: "TestCheckout",
         component: () => import("./pages/TestCheckout/TestCheckout.vue")
+    },
+    {
+        path: "/checkout/:orderId",
+        name: "Checkout",
+        component: () => import("./shared/Components/CheckoutPayment.vue")
     }
 ]

@@ -2260,7 +2260,62 @@ export default {
             }
           });
           
-          alert(`✅ Pedido criado com sucesso!\n\nID: ${result.order_id}\n\nEm produção, você seria redirecionado para o gateway de pagamento.`);
+          // Criar pagamento no Mercado Pago
+          console.log('💳 Criando pagamento para pedido:', result.order_id);
+          const paymentResult = await PricingService.createPayment(result.order_id);
+          
+          console.log('📦 [submitOrder] Resultado do pagamento:', paymentResult);
+          
+          // Debug ULTRA detalhado da condição
+          console.log('🔍 [submitOrder] ===== DEBUG COMPLETO =====');
+          console.log('🔍 paymentResult (objeto completo):', JSON.stringify(paymentResult, null, 2));
+          console.log('🔍 paymentResult (referência):', paymentResult);
+          console.log('🔍 typeof paymentResult:', typeof paymentResult);
+          console.log('🔍 Array.isArray(paymentResult):', Array.isArray(paymentResult));
+          console.log('🔍 paymentResult.constructor.name:', paymentResult?.constructor?.name);
+          
+          console.log('🔍 === VERIFICANDO .ok ===');
+          console.log('🔍 paymentResult.ok:', paymentResult.ok);
+          console.log('🔍 typeof paymentResult.ok:', typeof paymentResult.ok);
+          console.log('🔍 paymentResult.ok === true:', paymentResult.ok === true);
+          console.log('🔍 paymentResult.ok == true:', paymentResult.ok == true);
+          console.log('🔍 Boolean(paymentResult.ok):', Boolean(paymentResult.ok));
+          console.log('🔍 !!paymentResult.ok:', !!paymentResult.ok);
+          
+          console.log('🔍 === VERIFICANDO .checkout_data ===');
+          console.log('🔍 paymentResult.checkout_data:', paymentResult.checkout_data);
+          console.log('🔍 typeof paymentResult.checkout_data:', typeof paymentResult.checkout_data);
+          console.log('🔍 paymentResult.checkout_data === null:', paymentResult.checkout_data === null);
+          console.log('🔍 paymentResult.checkout_data === undefined:', paymentResult.checkout_data === undefined);
+          console.log('🔍 Boolean(paymentResult.checkout_data):', Boolean(paymentResult.checkout_data));
+          console.log('🔍 !!paymentResult.checkout_data:', !!paymentResult.checkout_data);
+          
+          console.log('🔍 === VERIFICANDO CONDIÇÃO COMPLETA ===');
+          const okCheck = paymentResult.ok === true;
+          const dataCheck = !!paymentResult.checkout_data;
+          const finalCondition = okCheck && dataCheck;
+          
+          console.log('🔍 okCheck (paymentResult.ok === true):', okCheck);
+          console.log('🔍 dataCheck (!!paymentResult.checkout_data):', dataCheck);
+          console.log('🔍 finalCondition (okCheck && dataCheck):', finalCondition);
+          console.log('🔍 ==========================================');
+          
+          if (finalCondition) {
+            // Navegar para checkout interno com os dados do pagamento
+            console.log('✅ Navegando para checkout interno:', result.order_id);
+            this.$router.push({
+              name: 'Checkout',
+              params: { orderId: result.order_id },
+              query: {
+                paymentId: paymentResult.payment_id,
+                amount: paymentResult.checkout_data.amount,
+                method: paymentResult.checkout_data.payment_method
+              }
+            });
+          } else {
+            console.error('🔴 Erro ao criar pagamento:', paymentResult);
+            console.error('🔴 Pedido criado mas pagamento falhou:', result.order_id);
+          }
         } else if (result.offline) {
           // API offline: verificar se é modo debug ou erro real
           const debugMode = this.$store.state.ConfigModule?.debug;
@@ -2286,7 +2341,7 @@ export default {
             };
             
             this.$emit('order-submitted', mockPayload);
-            alert('🔧 DEBUG MODE\n\nPedido simulado localmente.\n\nEm produção, o servidor validaria todos os valores.');
+            console.info('🔧 DEBUG MODE: Pedido simulado localmente');
           } else {
             // PRODUÇÃO: BLOQUEAR checkout se API estiver offline
             console.error('🚨 ERRO CRÍTICO: API offline em produção!');
@@ -2299,7 +2354,7 @@ export default {
         }
       } catch (error) {
         console.error('🔴 Erro ao enviar pedido:', error);
-        alert('❌ Erro ao enviar pedido. Tente novamente ou entre em contato.');
+        console.error('🔴 Falha no checkout, verifique os logs acima');
       } finally {
         this.isSubmitting = false;
       }

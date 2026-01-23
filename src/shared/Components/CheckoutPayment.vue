@@ -1,5 +1,15 @@
 <template>
   <div class="checkout-payment">
+    <!-- Order Summary -->
+    <div class="order-summary">
+      <h2>🛒 Finalizar Pagamento</h2>
+      <div class="order-info">
+        <p><strong>Pedido:</strong> {{ orderId }}</p>
+        <p><strong>Valor:</strong> R$ {{ transactionAmount.toFixed(2) }}</p>
+        <p><strong>Descrição:</strong> {{ productDescription }}</p>
+      </div>
+    </div>
+
     <!-- Debug Panel -->
     <div v-if="debug" class="debug-panel">
       <h4>🐛 Debug Mode</h4>
@@ -23,7 +33,7 @@
     </div>
 
     <!-- Card Payment Form -->
-    <div v-show="paymentMethod === 'credit_card'" class="payment-form card-form">
+    <form id="form-checkout" v-show="paymentMethod === 'credit_card'" class="payment-form card-form">
       <h3>Dados do Cartão</h3>
 
       <!-- Card Number -->
@@ -105,7 +115,7 @@
           class="form-input"
         />
       </div>
-    </div>
+    </form>
 
     <!-- Pix Payment Form -->
     <div v-show="paymentMethod === 'pix'" class="payment-form pix-form">
@@ -209,7 +219,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
+
+// =============================================
+// ROUTE DATA
+// =============================================
+const route = useRoute()
+const orderId = route.params.orderId
+const paymentId = route.query.paymentId
+const orderAmount = parseFloat(route.query.amount) || 199.90
+
+console.log('💳 Dados do checkout:', { orderId, paymentId, orderAmount })
 
 // =============================================
 // CONFIGURATION (via Environment Variables)
@@ -246,6 +267,8 @@ let cardForm = null
 
 // Debug info
 const debugInfo = computed(() => ({
+  orderId,
+  paymentId,
   paymentMethod: paymentMethod.value,
   email: email.value,
   identificationType: identificationType.value,
@@ -255,14 +278,17 @@ const debugInfo = computed(() => ({
   transactionAmount: transactionAmount.value
 }))
 
-// Order details (hardcoded for demo - você pode fazer isso dinâmico)
-const transactionAmount = ref(199.90)
-const productDescription = ref('Plano Premium - Mensal')
+// Order details - agora dinâmico baseado na rota
+const transactionAmount = ref(orderAmount)
+const productDescription = ref(`Pedido ${orderId}`)
 
 // =============================================
 // LIFECYCLE
 // =============================================
-onMounted(() => {
+onMounted(async () => {
+  // Aguardar o DOM estar completamente renderizado
+  await nextTick()
+  console.log('🔍 CheckoutPayment mounted, inicializando Mercado Pago...')
   initMercadoPago()
 })
 
@@ -282,12 +308,23 @@ function selectPaymentMethod(method) {
 
 async function initMercadoPago() {
   try {
+    console.log('🔍 Inicializando Mercado Pago...')
+    
+    // Verificar se o elemento form-checkout existe
+    const formElement = document.getElementById('form-checkout')
+    if (!formElement) {
+      throw new Error('Elemento form-checkout não encontrado no DOM')
+    }
+    console.log('✅ Elemento form-checkout encontrado:', formElement)
+    
     // Load Mercado Pago SDK
     if (!window.MercadoPago) {
       throw new Error('Mercado Pago SDK não carregado. Verifique se o script está no index.html')
     }
+    console.log('✅ SDK do Mercado Pago carregado')
 
     mp = new window.MercadoPago(PUBLIC_KEY)
+    console.log('✅ Instância do Mercado Pago criada')
 
     // Initialize Card Form
     cardForm = mp.cardForm({
@@ -483,6 +520,37 @@ function copyPixCode() {
   margin: 0 auto;
   padding: 2rem;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* =============================================
+   ORDER SUMMARY
+   ============================================= */
+.order-summary {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.order-summary h2 {
+  margin: 0 0 1rem 0;
+  color: #2c3e50;
+  font-size: 1.5rem;
+}
+
+.order-info {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.order-info p {
+  margin: 0;
+  color: #495057;
+}
+
+.order-info strong {
+  color: #2c3e50;
 }
 
 /* =============================================

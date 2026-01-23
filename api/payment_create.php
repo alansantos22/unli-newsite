@@ -87,16 +87,22 @@ try {
         'payment_url' => $paymentData['payment_url']
     ]);
     
-    // 7. Retornar dados do pagamento
+    // 7. Retornar dados do pagamento (para checkout integrado)
     $response = [
         'ok' => true,
         'order_id' => $orderId,
         'payment_id' => $paymentData['payment_id'],
-        'payment_url' => $paymentData['payment_url'],
-        'qr_code' => $paymentData['qr_code'] ?? null,
+        // Para checkout integrado - não retornar URL externa
+        'checkout_data' => [
+            'amount' => $amount,
+            'description' => $description,
+            'payment_method' => $paymentMethod,
+            'installments' => $pricing['installments'],
+            'external_reference' => $orderId
+        ],
         'amount' => $amount,
         'payment_method' => $paymentMethod,
-        'message' => 'Pagamento criado com sucesso!'
+        'message' => 'Dados do pagamento preparados para checkout integrado'
     ];
     
     echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
