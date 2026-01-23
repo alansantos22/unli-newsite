@@ -1297,7 +1297,24 @@ export default {
     if (this.serverAvailable) {
       console.info('✅ API Server disponível');
     } else {
-      console.warn('🟡 API Server offline - usando cálculos locais');
+      // Verificar se é erro crítico (produção) ou desenvolvimento
+      const debugMode = this.$store.state.ConfigModule?.debug;
+      
+      if (debugMode) {
+        console.warn('🔧 DEBUG MODE - API desabilitada (cálculos locais permitidos)');
+      } else {
+        console.error('🚨 ERRO CRÍTICO: API offline em produção!');
+        console.error('🚨 Checkout será bloqueado por segurança');
+        console.error('🚨 Verifique: .htaccess, CORS, permissões de arquivos');
+        
+        // Mostrar alerta visual para o usuário
+        alert(
+          '⚠️ Sistema Temporariamente Indisponível\n\n' +
+          'Nosso servidor de validação está offline.\n' +
+          'Por favor, tente novamente em alguns instantes.\n\n' +
+          'Se o problema persistir, entre em contato conosco.'
+        );
+      }
     }
   },
   watch: {
@@ -1370,14 +1387,27 @@ export default {
         return [];
       }
       
-      const filtered = this.selectedPages.filter(key => {
-        const exists = !!this.config.page_addons[key];
-        console.log(`  - Checking key "${key}": ${exists ? '✅ exists' : '❌ NOT FOUND'}`);
-        return exists;
-      });
+      // Garantir que selectedPages seja tratado como array
+      let pages = this.selectedPages;
+      if (Array.isArray(pages)) {
+        // Já é array, apenas filtrar
+        const filtered = pages.filter(key => {
+          const exists = !!this.config.page_addons[key];
+          console.log(`  - Checking key "${key}": ${exists ? '✅ exists' : '❌ NOT FOUND'}`);
+          return exists;
+        });
+        console.log('  ✅ Result:', filtered);
+        return filtered;
+      } else if (typeof pages === 'object' && pages !== null) {
+        // É um objeto (veio do servidor), converter para array
+        console.log('  ℹ️ Converting Object to Array');
+        const keys = Object.keys(pages).filter(key => !!this.config.page_addons[key]);
+        console.log('  ✅ Result:', keys);
+        return keys;
+      }
       
-      console.log('  ✅ Result:', filtered);
-      return filtered;
+      console.log('  ⚠️ selectedPages is invalid type');
+      return [];
     },
     
     validSelectedContentAddons() {
@@ -1461,35 +1491,24 @@ export default {
     },
     
     subtotal() {
-      // Se servidor validou, usar valor do servidor; senão, calcular localmente
-      if (this.serverValidatedPricing && this.serverValidatedPricing.source === 'server') {
-        return this.serverValidatedPricing.subtotal;
-      }
-      return this.basePrice + this.pagesTotal + this.contentTotal;
+      // SEMPRE calcular localmente para feedback visual instantâneo
+      const localPrice = this.basePrice + this.pagesTotal + this.contentTotal;
+      return localPrice;
     },
     
     cashPrice() {
-      if (this.serverValidatedPricing && this.serverValidatedPricing.source === 'server') {
-        return this.serverValidatedPricing.avista;
-      }
-      // À vista = preço normal (sem desconto)
+      // À vista = preço normal (sem desconto) - sempre calcular localmente
       return this.subtotal;
     },
     
     installmentTotal() {
-      if (this.serverValidatedPricing && this.serverValidatedPricing.source === 'server') {
-        return this.serverValidatedPricing.parcelado_total;
-      }
-      // 15% acréscimo no parcelado (taxa do gateway)
+      // 15% acréscimo no parcelado (taxa do gateway) - sempre calcular localmente
       const markup = 0.15; // 15%
       return Math.round(this.subtotal * (1 + markup) * 100) / 100;
     },
     
     installmentValue() {
-      if (this.serverValidatedPricing && this.serverValidatedPricing.source === 'server') {
-        return this.serverValidatedPricing.parcela_12;
-      }
-      // Valor de cada parcela (cálculo local)
+      // Valor de cada parcela - sempre calcular localmente
       return Math.round((this.installmentTotal / this.config.pricing_rules.installments) * 100) / 100;
     },
     
@@ -2027,21 +2046,73 @@ export default {
           content: this.selectedContentAddons
         };
         
+        // Converter Proxy para Array normal para logging
+        console.log('📤 [validatePriceOnServer] ENVIANDO para backend:', {
+          product: selection.product,
+          pages: [...selection.pages],  // Expande o array
+          content: [...selection.content],  // Expande o array
+          pages_count: selection.pages.length,
+          content_count: selection.content.length,
+          timestamp: new Date().toLocaleTimeString()
+        });
+        
+        console.log('📤 [DETALHE] Arrays expandidos:', {
+          pages_detail: selection.pages.map((p, i) => `[${i}]="${p}"`).join(', '),
+          content_detail: selection.content.map((c, i) => `[${i}]="${c}"`).join(', ')
+        });
+        
         const result = await PricingService.calculatePrice(selection, this.config);
         
+        console.log('📥 [validatePriceOnServer] RECEBIDO do backend:', {
+          serverValidated: result.serverValidated,
+          pricing: result.pricing,
+          normalized: result.normalized
+        });
+        
         if (result.serverValidated) {
-          this.serverValidatedPricing = result.pricing;
-          this.serverAvailable = true;
+          console.log('✅ Servidor validou preços:', result.pricing);
           
-          // Se servidor normalizou seleções, aplicar
-          if (result.normalized && result.normalized !== selection) {
-            console.info('🔄 Servidor normalizou seleções');
-            this.selectedProduct = result.normalized.product;
-            this.selectedPages = result.normalized.pages;
-          }
+          // Armazenar preços validados para uso no checkout
+          // MAS NÃO alterar as seleções do usuário!
+          this.serverValidatedPricing = null;
+          
+          this.$nextTick(() => {
+            this.serverValidatedPricing = {
+              ...result.pricing,
+              _timestamp: Date.now()
+            };
+            this.serverAvailable = true;
+            
+            console.log('💰 [validatePriceOnServer] Preços validados (sem alterar seleções):', {
+              subtotal: this.serverValidatedPricing.subtotal,
+              avista: this.serverValidatedPricing.avista,
+              parcelado: this.serverValidatedPricing.parcelado_total
+            });
+          });
+          
+          // REMOVIDO: Não aplicar "normalização" do servidor que sobrescreve escolhas do usuário
+          // O servidor só valida preços, não muda seleções!
         } else {
-          this.serverValidatedPricing = result.pricing; // Usar valor local
-          this.serverAvailable = false;
+          console.log('⚠️ Usando cálculo local:', result.pricing);
+          
+          // SOLUÇÃO: Também resetar para null primeiro
+          this.serverValidatedPricing = null;
+          
+          this.$nextTick(() => {
+            // Marcar explicitamente como local para forçar reatividade
+            this.serverValidatedPricing = {
+              ...result.pricing,
+              source: 'local',
+              _timestamp: Date.now() // Força reatividade
+            };
+            this.serverAvailable = false;
+            
+            console.log('💰 [validatePriceOnServer] Cálculo local:', {
+              subtotal: this.serverValidatedPricing.subtotal,
+              avista: this.serverValidatedPricing.avista,
+              parcelado: this.serverValidatedPricing.parcelado_total
+            });
+          });
         }
         
         this.isValidating = false;
@@ -2066,6 +2137,33 @@ export default {
       this.isSubmitting = true;
       
       try {
+        // VALIDAR preços no servidor antes de enviar
+        console.log('🔒 [submitOrder] Validando preços no servidor antes do checkout...');
+        const selection = {
+          product: this.selectedProduct,
+          pages: this.selectedPages,
+          content: this.selectedContentAddons
+        };
+        
+        const validationResult = await PricingService.calculatePrice(selection, this.config);
+        
+        // Verificar se há discrepância entre frontend e backend
+        if (validationResult.serverValidated) {
+          const serverPrice = validationResult.pricing.avista;
+          const localPrice = this.cashPrice;
+          const diff = Math.abs(serverPrice - localPrice);
+          
+          if (diff > 0.01) {
+            console.warn('⚠️ [submitOrder] DISCREPÂNCIA DE PREÇO detectada!');
+            console.warn('Frontend:', localPrice, '| Backend:', serverPrice);
+            alert(`⚠️ Detectamos uma diferença de preço.\n\nO valor correto é R$ ${serverPrice.toFixed(2).replace('.', ',')}.\n\nPor favor, revise seu pedido.`);
+            this.isSubmitting = false;
+            return;
+          }
+          
+          console.log('✅ [submitOrder] Preços validados - Frontend e Backend estão sincronizados');
+        }
+        
         // Montar dados do pedido (sem incluir preço - servidor calcula)
         const orderData = {
           product: this.selectedProduct,
@@ -2094,28 +2192,37 @@ export default {
           
           alert(`✅ Pedido criado com sucesso!\n\nID: ${result.order_id}\n\nEm produção, você seria redirecionado para o gateway de pagamento.`);
         } else if (result.offline) {
-          // API offline: modo desenvolvimento
-          console.warn('🟡 API offline - pedido simulado:', result.mockData);
+          // API offline: verificar se é modo debug ou erro real
+          const debugMode = this.$store.state.ConfigModule?.debug;
           
-          const mockPayload = {
-            ...result.mockData,
-            product: this.selectedProduct,
-            pages: this.selectedPages,
-            content_addons: this.selectedContentAddons,
-            briefing: this.briefing,
-            pricing: {
-              subtotal: this.subtotal,
-              cash_price: this.cashPrice,
-              installment_total: this.installmentTotal,
-              installment_value: this.installmentValue,
-              source: 'local'
-            },
-            timestamp: new Date().toISOString()
-          };
-          
-          this.$emit('order-submitted', mockPayload);
-          
-          alert('⚠️ Modo Desenvolvimento\n\nAPI offline - pedido simulado localmente.\n\nEm produção, o servidor validaria todos os valores.');
+          if (debugMode) {
+            // DEBUG MODE: permitir pedido mock
+            console.warn('🔧 DEBUG MODE - pedido simulado:', result.mockData);
+            
+            const mockPayload = {
+              ...result.mockData,
+              product: this.selectedProduct,
+              pages: this.selectedPages,
+              content_addons: this.selectedContentAddons,
+              briefing: this.briefing,
+              pricing: {
+                subtotal: this.subtotal,
+                cash_price: this.cashPrice,
+                installment_total: this.installmentTotal,
+                installment_value: this.installmentValue,
+                source: 'local'
+              },
+              timestamp: new Date().toISOString()
+            };
+            
+            this.$emit('order-submitted', mockPayload);
+            alert('🔧 DEBUG MODE\n\nPedido simulado localmente.\n\nEm produção, o servidor validaria todos os valores.');
+          } else {
+            // PRODUÇÃO: BLOQUEAR checkout se API estiver offline
+            console.error('🚨 ERRO CRÍTICO: API offline em produção!');
+            console.error('🚨 Checkout bloqueado por segurança');
+            throw new Error('Servidor de validação indisponível. Por favor, tente novamente em alguns instantes.');
+          }
         } else {
           // Erro no servidor
           throw new Error(result.error || 'Erro desconhecido');

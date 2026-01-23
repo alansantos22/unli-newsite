@@ -77,11 +77,25 @@ function normalize_selection(array $input, array $cfg): array {
         }
     }
     
-    // Validar conteúdo pesado (boolean)
+    // Validar conteúdo pesado (aceita tanto array quanto object)
     $contentIn = $input['content'] ?? [];
     $content = [];
+    
+    // Se é array ['pdf', 'video'], converter para object { pdf: true, video: true }
+    if (is_array($contentIn) && array_keys($contentIn) === range(0, count($contentIn) - 1)) {
+        // É array indexado: ['pdf', 'video']
+        $contentInAsObject = [];
+        foreach ($contentIn as $item) {
+            if (is_string($item)) {
+                $contentInAsObject[$item] = true;
+            }
+        }
+        $contentIn = $contentInAsObject;
+    }
+    
+    // Validar cada addon de conteúdo
     foreach ($contentAddons as $key => $_) {
-        $content[$key] = filter_var($contentIn[$key] ?? false, FILTER_VALIDATE_BOOL);
+        $content[$key] = !empty($contentIn[$key]);
     }
     
     return [

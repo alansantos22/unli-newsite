@@ -1,80 +1,74 @@
 # ============================================
-# PROTEÇÃO DE ARQUIVOS SENSÍVEIS
-# Apache .htaccess
+# PROTEÇÃO DE ARQUIVOS SENSÍVEIS - API
+# Apache 2.4+ (.htaccess)
 # ============================================
 
-# Bloqueia acesso direto a arquivos de configuração
-<FilesMatch "^(config\.secure\.php|config\..*\.php|db\.config\.php)$">
-    Order Allow,Deny
-    Deny from all
-</FilesMatch>
-
-# Bloqueia acesso a arquivos de log
-<FilesMatch "\.(log|txt)$">
-    Order Allow,Deny
-    Deny from all
-</FilesMatch>
-
-# Bloqueia listagem de diretórios
+# Desabilita listagem de diretórios
 Options -Indexes
+
+# IMPORTANTE: Garante que o diretório não é bloqueado por herança
+<IfModule mod_authz_core.c>
+  Require all granted
+</IfModule>
 
 # Bloqueia acesso a arquivos ocultos (.env, .git, etc)
 <FilesMatch "^\.">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
     Order Allow,Deny
     Deny from all
+  </IfModule>
 </FilesMatch>
 
-# Permite apenas arquivos PHP de API pública
-<FilesMatch "^(process_payment|webhook-payment|webhook_mercadopago|price|order_create|payment_create|migrate|debug-migrate|test-php)\.php$">
+# Bloqueia arquivos de configuração sensíveis
+<FilesMatch "^(config\.secure\.php|db\.config\.php)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
     Order Allow,Deny
-    Allow from all
+    Deny from all
+  </IfModule>
 </FilesMatch>
 
-# 🔒 SEGURANÇA: Depois de executar as migrations, bloqueie o acesso descomentando abaixo:
-# <Files "migrate.php">
-#     Order Allow,Deny
-#     Deny from all
-# </Files>
+# Bloqueia arquivos de log
+<FilesMatch "\.(log|txt)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order Allow,Deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
 
 # Proteção contra injeção de código
 <IfModule mod_rewrite.c>
-    RewriteEngine On
-    
-    # Bloqueia acesso a arquivos de configuração via URL rewrite
-    RewriteRule ^config\..*\.php$ - [F,L]
-    
-    # Bloqueia tentativas de acesso direto a includes/lib
-    RewriteRule ^(lib|includes|onboarding)/.*$ - [F,L]
+  RewriteEngine On
+  
+  # Bloqueia acesso a arquivos de configuração via padrão
+  RewriteRule ^config\..*\.php$ - [F,L]
+  
+  # Bloqueia acesso direto a includes/lib/onboarding
+  RewriteRule ^(lib|includes|onboarding)/.*$ - [F,L]
 </IfModule>
 
-# Headers de segurança adicionais
+# Headers de segurança
 <IfModule mod_headers.c>
-    # Previne clickjacking
-    Header always set X-Frame-Options "SAMEORIGIN"
-    
-    # Previne MIME sniffing
-    Header always set X-Content-Type-Options "nosniff"
-    
-    # Habilita proteção XSS do navegador
-    Header always set X-XSS-Protection "1; mode=block"
-    
-    # Remove informações do servidor
-    Header unset Server
-    Header unset X-Powered-By
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-XSS-Protection "1; mode=block"
+  Header unset Server
+  Header unset X-Powered-By
 </IfModule>
 
-# Desabilita execução de PHP em uploads (se houver)
-<IfModule mod_php7.c>
-    php_flag engine off
-</IfModule>
-<IfModule mod_php8.c>
-    php_flag engine off
-</IfModule>
-
-# Limite de tamanho de requisição (previne ataques de DoS)
+# Limite de tamanho de requisição (10MB)
 LimitRequestBody 10485760
 
 # Timeout de conexão
 <IfModule mod_reqtimeout.c>
-    RequestReadTimeout header=20-40,MinRate=500 body=20-40,MinRate=500
+  RequestReadTimeout header=20-40,MinRate=500 body=20-40,MinRate=500
 </IfModule>
+

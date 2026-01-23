@@ -46,10 +46,18 @@ class PricingService {
         return this.serverAvailable;
       }
       
+      // Se não é 200 OK, é erro do servidor (403, 404, 500, etc)
+      console.error(`🔴 ERRO NA API: HTTP ${response.status} - ${response.statusText}`);
+      console.error('🔴 Verifique .htaccess e permissões de arquivos');
       this.serverAvailable = false;
       return false;
     } catch (error) {
-      console.warn('🟡 API não disponível (modo desenvolvimento):', error.message);
+      // Erros de rede ou parsing JSON
+      if (error.message.includes('JSON') || error.message.includes('<!doctype')) {
+        console.error('🔴 API retornou HTML em vez de JSON - Verifique configuração do servidor');
+      } else {
+        console.warn('🟡 API não disponível (modo desenvolvimento):', error.message);
+      }
       this.serverAvailable = false;
       return false;
     }
