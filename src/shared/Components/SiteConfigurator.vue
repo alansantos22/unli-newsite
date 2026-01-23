@@ -824,21 +824,37 @@
               <!-- Divider -->
               <hr class="divider">
               
-              <!-- Preço com Badge do Café Inline -->
+              <!-- Preço Mensal / Cobrança Anual (Estratégia SaaS) -->
               <div class="price-display">
-                <!-- Ancoragem de Preço -->
+                <!-- Ancoragem de Preço Original -->
                 <div class="price-anchorage">
                   <span class="label-from">De</span>
                   <span class="old-price">{{ formatOriginalPrice(installmentTotal) }}</span>
                 </div>
                 
-                <span class="label">Equivalente a:</span>
-                <div class="values">
-                  <span class="final-price">{{ formatPrice(cashPrice) }}</span>
-                  <span class="coffee-badge">
-                    ☕ R$ {{ dailyPrice }} / dia
-                  </span>
+                <!-- Destaque: Preço Mensal -->
+                <span class="label">Por apenas:</span>
+                <div class="price-display-monthly">
+                  <div class="price-row">
+                    <div class="main-price">
+                      <span class="currency">R$</span>
+                      <span class="amount">{{ monthlyEquivalent }}</span>
+                      <span class="period">/mês</span>
+                    </div>
+                    
+                    <!-- Badge Café (Alinhado à Direita) -->
+                    <div class="coffee-badge-secondary">
+                      ☕ R$ {{ dailyPrice }} / dia
+                    </div>
+                  </div>
+                  
+                  <!-- Transparência: Contexto de Cobrança -->
+                  <div class="sub-price-context">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Faturado em parcela única de <strong>{{ formatPrice(cashPrice) }}</strong></span>
+                  </div>
                 </div>
+                
                 <p class="savings-text">
                   <i class="fas fa-piggy-bank"></i>
                   Você economiza <strong>{{ formatPrice(getTotalSavings()) }}</strong> escolhendo Pix!
@@ -868,7 +884,10 @@
                     >
                       <span class="btn-main-text">
                         <i class="fas fa-lock"></i>
-                        {{ isSubmitting ? 'Processando...' : `Garantir Desconto de ${formatPrice(getPixExtraSavings())}` }}
+                        {{ isSubmitting ? 'Processando...' : 'Pagar Plano Anual (Pix)' }}
+                      </span>
+                      <span class="btn-sub-text">
+                        Economize {{ formatPrice(getPixExtraSavings()) }} hoje
                       </span>
                     </button>
                   </div>
@@ -1499,6 +1518,12 @@ export default {
       const annual = this.cashPrice;
       const daily = annual / 365;
       return daily.toFixed(2).replace('.', ',');
+    },
+    
+    // Preço mensal equivalente (valor com taxa de 15% do cartão)
+    monthlyEquivalent() {
+      // Usa o installmentValue que já tem a taxa de 15% incluída
+      return this.installmentValue.toFixed(2).replace('.', ',');
     },
     
     // Verificar se alguma página personalizada tem formulário
@@ -5051,42 +5076,113 @@ body {
         }
       }
       
-      .values {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin-bottom: 12px;
+      // Layout de Preço Mensal (Estratégia SaaS)
+      .price-display-monthly {
+        margin: 16px 0;
         
-        .final-price {
-          font-size: 2.2rem;
-          font-weight: 800;
-          color: $p-color;
-          line-height: 1;
+        .price-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 12px;
+          flex-wrap: wrap;
           
           @media (max-width: 768px) {
-            font-size: 1.8rem;
+            gap: 12px;
           }
         }
         
-        .coffee-badge {
-          display: inline-flex;
+        .main-price {
+          display: flex;
+          align-items: baseline;
+          gap: 4px;
+          
+          .currency {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: $p-color;
+            
+            @media (max-width: 768px) {
+              font-size: 1.2rem;
+            }
+          }
+          
+          .amount {
+            font-size: 3rem;
+            font-weight: 900;
+            color: $p-color;
+            line-height: 1;
+            letter-spacing: -1px;
+            
+            @media (max-width: 768px) {
+              font-size: 2.4rem;
+            }
+          }
+          
+          .period {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: $gray-medium;
+            
+            @media (max-width: 768px) {
+              font-size: 1rem;
+            }
+          }
+        }
+        
+        .sub-price-context {
+          display: flex;
           align-items: center;
-          gap: 6px;
-          padding: 6px 12px;
-          background: linear-gradient(135deg, #6F4E37 0%, #8B4513 100%);
-          color: white;
-          border-radius: 20px;
-          font-size: 0.85rem;
-          font-weight: 600;
-          box-shadow: 0 2px 8px rgba(111, 78, 55, 0.3);
-          white-space: nowrap;
+          gap: 8px;
+          padding: 10px 14px;
+          background: rgba($accent-blue, 0.08);
+          border-left: 3px solid $accent-blue;
+          border-radius: 8px;
+          font-size: 0.9rem;
+          color: $gray-darkness;
+          line-height: 1.5;
           
           @media (max-width: 768px) {
-            font-size: 0.8rem;
-            padding: 5px 10px;
+            font-size: 0.85rem;
+            padding: 8px 12px;
           }
+          
+          i {
+            color: $accent-blue;
+            font-size: 1rem;
+            flex-shrink: 0;
+          }
+          
+          strong {
+            color: $p-color;
+            font-weight: 700;
+          }
+        }
+      }
+      
+      .coffee-badge-secondary {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        background: linear-gradient(135deg, #6F4E37 0%, #8B4513 100%);
+        color: white;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(111, 78, 55, 0.3);
+        white-space: nowrap;
+        flex-shrink: 0;
+        
+        @media (max-width: 768px) {
+          font-size: 0.7rem;
+          padding: 6px 10px;
+        }
+        
+        @media (max-width: 480px) {
+          font-size: 0.65rem;
+          padding: 5px 8px;
         }
       }
       
@@ -5095,9 +5191,14 @@ body {
         font-size: 0.9rem;
         color: #4caf50;
         font-weight: 600;
+        margin-top: 12px;
         
         @media (max-width: 768px) {
           font-size: 0.85rem;
+        }
+        
+        i {
+          margin-right: 4px;
         }
       }
     }
@@ -5391,39 +5492,6 @@ body {
         }
       }
     }
-    
-    .btn-toggle-items {
-      width: 100%;
-      margin-top: 12px;
-      padding: 10px 16px;
-      background: transparent;
-      border: 2px dashed $gray-light;
-      border-radius: 8px;
-      color: $gray-medium;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      
-      &:hover {
-        border-color: $p-color;
-        color: $p-color;
-        background: rgba($p-color, 0.03);
-      }
-      
-      i {
-        font-size: 0.9rem;
-      }
-      
-      @media (max-width: 768px) {
-        font-size: 0.8rem;
-        padding: 8px 12px;
-      }
-    }
   }
   
   // Divider
@@ -5482,45 +5550,6 @@ body {
       
       @media (max-width: 768px) {
         font-size: 0.85rem;
-      }
-    }
-    
-    .values {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 12px;
-      
-      .final-price {
-        font-size: 2.2rem;
-        font-weight: 800;
-        color: $p-color;
-        line-height: 1;
-        
-        @media (max-width: 768px) {
-          font-size: 1.8rem;
-        }
-      }
-      
-      .coffee-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
-        background: linear-gradient(135deg, #6F4E37 0%, #8B4513 100%);
-        color: white;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        box-shadow: 0 2px 8px rgba(111, 78, 55, 0.3);
-        white-space: nowrap;
-        
-        @media (max-width: 768px) {
-          font-size: 0.8rem;
-          padding: 5px 10px;
-        }
       }
     }
     
@@ -6438,6 +6467,76 @@ body {
     i {
       color: #17a2b8;
       font-size: 14px;
+    }
+  }
+}
+    
+.btn-toggle-items {
+  width: 100% !important;
+  margin-top: 16px !important;
+  padding: 12px 20px !important;
+  background: linear-gradient(135deg, rgba($p-color, 0.05) 0%, rgba($accent-blue, 0.03) 100%) !important;
+  border: 2px solid rgba($p-color, 0.2) !important;
+  border-radius: 10px !important;
+  color: $p-color !important;
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  
+  // Efeito de brilho no hover
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+  }
+  
+  &:hover {
+    border-color: $p-color;
+    background: linear-gradient(135deg, rgba($p-color, 0.1) 0%, rgba($accent-blue, 0.06) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba($p-color, 0.15);
+    
+    &::before {
+      left: 100%;
+    }
+    
+    i {
+      transform: scale(1.15);
+    }
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  i {
+    font-size: 1rem;
+    transition: transform 0.3s ease;
+  }
+  
+  span {
+    position: relative;
+    z-index: 1;
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+    padding: 10px 16px;
+    
+    i {
+      font-size: 0.9rem;
     }
   }
 }
