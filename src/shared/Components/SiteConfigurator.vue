@@ -1254,7 +1254,10 @@ export default {
       showDetails: false,
       
       // UI Control - Expandir lista de itens incluídos
-      showAllIncludedItems: false
+      showAllIncludedItems: false,
+      
+      // Mensagens de erro do sistema
+      systemError: null
     };
   },
   async mounted() {
@@ -1307,13 +1310,8 @@ export default {
         console.error('🚨 Checkout será bloqueado por segurança');
         console.error('🚨 Verifique: .htaccess, CORS, permissões de arquivos');
         
-        // Mostrar alerta visual para o usuário
-        alert(
-          '⚠️ Sistema Temporariamente Indisponível\n\n' +
-          'Nosso servidor de validação está offline.\n' +
-          'Por favor, tente novamente em alguns instantes.\n\n' +
-          'Se o problema persistir, entre em contato conosco.'
-        );
+        // Mostrar notificação de sistema offline
+        this.systemError = '⚠️ Sistema temporariamente indisponível. Nosso servidor de validação está offline.';
       }
     }
   },
@@ -1806,7 +1804,7 @@ export default {
       const hasVideo = this.videoSelected;
       
       if (!hasVideo || !this.selectedVideoTier) {
-        alert('⚠️ Primeiro selecione um plano de vídeo antes de fazer upload:\n\n• 1 vídeo: até 50MB - R$ 35/ano\n• 2 vídeos: até 50MB cada - R$ 70/ano\n• 3-5 vídeos: até 1GB cada - R$ 105-175/ano\n\nVá na seção "Tipos de Arquivos Aceitos" e escolha a quantidade de vídeos.');
+        console.warn('⚠️ Plano de vídeo não selecionado');
         event.target.value = '';
         return;
       }
@@ -1832,22 +1830,10 @@ export default {
         console.log(`✅ Vídeo aceito no plano ${planName}:`, file.name, `(${fileSizeDisplay})`);
         
         // Feedback positivo para o usuário
-        setTimeout(() => {
-          alert(`✅ Vídeo carregado com sucesso!\n\nArquivo: ${file.name}\nTamanho: ${fileSizeDisplay}\nPlano: ${planName}`);
-        }, 100);
+        console.log(`✅ Vídeo carregado: ${file.name} (${fileSizeDisplay}) - Plano: ${planName}`);
       } else {
         // Feedback detalhado sobre o problema
-        const isBasicPlan = this.selectedVideoTier.max_file_size <= 31457280;
-        const upgradeText = isBasicPlan ? 'upgrade para 3+ vídeos (até 1GB cada)' : 'considere comprimir o vídeo';
-        
-        alert(`❌ Arquivo muito grande para o plano ${planName}\n\n` +
-              `📁 Arquivo: ${file.name}\n` +
-              `📊 Tamanho: ${fileSizeDisplay}\n` +
-              `🚫 Limite do plano: ${maxSizeText}\n\n` +
-              `💡 Dicas:\n` +
-              `• Para vídeos até ${maxSizeText}: use o plano ${planName}\n` +
-              `• Para vídeos maiores: ${upgradeText}`);
-        
+        console.error(`❌ Arquivo ${file.name} (${fileSizeDisplay}) excede limite do plano ${planName} (${maxSizeText})`);
         event.target.value = '';
       }
     },
@@ -2375,7 +2361,7 @@ export default {
         
         if (result.ok) {
           this.$emit('custom-request', this.customRequest);
-          alert(result.message);
+          console.log('✅ Solicitação personalizada enviada:', result.message);
           this.closeCustomForm();
         } else if (result.offline) {
           alert('⚠️ API offline\n\nEntre em contato via WhatsApp: (11) 99999-9999');
