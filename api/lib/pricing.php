@@ -49,6 +49,7 @@ function normalize_selection(array $input, array $cfg): array {
     $products = $cfg['products'] ?? [];
     $pageAddons = $cfg['page_addons'] ?? [];
     $contentAddons = $cfg['content_addons'] ?? [];
+    $customPagesConfig = $cfg['custom_pages'] ?? [];
     $limits = $cfg['limits'] ?? ['extra_pages_max_for_checkout' => 5];
     
     // Validar produto (whitelist)
@@ -98,10 +99,41 @@ function normalize_selection(array $input, array $cfg): array {
         $content[$key] = !empty($contentIn[$key]);
     }
     
+    // Validar quantidades de vídeo
+    $videoBasicQty = clamp_int($input['video_basic_quantity'] ?? 0, 0, 10);
+    $videoProQty = clamp_int($input['video_pro_quantity'] ?? 0, 0, 10);
+    
+    // Validar páginas customizadas
+    $customPagesIn = $input['custom_pages'] ?? [];
+    $customPages = [];
+    
+    if (is_array($customPagesIn)) {
+        foreach ($customPagesIn as $page) {
+            if (is_array($page) && isset($page['resources'])) {
+                $validatedPage = [
+                    'description' => strip_tags(trim($page['description'] ?? '')),
+                    'resources' => []
+                ];
+                
+                // Validar cada resource contra a configuração
+                if (isset($customPagesConfig['resources']) && is_array($page['resources'])) {
+                    foreach ($customPagesConfig['resources'] as $resourceKey => $_) {
+                        $validatedPage['resources'][$resourceKey] = !empty($page['resources'][$resourceKey]);
+                    }
+                }
+                
+                $customPages[] = $validatedPage;
+            }
+        }
+    }
+    
     return [
         'product' => $product,
         'pages' => $pages,
-        'content' => $content
+        'content' => $content,
+        'custom_pages' => $customPages,
+        'video_basic_quantity' => $videoBasicQty,
+        'video_pro_quantity' => $videoProQty
     ];
 }
 
@@ -117,11 +149,17 @@ function compute_price(array $selection, array $cfg): array {
     $products = $cfg['products'];
     $pageAddons = $cfg['page_addons'];
     $contentAddons = $cfg['content_addons'];
+    $customPagesConfig = $cfg['custom_pages'] ?? [];
     $rules = $cfg['pricing_rules'];
+    
+    // LOG: Início do cálculo
+    error_log('🧮 [compute_price] ========== CALCULANDO PREÇO ==========');
     
     // Preço base do produto
     $basePrice = floatval($products[$selection['product']]['base_price']);
     $subtotal = $basePrice;
+    
+    error_log('🏷️ [compute_price] Base Price (' . $selection['product'] . '): ' . $basePrice);
     
     // Breakdown detalhado para transparência
     $breakdown = [
@@ -130,16 +168,21 @@ function compute_price(array $selection, array $cfg): array {
             'price' => $basePrice
         ],
         'pages' => [],
-        'content' => []
+        'content' => [],
+        'custom_pages' => []
     ];
     
-    // Páginas adicionais
+    // Páginas adicionais pré-definidas
+    $pagesTotal = 0;
     foreach ($selection['pages'] as $key => $qty) {
         if ($qty <= 0) continue;
         
         $pagePrice = floatval($pageAddons[$key]['price']);
         $totalPagePrice = $pagePrice * $qty;
         $subtotal += $totalPagePrice;
+        $pagesTotal += $totalPagePrice;
+        
+        error_log("📄 [compute_price] Página '$key' x$qty: $totalPagePrice");
         
         $breakdown['pages'][] = [
             'key' => $key,
@@ -149,27 +192,110 @@ function compute_price(array $selection, array $cfg): array {
             'total' => $totalPagePrice
         ];
     }
+    error_log('📄 [compute_price] Total Páginas: ' . $pagesTotal);
     
-    // Conteúdo pesado
+    // Conteúdo pesado (sem vídeos, que têm quantidade)
+    $contentTotal = 0;
     foreach ($selection['content'] as $key => $enabled) {
         if (!$enabled) continue;
         
-        $contentPrice = floatval($contentAddons[$key]['price']);
-        $subtotal += $contentPrice;
-        
-        $breakdown['content'][] = [
-            'key' => $key,
-            'name' => $contentAddons[$key]['name'],
-            'price' => $contentPrice
-        ];
+        // Se for vídeo, usar price_per_unit * quantidade
+        if ($key === 'video_basic') {
+            $qty = intval($selection['video_basic_quantity'] ?? 0);
+            if ($qty > 0) {
+                $unitPrice = floatval($contentAddons[$key]['price_per_unit']);
+                $totalPrice = $unitPrice * $qty;
+                $subtotal += $totalPrice;
+                $contentTotal += $totalPrice;
+                
+                error_log("🎬 [compute_price] Video Basic x$qty: $totalPrice");
+                
+                $breakdown['content'][] = [
+                    'key' => $key,
+                    'name' => $contentAddons[$key]['name'],
+                    'qty' => $qty,
+                    'unit_price' => $unitPrice,
+                    'total' => $totalPrice
+                ];
+            }
+        } else if ($key === 'video_pro') {
+            $qty = intval($selection['video_pro_quantity'] ?? 0);
+            if ($qty > 0) {
+                $unitPrice = floatval($contentAddons[$key]['price_per_unit']);
+                $totalPrice = $unitPrice * $qty;
+                $subtotal += $totalPrice;
+                $contentTotal += $totalPrice;
+                
+                error_log("🎬 [compute_price] Video Pro x$qty: $totalPrice");
+                
+                $breakdown['content'][] = [
+                    'key' => $key,
+                    'name' => $contentAddons[$key]['name'],
+                    'qty' => $qty,
+                    'unit_price' => $unitPrice,
+                    'total' => $totalPrice
+                ];
+            }
+        } else {
+            // Outros addons usam price fixo
+            $contentPrice = floatval($contentAddons[$key]['price']);
+            $subtotal += $contentPrice;
+            $contentTotal += $contentPrice;
+            
+            error_log("📦 [compute_price] Content '$key': $contentPrice");
+            
+            $breakdown['content'][] = [
+                'key' => $key,
+                'name' => $contentAddons[$key]['name'],
+                'price' => $contentPrice
+            ];
+        }
     }
+    error_log('📦 [compute_price] Total Conteúdo: ' . $contentTotal);
+    
+    // Páginas personalizadas
+    $customTotal = 0;
+    if (!empty($selection['custom_pages']) && !empty($customPagesConfig)) {
+        foreach ($selection['custom_pages'] as $page) {
+            $pageTotal = floatval($customPagesConfig['base_price']);
+            $pageResources = [];
+            
+            if (isset($page['resources']) && is_array($page['resources'])) {
+                foreach ($page['resources'] as $resourceKey => $enabled) {
+                    if ($enabled && isset($customPagesConfig['resources'][$resourceKey])) {
+                        $resourcePrice = floatval($customPagesConfig['resources'][$resourceKey]['price']);
+                        $pageTotal += $resourcePrice;
+                        $pageResources[$resourceKey] = $resourcePrice;
+                    }
+                }
+            }
+            
+            $subtotal += $pageTotal;
+            $customTotal += $pageTotal;
+            
+            error_log("📝 [compute_price] Página Custom: $pageTotal");
+            
+            $breakdown['custom_pages'][] = [
+                'description' => $page['description'] ?? '',
+                'resources' => $pageResources,
+                'total' => $pageTotal
+            ];
+        }
+    }
+    error_log('📝 [compute_price] Total Páginas Custom: ' . $customTotal);
+    error_log('💰 [compute_price] SUBTOTAL: ' . $subtotal);
     
     // Cálculos finais
-    $cashDiscount = floatval($rules['cash_discount_percent']); // 10%
-    $markup12 = floatval($rules['installments_12_markup_percent']); // 10%
+    // IMPORTANTE: Lógica simples de preços
+    // - À VISTA: subtotal (preço normal, sem taxa)
+    // - PARCELADO (12x): subtotal + 15% (taxa do gateway de pagamento)
+    $markup12 = floatval($rules['installments_12_markup_percent']); // 15%
     $installments = intval($rules['installments']); // 12
     
-    $avista = round($subtotal * (1.0 - $cashDiscount / 100.0), 2);
+    // À vista: preço normal (sem alteração)
+    $avista = round($subtotal, 2);
+    
+    // Parcelado: preço COM acréscimo de 15%
     $parcelado_total = round($subtotal * (1.0 + $markup12 / 100.0), 2);
     $parcela_12 = round($parcelado_total / $installments, 2);
     
@@ -177,6 +303,10 @@ function compute_price(array $selection, array $cfg): array {
     $parcela_12_adjusted = $parcela_12;
     $total_parcelas = $parcela_12 * $installments;
     $diferenca = round($parcelado_total - $total_parcelas, 2);
+    
+    error_log('💵 [compute_price] À vista: ' . $avista);
+    error_log('💳 [compute_price] Parcelado: ' . $parcelado_total);
+    error_log('====================================================');
     
     return [
         'subtotal' => round($subtotal, 2),
@@ -186,7 +316,6 @@ function compute_price(array $selection, array $cfg): array {
         'installments' => $installments,
         'breakdown' => $breakdown,
         'adjustments' => [
-            'cash_discount_percent' => $cashDiscount,
             'installments_markup_percent' => $markup12,
             'last_installment_diff' => $diferenca
         ]

@@ -26,11 +26,22 @@ try {
         $body = [];
     }
     
+    // LOG: Input recebido - COMPLETO
+    error_log('========== API price.php CHAMADA ==========');
+    error_log('📥 [price.php] INPUT RAW: ' . json_encode($body, JSON_PRETTY_PRINT));
+    
     // Normalizar e validar (aplicar whitelist e limites)
     $selection = normalize_selection($body, $cfg);
     
+    // LOG: Seleção normalizada - COMPLETO
+    error_log('✅ [price.php] SELEÇÃO NORMALIZADA: ' . json_encode($selection, JSON_PRETTY_PRINT));
+    
     // Calcular preço oficial (source of truth)
     $pricing = compute_price($selection, $cfg);
+    
+    // LOG: Preço calculado - RESUMO
+    error_log('💰 [price.php] RESULTADO: subtotal=' . $pricing['subtotal'] . ', avista=' . $pricing['avista'] . ', parcelado=' . $pricing['parcelado_total']);
+    error_log('====================================================');
     
     // Retornar seleções normalizadas + preços oficiais
     $response = [

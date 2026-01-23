@@ -851,7 +851,7 @@
                   <!-- Transparência: Contexto de Cobrança -->
                   <div class="sub-price-context">
                     <i class="fas fa-info-circle"></i>
-                    <span>Faturado em parcela única de <strong>{{ formatPrice(cashPrice) }}</strong></span>
+                    <span>Faturado em parcela única de <strong>{{ formatPrice(installmentTotal) }}</strong></span>
                   </div>
                 </div>
                 
@@ -1474,11 +1474,13 @@ export default {
       let total = 0;
       
       // Calcular outros addons (não-vídeo)
-      total += this.validSelectedContentAddons.reduce((sum, key) => {
-        return sum + (this.config.content_addons[key]?.price || this.config.content_addons[key]?.price_per_unit || 0);
-      }, 0);
+      total += this.validSelectedContentAddons
+        .filter(key => key !== 'video_basic' && key !== 'video_pro') // Excluir vídeos
+        .reduce((sum, key) => {
+          return sum + (this.config.content_addons[key]?.price || 0);
+        }, 0);
       
-      // Adicionar vídeos se selecionados
+      // Adicionar vídeos se selecionados (com quantidade)
       if (this.videoBasicSelected && this.config.content_addons.video_basic) {
         total += this.config.content_addons.video_basic.price_per_unit * this.videoBasicQuantity;
       }
@@ -1497,12 +1499,12 @@ export default {
     },
     
     cashPrice() {
-      // À vista = preço normal (sem desconto) - sempre calcular localmente
+      // À vista = preço NORMAL (sem taxa) - sempre calcular localmente
       return this.subtotal;
     },
     
     installmentTotal() {
-      // 15% acréscimo no parcelado (taxa do gateway) - sempre calcular localmente
+      // Parcelado = preço + 15% (taxa do gateway) - sempre calcular localmente
       const markup = 0.15; // 15%
       return Math.round(this.subtotal * (1 + markup) * 100) / 100;
     },
@@ -1516,12 +1518,10 @@ export default {
       return this.serverValidatedPricing?.source || 'local';
     },
     
-    // Economia em R$ (diferença entre valor sem desconto e à vista)
+    // Economia em R$ (diferença entre valor parcelado e à vista)
     savingsAmount() {
-      // Valor original inflacionado 30% + taxa 15%
-      const originalTotal = this.subtotal * 1.15 * 1.3;
-      // Diferença para à vista
-      return originalTotal - this.cashPrice;
+      // Diferença entre parcelado e à vista (taxa de 15%)
+      return this.installmentTotal - this.cashPrice;
     },
     
     // Texto do CTA baseado na seleção
@@ -2040,26 +2040,42 @@ export default {
       // Debounce (evitar muitas chamadas)
       clearTimeout(this._validateTimeout);
       this._validateTimeout = setTimeout(async () => {
+        // Converter pages de array para objeto com quantidades
+        const pagesAsObject = {};
+        this.selectedPages.forEach(pageKey => {
+          pagesAsObject[pageKey] = 1; // Cada página selecionada tem quantidade 1
+        });
+        
         const selection = {
           product: this.selectedProduct,
-          pages: this.selectedPages,
-          content: this.selectedContentAddons
+          pages: pagesAsObject, // Enviando como objeto
+          content: this.selectedContentAddons,
+          custom_pages: this.customPages,
+          video_basic_quantity: this.videoBasicQuantity,
+          video_pro_quantity: this.videoProQuantity
         };
         
-        // Converter Proxy para Array normal para logging
-        console.log('📤 [validatePriceOnServer] ENVIANDO para backend:', {
+        // Log COMPLETO do que está sendo enviado
+        console.log('📤 [validatePriceOnServer] ========== ENVIANDO PARA BACKEND ==========');
+        console.log('📦 SELEÇÃO:', JSON.parse(JSON.stringify(selection)));
+        console.log('💰 CÁLCULO LOCAL:', {
+          basePrice: this.basePrice,
+          pagesTotal: this.pagesTotal,
+          contentTotal: this.contentTotal,
+          subtotal: this.subtotal,
+          cashPrice: this.cashPrice,
+          installmentTotal: this.installmentTotal,
+          paymentMethod: this.paymentMethod
+        });
+        console.log('📋 DETALHES:', {
           product: selection.product,
-          pages: [...selection.pages],  // Expande o array
-          content: [...selection.content],  // Expande o array
-          pages_count: selection.pages.length,
-          content_count: selection.content.length,
-          timestamp: new Date().toLocaleTimeString()
+          pages: selection.pages, // Já é objeto, não precisa spread
+          content: [...selection.content],
+          custom_pages_count: selection.custom_pages.length,
+          video_basic_qty: selection.video_basic_quantity,
+          video_pro_qty: selection.video_pro_quantity
         });
-        
-        console.log('📤 [DETALHE] Arrays expandidos:', {
-          pages_detail: selection.pages.map((p, i) => `[${i}]="${p}"`).join(', '),
-          content_detail: selection.content.map((c, i) => `[${i}]="${c}"`).join(', ')
-        });
+        console.log('====================================================');
         
         const result = await PricingService.calculatePrice(selection, this.config);
         
@@ -2139,36 +2155,88 @@ export default {
       try {
         // VALIDAR preços no servidor antes de enviar
         console.log('🔒 [submitOrder] Validando preços no servidor antes do checkout...');
+        
+        // Converter pages de array para objeto com quantidades
+        const pagesAsObject = {};
+        this.selectedPages.forEach(pageKey => {
+          pagesAsObject[pageKey] = 1; // Cada página selecionada tem quantidade 1
+        });
+        
         const selection = {
           product: this.selectedProduct,
-          pages: this.selectedPages,
-          content: this.selectedContentAddons
+          pages: pagesAsObject, // Enviando como objeto
+          content: this.selectedContentAddons,
+          custom_pages: this.customPages,
+          video_basic_quantity: this.videoBasicQuantity,
+          video_pro_quantity: this.videoProQuantity
         };
+        
+        console.log('📤 [submitOrder] ========== VALIDAÇÃO NO SERVIDOR ==========');
+        console.log('📦 Enviando:', JSON.parse(JSON.stringify(selection)));
+        console.log('� DETALHAMENTO DO QUE ESTÁ SENDO ENVIADO:');
+        console.log('  - product:', selection.product);
+        console.log('  - pages (objeto):', selection.pages);
+        console.log('  - content (array):', [...selection.content]);
+        console.log('  - custom_pages:', selection.custom_pages);
+        console.log('  - video_basic_quantity:', selection.video_basic_quantity);
+        console.log('  - video_pro_quantity:', selection.video_pro_quantity);
+        console.log('💰 Frontend calculou:', {
+          subtotal: this.subtotal,
+          cashPrice: this.cashPrice,
+          installmentTotal: this.installmentTotal,
+          paymentMethod: this.paymentMethod
+        });
         
         const validationResult = await PricingService.calculatePrice(selection, this.config);
         
+        console.log('📥 Backend retornou:', validationResult.pricing);
+        
         // Verificar se há discrepância entre frontend e backend
         if (validationResult.serverValidated) {
-          const serverPrice = validationResult.pricing.avista;
-          const localPrice = this.cashPrice;
+          // Comparar com o preço correto baseado no método de pagamento
+          const serverPrice = this.paymentMethod === 'cash' 
+            ? validationResult.pricing.avista 
+            : validationResult.pricing.parcelado_total;
+          const localPrice = this.paymentMethod === 'cash' 
+            ? this.cashPrice 
+            : this.installmentTotal;
           const diff = Math.abs(serverPrice - localPrice);
           
+          console.log('🔍 [submitOrder] Comparando preços:', {
+            paymentMethod: this.paymentMethod,
+            serverPrice: serverPrice,
+            localPrice: localPrice,
+            diff: diff,
+            serverAvista: validationResult.pricing.avista,
+            serverParcelado: validationResult.pricing.parcelado_total,
+            localCash: this.cashPrice,
+            localInstallment: this.installmentTotal
+          });
+          
           if (diff > 0.01) {
-            console.warn('⚠️ [submitOrder] DISCREPÂNCIA DE PREÇO detectada!');
-            console.warn('Frontend:', localPrice, '| Backend:', serverPrice);
-            alert(`⚠️ Detectamos uma diferença de preço.\n\nO valor correto é R$ ${serverPrice.toFixed(2).replace('.', ',')}.\n\nPor favor, revise seu pedido.`);
+            console.error('❌ [submitOrder] DISCREPÂNCIA DE PREÇO detectada!');
+            console.error('Método de pagamento:', this.paymentMethod);
+            console.error('Frontend:', localPrice);
+            console.error('Backend:', serverPrice);
+            console.error('Diferença:', diff);
+            const methodText = this.paymentMethod === 'cash' ? 'à vista' : 'parcelado';
+            alert(`⚠️ Detectamos uma diferença de preço (${methodText}).\n\nFrontend: R$ ${localPrice.toFixed(2).replace('.', ',')}\nBackend: R$ ${serverPrice.toFixed(2).replace('.', ',')}\nDiferença: R$ ${diff.toFixed(2).replace('.', ',')}\n\nPor favor, revise seu pedido.`);
             this.isSubmitting = false;
             return;
           }
           
           console.log('✅ [submitOrder] Preços validados - Frontend e Backend estão sincronizados');
         }
+        console.log('====================================================');
         
         // Montar dados do pedido (sem incluir preço - servidor calcula)
         const orderData = {
           product: this.selectedProduct,
-          pages: this.selectedPages,
+          pages: pagesAsObject, // Usar o mesmo objeto que foi validado
           content: this.selectedContentAddons,
+          custom_pages: this.customPages,
+          video_basic_quantity: this.videoBasicQuantity,
+          video_pro_quantity: this.videoProQuantity,
           briefing: this.briefing,
           payment_method: 'avista' // TODO: adicionar seletor de forma de pagamento
         };

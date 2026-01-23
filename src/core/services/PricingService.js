@@ -64,28 +64,70 @@ class PricingService {
   }
 
   calculateLocal(selection, config) {
-    const { product, pages, content } = selection;
-    const { products, page_addons, content_addons, pricing_rules } = config;
+    const { product, pages, content, custom_pages, video_basic_quantity, video_pro_quantity } = selection;
+    const { products, page_addons, content_addons, custom_pages: customPagesConfig, pricing_rules } = config;
 
     let subtotal = products[product]?.base_price || 0;
 
-    Object.entries(pages || {}).forEach(([key, qty]) => {
-      if (qty > 0 && page_addons[key]) {
-        subtotal += page_addons[key].price * qty;
-      }
-    });
+    // Páginas pré-definidas (aceitar tanto array quanto objeto)
+    if (Array.isArray(pages)) {
+      // Se for array, converter para objeto
+      pages.forEach(pageKey => {
+        if (page_addons[pageKey]) {
+          subtotal += page_addons[pageKey].price;
+        }
+      });
+    } else {
+      // Se for objeto, usar as quantidades
+      Object.entries(pages || {}).forEach(([key, qty]) => {
+        if (qty > 0 && page_addons[key]) {
+          subtotal += page_addons[key].price * qty;
+        }
+      });
+    }
 
+    // Content addons (sem vídeos, pois eles têm quantidade)
     (content || []).forEach(key => {
       if (content_addons[key]) {
-        subtotal += content_addons[key].price;
+        // Se for vídeo, usar price_per_unit * quantidade
+        if (key === 'video_basic') {
+          const qty = video_basic_quantity || 0;
+          subtotal += (content_addons[key].price_per_unit || 0) * qty;
+        } else if (key === 'video_pro') {
+          const qty = video_pro_quantity || 0;
+          subtotal += (content_addons[key].price_per_unit || 0) * qty;
+        } else {
+          // Outros addons usam price fixo
+          subtotal += content_addons[key].price || 0;
+        }
       }
     });
 
-    const cashDiscount = pricing_rules.cash_discount_percent / 100;
+    // Páginas customizadas
+    if (custom_pages && custom_pages.length > 0 && customPagesConfig) {
+      custom_pages.forEach(page => {
+        let pageTotal = customPagesConfig.base_price || 0;
+        
+        if (page.resources) {
+          Object.entries(page.resources).forEach(([resource, enabled]) => {
+            if (enabled && customPagesConfig.resources[resource]) {
+              pageTotal += customPagesConfig.resources[resource].price || 0;
+            }
+          });
+        }
+        
+        subtotal += pageTotal;
+      });
+    }
+
+    // Cálculos finais
+    // IMPORTANTE: Lógica simples de preços
+    // - À VISTA: subtotal (preço normal)
+    // - PARCELADO (12x): subtotal + 15% (taxa do gateway de pagamento)
     const installmentMarkup = pricing_rules.installments_12_markup_percent / 100;
     const installments = pricing_rules.installments;
 
-    const avista = Math.round(subtotal * (1 - cashDiscount) * 100) / 100;
+    const avista = Math.round(subtotal * 100) / 100;
     const parcelado_total = Math.round(subtotal * (1 + installmentMarkup) * 100) / 100;
     const parcela = Math.round((parcelado_total / installments) * 100) / 100;
 
