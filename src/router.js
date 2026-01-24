@@ -40,13 +40,8 @@ export default [
         component: () => import("./shared/Components/OnboardingWizard.vue")
     },
     {
-        path: "/test-checkout",
-        name: "TestCheckout",
-        component: () => import("./pages/TestCheckout/TestCheckout.vue")
-    },
-    {
-        path: "/checkout/:orderId",
-        name: "Checkout",
-        component: () => import("./shared/Components/CheckoutPayment.vue")
+        path: "/pagamento/validar",
+        name: "PaymentValidation", 
+        component: () => import("./pages/PaymentValidation.vue")
     }
 ]

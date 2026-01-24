@@ -2224,7 +2224,7 @@ export default {
           video_basic_quantity: this.videoBasicQuantity,
           video_pro_quantity: this.videoProQuantity,
           briefing: this.briefing,
-          payment_method: 'avista' // TODO: adicionar seletor de forma de pagamento
+          payment_method: this.paymentMethod === 'cash' ? 'avista' : 'prazo'
         };
         
         // Tentar criar pedido no servidor
@@ -2246,61 +2246,38 @@ export default {
             }
           });
           
-          // Criar pagamento no Mercado Pago
-          console.log('💳 Criando pagamento para pedido:', result.order_id);
-          const paymentResult = await PricingService.createPayment(result.order_id);
+          // Criar preferência no Mercado Pago Checkout Pro
+          console.log('💳 Criando preferência Checkout Pro para pedido:', result.order_id);
           
-          console.log('📦 [submitOrder] Resultado do pagamento:', paymentResult);
+          const preferenceData = {
+            order_id: result.order_id,
+            payer_name: this.briefing.customer_name || 'Cliente',
+            payer_email: this.briefing.customer_email || 'cliente@exemplo.com',
+            payment_type: this.paymentMethod === 'cash' ? 'avista' : 'prazo'
+          };
           
-          // Debug ULTRA detalhado da condição
-          console.log('🔍 [submitOrder] ===== DEBUG COMPLETO =====');
-          console.log('🔍 paymentResult (objeto completo):', JSON.stringify(paymentResult, null, 2));
-          console.log('🔍 paymentResult (referência):', paymentResult);
-          console.log('🔍 typeof paymentResult:', typeof paymentResult);
-          console.log('🔍 Array.isArray(paymentResult):', Array.isArray(paymentResult));
-          console.log('🔍 paymentResult.constructor.name:', paymentResult?.constructor?.name);
+          console.log('📦 Dados da preferência:', preferenceData);
           
-          console.log('🔍 === VERIFICANDO .ok ===');
-          console.log('🔍 paymentResult.ok:', paymentResult.ok);
-          console.log('🔍 typeof paymentResult.ok:', typeof paymentResult.ok);
-          console.log('🔍 paymentResult.ok === true:', paymentResult.ok === true);
-          console.log('🔍 paymentResult.ok == true:', paymentResult.ok == true);
-          console.log('🔍 Boolean(paymentResult.ok):', Boolean(paymentResult.ok));
-          console.log('🔍 !!paymentResult.ok:', !!paymentResult.ok);
+          const response = await fetch('/api/create_preference.php', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(preferenceData)
+          });
           
-          console.log('🔍 === VERIFICANDO .checkout_data ===');
-          console.log('🔍 paymentResult.checkout_data:', paymentResult.checkout_data);
-          console.log('🔍 typeof paymentResult.checkout_data:', typeof paymentResult.checkout_data);
-          console.log('🔍 paymentResult.checkout_data === null:', paymentResult.checkout_data === null);
-          console.log('🔍 paymentResult.checkout_data === undefined:', paymentResult.checkout_data === undefined);
-          console.log('🔍 Boolean(paymentResult.checkout_data):', Boolean(paymentResult.checkout_data));
-          console.log('🔍 !!paymentResult.checkout_data:', !!paymentResult.checkout_data);
+          const preferenceResult = await response.json();
           
-          console.log('🔍 === VERIFICANDO CONDIÇÃO COMPLETA ===');
-          const okCheck = paymentResult.ok === true;
-          const dataCheck = !!paymentResult.checkout_data;
-          const finalCondition = okCheck && dataCheck;
+          console.log('📦 [submitOrder] Resultado da preferência:', preferenceResult);
           
-          console.log('🔍 okCheck (paymentResult.ok === true):', okCheck);
-          console.log('🔍 dataCheck (!!paymentResult.checkout_data):', dataCheck);
-          console.log('🔍 finalCondition (okCheck && dataCheck):', finalCondition);
-          console.log('🔍 ==========================================');
-          
-          if (finalCondition) {
-            // Navegar para checkout interno com os dados do pagamento
-            console.log('✅ Navegando para checkout interno:', result.order_id);
-            this.$router.push({
-              name: 'Checkout',
-              params: { orderId: result.order_id },
-              query: {
-                paymentId: paymentResult.payment_id,
-                amount: paymentResult.checkout_data.amount,
-                method: paymentResult.checkout_data.payment_method
-              }
-            });
+          if (preferenceResult.success && preferenceResult.init_point) {
+            console.log('✅ Redirecionando para Checkout Pro:', preferenceResult.init_point);
+            
+            // Redirecionar para o Mercado Pago
+            window.location.href = preferenceResult.init_point;
           } else {
-            console.error('🔴 Erro ao criar pagamento:', paymentResult);
-            console.error('🔴 Pedido criado mas pagamento falhou:', result.order_id);
+            console.error('🔴 Erro ao criar preferência:', preferenceResult);
+            alert('Erro ao processar pagamento: ' + (preferenceResult.message || 'Erro desconhecido'));
           }
         } else if (result.offline) {
           // API offline: verificar se é modo debug ou erro real
@@ -2341,6 +2318,9 @@ export default {
       } catch (error) {
         console.error('🔴 Erro ao enviar pedido:', error);
         console.error('🔴 Falha no checkout, verifique os logs acima');
+        
+        // Mostrar erro para o usuário
+        alert('❌ Erro ao processar pedido: ' + error.message);
       } finally {
         this.isSubmitting = false;
       }
