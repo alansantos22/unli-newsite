@@ -360,6 +360,7 @@
               <li><i class="fas fa-check"></i> Adicione vídeos e documentos</li>
               <li><i class="fas fa-check"></i> Personalize o visual</li>
               <li><i class="fas fa-check"></i> Configurador interativo</li>
+              <li><i class="fas fa-check"></i> Formulários para contato</li>
             </ul>
 
             <router-link to="/configurador?plan=site_complete" class="pricing-button">
@@ -385,7 +386,6 @@
 
             <ul class="pricing-features">
               <li class="included"><i class="fas fa-plus-circle"></i> <strong>Tudo das opções anteriores +</strong></li>
-              <li><i class="fas fa-check"></i> Site multipáginas</li>
               <li><i class="fas fa-check"></i> E-commerce completo</li>
               <li><i class="fas fa-check"></i> Área do cliente / Login</li>
               <li><i class="fas fa-check"></i> Integrações complexas</li>

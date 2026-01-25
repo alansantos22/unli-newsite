@@ -51,20 +51,29 @@
         </p>
       </div>
     </footer>
+
+    <!-- Loading Screen Profissional -->
+    <FullScreenLoading 
+      :visible="isProcessingPayment"
+      title="Processando pagamento..."
+      subtitle="Redirecionando para o gateway de pagamento seguro."
+    />
   </div>
 </template>
 
 <script>
-import { SiteConfigurator } from '@/shared/Components';
+import { SiteConfigurator, FullScreenLoading } from '@/shared/Components';
 
 export default {
   name: 'ConfiguradorPage',
   components: {
-    SiteConfigurator
+    SiteConfigurator,
+    FullScreenLoading
   },
   data() {
     return {
-      selectedPlan: null
+      selectedPlan: null,
+      isProcessingPayment: false
     };
   },
   created() {
@@ -89,19 +98,31 @@ export default {
   },
   methods: {
     handleOrderSubmitted(orderPayload) {
-      console.log('Pedido recebido:', orderPayload);
+      console.log('✅ [ConfiguradorPage] Pedido recebido do SiteConfigurator:', orderPayload);
       
-      // TODO: Enviar para backend
-      // this.$http.post('/api/orders', orderPayload)
-      //   .then(response => {
-      //     window.location.href = response.data.payment_url;
-      //   });
+      // Mostrar loading durante o processamento
+      this.isProcessingPayment = true;
       
-      // Simular redirecionamento para pagamento
-      alert('Pedido recebido! Em produção, isso redirecionaria para o gateway de pagamento.');
-      
-      // Opcional: redirecionar para página de confirmação
-      // this.$router.push({ name: 'OrderConfirmation', params: { orderId: response.data.id } });
+      // Verificar se há init_point para redirecionamento
+      if (orderPayload && orderPayload.init_point) {
+        console.log('🚀 [ConfiguradorPage] Redirecionando para Checkout Pro:', orderPayload.init_point);
+        window.location.href = orderPayload.init_point;
+      } else if (orderPayload && orderPayload.preference_error) {
+        // Erro específico na criação da preferência
+        console.error('❌ [ConfiguradorPage] Erro na preferência:', orderPayload.error_message);
+        this.isProcessingPayment = false;
+        alert(`❌ Erro ao processar pagamento:\n\n${orderPayload.error_message}\n\nPedido criado: ${orderPayload.order_id}\nPor favor, tente novamente ou entre em contato.`);
+      } else if (orderPayload && orderPayload.order_id) {
+        // Pedido criado mas sem preferência (caso não esperado)
+        console.warn('⚠️ [ConfiguradorPage] Pedido criado mas sem init_point. ID:', orderPayload.order_id);
+        this.isProcessingPayment = false;
+        alert(`⚠️ Pedido criado com sucesso mas falha no redirecionamento.\n\nID do Pedido: ${orderPayload.order_id}\n\nPor favor, entre em contato para continuar o pagamento.`);
+      } else {
+        // Payload inválido
+        console.error('❌ [ConfiguradorPage] Payload inválido recebido:', orderPayload);
+        this.isProcessingPayment = false;
+        alert('❌ Erro inesperado ao processar pedido. Por favor, tente novamente.');
+      }
     },
     
     handleCustomRequest(customData) {

@@ -17,6 +17,7 @@ export { default as BenefitsGameSection } from './BenefitsGameSection.vue';
 export { default as ExperiencePreview } from './ExperiencePreview.vue';
 export { default as PriceCalculator } from './PriceCalculator.vue';
 export { default as SiteConfigurator } from './SiteConfigurator.vue';
+export { default as FullScreenLoading } from './FullScreenLoading.vue';
 
 // Componentes de Upload
 export { default as ImageUploader } from './ImageUploader.vue';

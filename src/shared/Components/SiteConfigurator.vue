@@ -1866,7 +1866,7 @@ export default {
       }
       
       if (errorMessages.length > 0) {
-        alert(`⚠️ Alguns arquivos PDF excederam o limite:\n\n${errorMessages.join('\n')}\n\n📊 Limite por arquivo: 15MB\n📁 Arquivos válidos foram adicionados`);
+        console.error(`⚠️ Alguns arquivos PDF excederam o limite:\n\n${errorMessages.join('\n')}\n\n📊 Limite por arquivo: 15MB\n📁 Arquivos válidos foram adicionados`);
         event.target.value = '';
       }
     },
@@ -2236,48 +2236,77 @@ export default {
           // Sucesso: pedido criado no servidor
           console.log('✅ Pedido criado:', result.order_id);
           
-          // Emitir evento com dados oficiais do servidor
-          this.$emit('order-submitted', {
-            ...result,
-            local_pricing: {
-              subtotal: this.subtotal,
-              cash_price: this.cashPrice,
-              installment_total: this.installmentTotal
-            }
-          });
-          
           // Criar preferência no Mercado Pago Checkout Pro
           console.log('💳 Criando preferência Checkout Pro para pedido:', result.order_id);
           
-          const preferenceData = {
-            order_id: result.order_id,
-            payer_name: this.briefing.customer_name || 'Cliente',
-            payer_email: this.briefing.customer_email || 'cliente@exemplo.com',
-            payment_type: this.paymentMethod === 'cash' ? 'avista' : 'prazo'
-          };
-          
-          console.log('📦 Dados da preferência:', preferenceData);
-          
-          const response = await fetch('/api/create_preference.php', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(preferenceData)
-          });
-          
-          const preferenceResult = await response.json();
-          
-          console.log('📦 [submitOrder] Resultado da preferência:', preferenceResult);
-          
-          if (preferenceResult.success && preferenceResult.init_point) {
-            console.log('✅ Redirecionando para Checkout Pro:', preferenceResult.init_point);
+          try {
+            // === CONSISTÊNCIA: Dados serão carregados da ordem salva no servidor ===
+            // Não precisamos enviar seleção - garantimos que os dados sejam exatamente 
+            // os mesmos que foram validados e salvos na criação da ordem
             
-            // Redirecionar para o Mercado Pago
-            window.location.href = preferenceResult.init_point;
-          } else {
-            console.error('🔴 Erro ao criar preferência:', preferenceResult);
-            alert('Erro ao processar pagamento: ' + (preferenceResult.message || 'Erro desconhecido'));
+            const preferenceData = {
+              order_id: result.order_id,
+              payer_name: this.briefing.customer_name || 'Cliente',
+              payer_email: this.briefing.customer_email || 'cliente@exemplo.com',
+              payment_type: this.paymentMethod === 'cash' ? 'avista' : 'prazo'
+              // SEGURANÇA: selection será carregada da ordem salva para garantir consistência total
+            };
+            
+            console.log('📦 Dados da preferência (sem seleção - vem da ordem):', preferenceData);
+            
+            const response = await fetch('/api/create_preference.php', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(preferenceData)
+            });
+            
+            const preferenceResult = await response.json();
+            
+            console.log('📦 [submitOrder] Resultado da preferência:', preferenceResult);
+            
+            if (preferenceResult.success && preferenceResult.init_point) {
+              console.log('✅ Preferência criada, emitindo evento para redirecionamento:', preferenceResult.init_point);
+              
+              // ✅ CORREÇÃO: Emitir evento COM o init_point para o ConfiguradorPage fazer o redirecionamento
+              this.$emit('order-submitted', {
+                ...result,
+                init_point: preferenceResult.init_point,
+                preference_id: preferenceResult.preference_id,
+                local_pricing: {
+                  subtotal: this.subtotal,
+                  cash_price: this.cashPrice,
+                  installment_total: this.installmentTotal
+                }
+              });
+            } else {
+              console.error('🔴 Erro ao criar preferência:', preferenceResult);
+              // Emitir evento sem init_point em caso de erro na preferência
+              this.$emit('order-submitted', {
+                ...result,
+                preference_error: true,
+                error_message: preferenceResult.message || 'Erro ao criar preferência',
+                local_pricing: {
+                  subtotal: this.subtotal,
+                  cash_price: this.cashPrice,
+                  installment_total: this.installmentTotal
+                }
+              });
+            }
+          } catch (error) {
+            console.error('🔴 Erro na criação da preferência:', error);
+            // Emitir evento com erro
+            this.$emit('order-submitted', {
+              ...result,
+              preference_error: true,
+              error_message: 'Erro de conexão ao criar preferência: ' + error.message,
+              local_pricing: {
+                subtotal: this.subtotal,
+                cash_price: this.cashPrice,
+                installment_total: this.installmentTotal
+              }
+            });
           }
         } else if (result.offline) {
           // API offline: verificar se é modo debug ou erro real
@@ -2320,7 +2349,7 @@ export default {
         console.error('🔴 Falha no checkout, verifique os logs acima');
         
         // Mostrar erro para o usuário
-        alert('❌ Erro ao processar pedido: ' + error.message);
+        console.error('❌ Erro ao processar pedido: ' + error.message);
       } finally {
         this.isSubmitting = false;
       }
@@ -2344,11 +2373,11 @@ export default {
           console.log('✅ Solicitação personalizada enviada:', result.message);
           this.closeCustomForm();
         } else if (result.offline) {
-          alert('⚠️ API offline\n\nEntre em contato via WhatsApp: (11) 99999-9999');
+          console.error('⚠️ API offline\n\nEntre em contato via WhatsApp: (11) 99999-9999');
         }
       } catch (error) {
         console.error('🔴 Erro:', error);
-        alert('Erro ao enviar solicitação.');
+        console.error('Erro ao enviar solicitação.');
       } finally {
         this.isSubmittingCustom = false;
       }

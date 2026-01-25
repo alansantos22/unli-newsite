@@ -4,6 +4,13 @@
  * MERCADO PAGO - CHECKOUT PRO MVP SEGURO
  * Criação de Preferências de Pagamento
  * ============================================
+ * 
+ * Sistema simplificado que gera preferências
+ * com lógica à vista vs prazo:
+ * - À vista: R$ 599 (PIX + Cartão 1x)
+ * - A prazo: R$ 688,85 (+15% sem juros até 12x)
+ * 
+ * @version 2.0.0 - MVP Seguro
  */
 
 // ============================================
@@ -24,8 +31,6 @@ if (!file_exists($configFile)) {
 
 require_once $configFile;
 require_once __DIR__ . '/lib/cors.php';
-require_once __DIR__ . '/lib/pricing.php'; // Importar lógica de pricing
-require_once __DIR__ . '/lib/storage.php'; // Para load_order() - consistência de dados
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -60,7 +65,7 @@ if (!$data) {
 // FUNÇÃO: DEBUG LOG
 // ============================================
 function debugLog($message, $data = null) {
-    if (!defined('DEBUG_MODE') || !DEBUG_MODE) return;
+    if (!DEBUG_MODE) return;
     
     $timestamp = date('Y-m-d H:i:s');
     $logMessage = "[$timestamp] $message";
@@ -90,115 +95,48 @@ foreach ($requiredFields as $field) {
 debugLog('Dados recebidos para criação de preferência', $data);
 
 // ============================================
-// CARREGAR ORDEM SALVA (FONTE DA VERDADE)
-// ============================================
-
-// GARANTIR CONSISTÊNCIA: Usar exatamente os mesmos dados da ordem criada
-// Isso evita discrepâncias entre o que foi salvo e o que vai para o Mercado Pago
-
-$orderId = $data['order_id'];
-
-try {
-    // Carregar ordem já validada e com preços calculados
-    $order = load_order($orderId);
-    
-    if (!$order) {
-        http_response_code(404);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Ordem não encontrada: ' . $orderId
-        ], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-    
-    // USAR DADOS EXATOS DA ORDEM (já normalizados e validados)
-    $selection = $order['selection'];
-    $pricing = $order['pricing'];
-    $paymentMethodFromOrder = $order['payment_method'];
-    
-    debugLog('Dados carregados da ordem salva', [
-        'order_id' => $orderId,
-        'selection' => $selection,
-        'pricing' => $pricing,
-        'payment_method' => $paymentMethodFromOrder,
-        'source' => 'saved_order'
-    ]);
-    
-    // Verificar se payment_type do request bate com da ordem
-    $requestedPaymentType = $data['payment_type'];
-    $expectedPaymentType = ($paymentMethodFromOrder === '12x') ? 'prazo' : 'avista';
-    
-    if ($requestedPaymentType !== $expectedPaymentType) {
-        debugLog('AVISO: Método de pagamento inconsistente', [
-            'requested' => $requestedPaymentType,
-            'from_order' => $expectedPaymentType,
-            'order_method' => $paymentMethodFromOrder
-        ]);
-    }
-    
-} catch (Exception $e) {
-    debugLog('Erro ao carregar ordem', $e->getMessage());
-    http_response_code(500);
-    echo json_encode([
-        'success' => false,
-        'message' => 'Erro ao carregar ordem: ' . $e->getMessage()
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-// ============================================
-// LÓGICA DE NEGÓCIO
+// LÓGICA DE NEGÓCIO: À VISTA vs A PRAZO
 // ============================================
 try {
     $orderId = $data['order_id'];
-    $paymentType = $data['payment_type']; 
+    $paymentType = $data['payment_type']; // 'vista' ou 'prazo'
     $payerEmail = $data['payer_email'];
     $payerName = $data['payer_name'] ?? 'Cliente';
     
-    // === USAR PREÇO CALCULADO PELO SERVIDOR (SEGURO) ===
-    // O preço é recalculado baseado na seleção, não no que o frontend envia
+    // Preço base do site
+    $precoBase = 599.00;
     
     if ($paymentType === 'prazo') {
-        $precoFinal = $pricing['parcelado_total']; // Preço parcelado
+        // A PRAZO: +15% para absorver juros (parcelamento sem juros)
+        $precoFinal = $precoBase * 1.15; // R$ 688,85
         $maxParcelas = 12;
         $descricao = "Site Completo UNLI - Parcelado Sem Juros";
+        debugLog('Pagamento A PRAZO', [
+            'preco_base' => $precoBase,
+            'acrescimo' => '15%',
+            'preco_final' => $precoFinal,
+            'parcelas' => $maxParcelas
+        ]);
     } else {
-        $precoFinal = $pricing['avista']; // Preço à vista
-        $maxParcelas = 1; 
+        // À VISTA: Preço original
+        $precoFinal = $precoBase;
+        $maxParcelas = 1; // BLOQUEIA parcelamento
         $descricao = "Site Completo UNLI - À Vista";
+        debugLog('Pagamento À VISTA', [
+            'preco_final' => $precoFinal,
+            'parcelas' => 1
+        ]);
     }
     
-    debugLog('Preço final determinado pelo servidor', [
-        'payment_type' => $paymentType,
-        'amount' => $precoFinal,
-        'max_parcelas' => $maxParcelas,
-        'source' => 'server_calculated'
-    ]);
-    
+    // Gerar external_reference único
     $externalReference = "UNLI-" . $orderId . "-" . time();
     
-    // Separar Nome e Sobrenome
+    // LÓGICA DE CORREÇÃO DO NOME (Separar Nome e Sobrenome)
+    // O Mercado Pago valida estritamente name (primeiro nome) e surname (sobrenome)
     $parts = explode(' ', trim($payerName), 2);
     $firstName = $parts[0];
-    $lastName = isset($parts[1]) ? $parts[1] : 'Cliente'; 
-
-    // === CORREÇÃO DE URL (Back URLs) ===
-    $domain = "https://unli.com.br"; 
-    $rawUrl = defined('MP_SUCCESS_URL') ? MP_SUCCESS_URL : '/sucesso'; 
+    $lastName = isset($parts[1]) ? $parts[1] : ''; // Deixa vazio se não tiver sobrenome
     
-    // Se a URL não começar com http, adicionamos o domínio
-    if (strpos($rawUrl, 'http') !== 0) {
-        $returnUrl = $domain . '/' . ltrim($rawUrl, '/');
-    } else {
-        $returnUrl = $rawUrl;
-    }
-
-    // Adiciona o order_id como parâmetro
-    $separator = (strpos($returnUrl, '?') === false) ? '?' : '&';
-    $finalReturnUrl = $returnUrl . $separator . "order_id=" . $orderId;
-
-    debugLog("URL de Retorno Gerada: " . $finalReturnUrl);
-
     // Montar preferência de pagamento
     $preference = [
         "items" => [
@@ -216,20 +154,24 @@ try {
             "email" => $payerEmail
         ],
         "back_urls" => [
-            "success" => $finalReturnUrl,
-            "failure" => $finalReturnUrl,
-            "pending" => $finalReturnUrl
+            "success" => MP_SUCCESS_URL . "?order_id=" . $orderId,
+            "failure" => MP_SUCCESS_URL . "?order_id=" . $orderId,
+            "pending" => MP_SUCCESS_URL . "?order_id=" . $orderId
         ],
         "auto_return" => "approved",
         "external_reference" => $externalReference,
+        
+        // === CORREÇÃO: As parcelas devem ficar dentro de payment_methods ===
         "payment_methods" => [
             "installments" => $maxParcelas,
             "default_installments" => 1
         ],
-        "statement_descriptor" => "UNLI SITES"
+        
+        // Opcional: Definir expiração para evitar pagamentos em pedidos muito antigos
+        "expires" => false
     ];
 
-    debugLog('Preferência montada', $preference);
+    debugLog('Preferência montada (Corrigida)', $preference);
 
     // ============================================
     // ENVIAR PARA MERCADO PAGO
@@ -238,10 +180,9 @@ try {
     
     if ($response['success']) {
         debugLog('Preferência criada com sucesso', [
-            'preference_id' => $response['data']['id']
+            'preference_id' => $response['data']['id'],
+            'init_point' => $response['data']['init_point']
         ]);
-        
-        savePendingOrder($orderId, $externalReference, $precoFinal, $descricao, $payerEmail);
         
         echo json_encode([
             'success' => true,
@@ -259,7 +200,7 @@ try {
     }
 
 } catch (Exception $e) {
-    debugLog('ERRO CRÍTICO', $e->getMessage());
+    debugLog('ERRO ao criar preferência', $e->getMessage());
     
     http_response_code(500);
     echo json_encode([
@@ -272,66 +213,102 @@ try {
 // FUNÇÃO: CRIAR PREFERÊNCIA NO MERCADO PAGO
 // ============================================
 function createMercadoPagoPreference($preference) {
-    $url = "https://api.mercadopago.com/checkout/preferences";
+    debugLog('Enviando preferência para Mercado Pago');
     
-    $ch = curl_init($url);
+    // Inicializar cURL
+    $ch = curl_init(MP_API_URL);
     
     if ($ch === false) {
         return ['success' => false, 'message' => 'Erro interno: cURL não disponível'];
     }
     
+    // Configurar headers
     $headers = [
         'Authorization: Bearer ' . MP_ACCESS_TOKEN,
         'Content-Type: application/json'
     ];
     
+    // Configurar cURL
     curl_setopt_array($ch, [
         CURLOPT_POST => true,
         CURLOPT_POSTFIELDS => json_encode($preference),
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER => $headers,
         CURLOPT_TIMEOUT => 30,
-        CURLOPT_SSL_VERIFYPEER => false 
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_SSL_VERIFYPEER => SSL_VERIFY_PEER,
+        CURLOPT_SSL_VERIFYHOST => SSL_VERIFY_HOST,
+        CURLOPT_USERAGENT => 'UNLI-CheckoutPro/2.0'
     ]);
     
+    // Executar request
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $curlError = curl_error($ch);
     
     curl_close($ch);
     
+    // Verificar erro cURL
     if ($curlError) {
+        debugLog('Erro cURL', $curlError);
         return ['success' => false, 'message' => "Erro de conexão: $curlError"];
     }
     
-    $responseData = json_decode($response, true);
+    // Verificar resposta
+    if ($response === false) {
+        return ['success' => false, 'message' => 'Falha na requisição'];
+    }
     
-    if (($httpCode === 200 || $httpCode === 201) && isset($responseData['id'])) {
+    $responseData = json_decode($response, true);
+    debugLog('Resposta do Mercado Pago', [
+        'http_code' => $httpCode,
+        'response' => $responseData
+    ]);
+    
+    if ($httpCode === 201 && isset($responseData['id'])) {
         return ['success' => true, 'data' => $responseData];
     } else {
-        $msg = $responseData['message'] ?? 'Erro desconhecido do Mercado Pago';
-        debugLog('Erro MP Detalhado', $responseData);
-        return ['success' => false, 'message' => "Erro MP ($httpCode): $msg"];
+        $errorMessage = $responseData['message'] ?? 'Erro desconhecido';
+        if (isset($responseData['cause'])) {
+            $errorMessage .= ' - ' . json_encode($responseData['cause']);
+        }
+        return ['success' => false, 'message' => $errorMessage];
     }
 }
 
 // ============================================
-// FUNÇÃO: SALVAR PEDIDO (DB Opcional)
+// FUNÇÃO: SALVAR PEDIDO PENDENTE
 // ============================================
 function savePendingOrder($orderId, $externalReference, $amount, $description, $payerEmail) {
-    if (!defined('DB_HOST')) return; 
-    
     try {
+        if (!defined('DB_HOST')) {
+            debugLog('Database não configurado, pulando salvamento');
+            return;
+        }
+        
         $conn = getConnection();
-        if (!$conn) return;
-
+        if (!$conn) {
+            debugLog('Falha na conexão com banco de dados');
+            return;
+        }
+        
         $stmt = $conn->prepare("
-            INSERT INTO orders (order_id, external_reference, amount, description, payer_email, status, created_at) 
-            VALUES (?, ?, ?, ?, ?, 'pending', NOW())
-            ON DUPLICATE KEY UPDATE updated_at = NOW()
+            INSERT INTO orders (
+                order_id, external_reference, amount, description, 
+                payer_email, status, created_at
+            ) VALUES (?, ?, ?, ?, ?, 'pending', NOW())
+            ON DUPLICATE KEY UPDATE
+                external_reference = VALUES(external_reference),
+                amount = VALUES(amount),
+                updated_at = NOW()
         ");
+        
         $stmt->execute([$orderId, $externalReference, $amount, $description, $payerEmail]);
+        debugLog('Pedido salvo no banco de dados', ['order_id' => $orderId]);
+        
     } catch (Exception $e) {
-        debugLog('Aviso DB', $e->getMessage());
+        debugLog('Erro ao salvar no banco', $e->getMessage());
+        // Não falha a criação da preferência por erro no banco
     }
 }
+?>
