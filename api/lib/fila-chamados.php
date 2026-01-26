@@ -169,15 +169,57 @@ function buildTicketMessage($orderData, $summary) {
         $message .= "<h3>🎨 Especificações do Produto</h3>\n";
         $message .= "<ul>\n";
         
-        if (isset($selection['pages'])) {
+        // Páginas - mostrar detalhadamente
+        if (isset($selection['pages']) && is_array($selection['pages'])) {
+            $pagesDetails = [];
+            foreach ($selection['pages'] as $pageKey => $qty) {
+                if ($qty > 0) {
+                    $pagesDetails[] = "{$pageKey} (x{$qty})";
+                }
+            }
+            if (!empty($pagesDetails)) {
+                $message .= "<li><strong>Páginas Adicionais:</strong> " . implode(', ', $pagesDetails) . "</li>\n";
+            } else {
+                $message .= "<li><strong>Páginas Adicionais:</strong> Nenhuma</li>\n";
+            }
+        } elseif (isset($selection['pages'])) {
             $message .= "<li><strong>Páginas:</strong> {$selection['pages']}</li>\n";
         }
         
-        if (isset($selection['content'])) {
+        // Conteúdo - mostrar detalhadamente
+        if (isset($selection['content']) && is_array($selection['content'])) {
+            $contentDetails = [];
+            foreach ($selection['content'] as $contentKey => $enabled) {
+                if ($enabled) {
+                    $contentDetails[] = $contentKey;
+                }
+            }
+            if (!empty($contentDetails)) {
+                $message .= "<li><strong>Conteúdo Adicional:</strong> " . implode(', ', $contentDetails) . "</li>\n";
+            } else {
+                $message .= "<li><strong>Conteúdo Adicional:</strong> Nenhum</li>\n";
+            }
+        } elseif (isset($selection['content']) && !empty($selection['content'])) {
             $message .= "<li><strong>Conteúdo:</strong> " . ucfirst($selection['content']) . "</li>\n";
         }
         
+        // Produto base
+        if (isset($selection['product'])) {
+            $message .= "<li><strong>Produto Base:</strong> {$selection['product']}</li>\n";
+        }
+        
         $message .= "</ul>\n\n";
+    }
+    
+    // Mostrar order_details completo para referência
+    if (isset($orderData['selection']) || isset($orderData['briefing'])) {
+        $message .= "<h3>📋 Dados Completos do Pedido (JSON)</h3>\n";
+        $message .= "<pre style=\"background:#f5f5f5; padding:10px; border-radius:5px; overflow:auto; font-size:12px;\">\n";
+        $message .= htmlspecialchars(json_encode([
+            'selection' => $orderData['selection'] ?? null,
+            'briefing' => $orderData['briefing'] ?? null
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        $message .= "\n</pre>\n\n";
     }
     
     // Briefing/Informações Adicionais

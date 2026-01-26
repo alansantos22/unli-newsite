@@ -125,14 +125,17 @@ try {
     ]);
     
     // Verificar se payment_type do request bate com da ordem
+    // Normalizar formatos: '12x' e 'prazo' são equivalentes para parcelado
     $requestedPaymentType = $data['payment_type'];
-    $expectedPaymentType = ($paymentMethodFromOrder === '12x') ? 'prazo' : 'avista';
+    $isOrderParcelado = in_array($paymentMethodFromOrder, ['12x', 'prazo', 'parcelado', 'installments']);
+    $isRequestParcelado = in_array($requestedPaymentType, ['12x', 'prazo', 'parcelado', 'installments']);
     
-    if ($requestedPaymentType !== $expectedPaymentType) {
+    if ($isOrderParcelado !== $isRequestParcelado) {
         debugLog('AVISO: Método de pagamento inconsistente', [
             'requested' => $requestedPaymentType,
-            'from_order' => $expectedPaymentType,
-            'order_method' => $paymentMethodFromOrder
+            'from_order' => $paymentMethodFromOrder,
+            'order_parcelado' => $isOrderParcelado,
+            'request_parcelado' => $isRequestParcelado
         ]);
     }
     
@@ -157,8 +160,10 @@ try {
     
     // === USAR PREÇO CALCULADO PELO SERVIDOR (SEGURO) ===
     // O preço é recalculado baseado na seleção, não no que o frontend envia
+    // Normalizar: aceitar múltiplos formatos de payment_type
+    $isParcelado = in_array($paymentType, ['prazo', '12x', 'parcelado', 'installments']);
     
-    if ($paymentType === 'prazo') {
+    if ($isParcelado) {
         $precoFinal = $pricing['parcelado_total']; // Preço parcelado
         $maxParcelas = 12;
         $descricao = "Site Completo UNLI - Parcelado Sem Juros";
@@ -170,6 +175,7 @@ try {
     
     debugLog('Preço final determinado pelo servidor', [
         'payment_type' => $paymentType,
+        'is_parcelado' => $isParcelado,
         'amount' => $precoFinal,
         'max_parcelas' => $maxParcelas,
         'source' => 'server_calculated'
@@ -243,12 +249,26 @@ try {
         
         savePendingOrder($orderId, $externalReference, $precoFinal, $descricao, $payerEmail);
         
+        // IMPORTANTE: Em modo DEBUG/TESTE, usar sandbox_init_point
+        // Em produção, usar init_point
+        $checkoutUrl = DEBUG_MODE 
+            ? ($response['data']['sandbox_init_point'] ?? $response['data']['init_point'])
+            : $response['data']['init_point'];
+        
+        debugLog('URL de checkout selecionada', [
+            'debug_mode' => DEBUG_MODE,
+            'using_sandbox' => DEBUG_MODE,
+            'url' => $checkoutUrl
+        ]);
+        
         echo json_encode([
             'success' => true,
             'message' => 'Preferência criada com sucesso',
             'preference_id' => $response['data']['id'],
-            'init_point' => $response['data']['init_point'],
+            'init_point' => $checkoutUrl, // Retorna a URL correta baseado no modo
             'sandbox_init_point' => $response['data']['sandbox_init_point'] ?? null,
+            'production_init_point' => $response['data']['init_point'],
+            'is_sandbox' => DEBUG_MODE,
             'external_reference' => $externalReference,
             'amount' => $precoFinal,
             'payment_type' => $paymentType

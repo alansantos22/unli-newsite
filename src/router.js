@@ -43,5 +43,10 @@ export default [
         path: "/pagamento/validar",
         name: "PaymentValidation", 
         component: () => import("./pages/PaymentValidation.vue")
+    },
+    {
+        path: "/sucesso",
+        name: "PaymentSuccess",
+        component: () => import("./pages/PaymentSuccess.vue")
     }
 ]

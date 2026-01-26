@@ -292,39 +292,6 @@ class PricingService {
     }
   }
 
-  async createPayment(orderId) {
-    if (this.isDebugMode() || this.serverAvailable === false) {
-      return {
-        ok: false,
-        error: this.isDebugMode() ? 'Debug mode ativo' : 'API offline',
-        offline: true,
-        debugMode: this.isDebugMode()
-      };
-    }
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/payment_create.php`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({ order_id: orderId })
-      });
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('🔴 Erro ao criar pagamento:', error);
-      this.serverAvailable = false;
-      return {
-        ok: false,
-        error: error.message,
-        offline: true
-      };
-    }
-  }
-
   async submitCustomRequest(customData) {
     if (this.isDebugMode()) {
       console.info('🔧 DEBUG MODE: Orçamento simulado');

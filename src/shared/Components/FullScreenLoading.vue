@@ -189,7 +189,6 @@ export default {
   i {
     font-size: 2rem;
     color: #ffffff;
-    animation: pulse 1.5s ease-in-out infinite;
   }
 }
 

@@ -21,10 +21,13 @@
   ├── config.php              # GET - Catálogo de produtos
   ├── price.php               # POST - Calcular preço
   ├── order_create.php        # POST - Criar pedido
-  ├── payment_create.php      # POST - Criar pagamento
+  ├── create_preference.php   # POST - Criar pagamento Mercado Pago
+  ├── validate_payment.php    # POST - Validar pagamento após sucesso
   ├── pricing.json            # Configuração oficial (source of truth)
   ├── lib/
   │   ├── pricing.php         # Core de cálculo
+  │   ├── database.php        # Conexão banco de dados
+  │   ├── cors.php            # CORS headers
   │   └── storage.php         # Persistência
   └── orders/                 # Pedidos salvos (JSON)
       └── ORD-*.json
@@ -167,68 +170,16 @@ fetch('/api/price.php', {
 
 ---
 
-### 4. POST `/api/payment_create.php`
+## 🔧 Integração com Mercado Pago
 
-**Descrição:** Cria pagamento com valor do servidor
+O pagamento é feito via **Checkout Pro** (redirect):
 
-**Request:**
-```json
-{
-  "order_id": "ORD-20260121-A3F7B9C1"
-}
-```
-
-**Response:**
-```json
-{
-  "ok": true,
-  "order_id": "ORD-20260121-A3F7B9C1",
-  "payment_id": "PAY-XYZ123",
-  "payment_url": "https://gateway.com/checkout/PAY-XYZ123",
-  "amount": 1212.30,
-  "payment_method": "12x"
-}
-```
-
-**Proteções:**
-- ✅ Busca pedido por ID
-- ✅ Usa preço salvo no pedido
-- ✅ Valida status (não permite pagar 2x)
-- ✅ Gateway recebe valor do servidor
-
----
-
-## 🔧 Integração com Gateway
-
-### Mercado Pago (Exemplo)
-
-```php
-// Em payment_create.php, substituir função mock:
-
-require_once 'vendor/autoload.php';
-MercadoPago\SDK::setAccessToken('YOUR_ACCESS_TOKEN');
-
-$preference = new MercadoPago\Preference();
-$item = new MercadoPago\Item();
-$item->title = $description;
-$item->quantity = 1;
-$item->unit_price = $amount; // VALOR DO SERVIDOR
-
-$preference->items = [$item];
-$preference->external_reference = $orderId;
-$preference->save();
-
-return [
-  'payment_url' => $preference->init_point,
-  'payment_id' => $preference->id
-];
-```
-
-### Outros Gateways
-
-- **PagSeguro:** Similar ao Mercado Pago
-- **Stripe:** Criar `PaymentIntent` server-side
-- **Pagar.me:** API REST com token de transação
+1. Frontend chama `POST /api/create_preference.php` com order_id
+2. PHP cria preferência no Mercado Pago com valor do servidor
+3. Cliente é redirecionado para Mercado Pago
+4. Após pagamento, cliente volta para `/pagamento-sucesso`
+5. Frontend chama `POST /api/validate_payment.php` para validar
+6. PHP atualiza status do pedido no banco
 
 ---
 

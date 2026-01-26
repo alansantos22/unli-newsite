@@ -185,11 +185,12 @@ function update_payment_status($orderId, $status, $paymentId = null) {
         }
         
         $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+        // JSON_UNQUOTE remove as aspas do valor extraído do JSON
         $sql = "UPDATE " . $prefix . "orders 
                 SET payment_status = :status,
                     payment_id = :payment_id,
                     updated_at = CURRENT_TIMESTAMP
-                WHERE JSON_EXTRACT(order_details, '$.order_id') = :order_id";
+                WHERE JSON_UNQUOTE(JSON_EXTRACT(order_details, '$.order_id')) = :order_id";
         
         $stmt = $pdo->prepare($sql);
         
@@ -220,8 +221,9 @@ function get_order_by_id($orderId) {
         }
         
         $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+        // JSON_UNQUOTE remove as aspas do valor extraído do JSON
         $sql = "SELECT * FROM " . $prefix . "orders 
-                WHERE JSON_EXTRACT(order_details, '$.order_id') = :order_id
+                WHERE JSON_UNQUOTE(JSON_EXTRACT(order_details, '$.order_id')) = :order_id
                 LIMIT 1";
         
         $stmt = $pdo->prepare($sql);

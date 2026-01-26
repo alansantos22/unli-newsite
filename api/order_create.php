@@ -88,12 +88,27 @@ try {
     error_log('🧹 [order_create] Briefing sanitizado: ' . json_encode($briefing, JSON_PRETTY_PRINT));
     
     // 5. Validar método de pagamento
-    $paymentMethod = $body['payment_method'] ?? 'avista';
-    if (!in_array($paymentMethod, ['avista', '12x'])) {
-        $paymentMethod = 'avista';
-    }
+    // CORREÇÃO: Aceitar múltiplos formatos e normalizar
+    $rawPaymentMethod = $body['payment_method'] ?? 'avista';
     
-    error_log('💳 [order_create] Método de pagamento: ' . $paymentMethod);
+    // Mapeamento de todos os formatos aceitos para formato interno
+    $paymentMethodMap = [
+        // Formato interno
+        'avista' => 'avista',
+        '12x' => '12x',
+        // Formato do frontend
+        'cash' => 'avista',
+        'installments' => '12x',
+        // Formato alternativo
+        'prazo' => '12x',
+        'parcelado' => '12x',
+        'a_vista' => 'avista',
+        'à vista' => 'avista'
+    ];
+    
+    $paymentMethod = $paymentMethodMap[strtolower($rawPaymentMethod)] ?? 'avista';
+    
+    error_log('💳 [order_create] Método de pagamento recebido: ' . $rawPaymentMethod . ' -> normalizado para: ' . $paymentMethod);
     
     // 6. Gerar order_id e salvar
     error_log('🔢 [order_create] Gerando order_id...');

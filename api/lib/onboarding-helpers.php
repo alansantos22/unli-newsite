@@ -33,8 +33,8 @@ function isValidTokenFormat($token) {
  * @return bool Success status
  */
 function sendOnboardingEmail($email, $name, $magicLink, $orderId, $planName = 'Site Vitrine') {
-    // Load email template
-    $templatePath = __DIR__ . '/emails/onboarding-magic-link.html';
+    // Load email template (api/emails/)
+    $templatePath = __DIR__ . '/../emails/onboarding-magic-link.html';
     
     if (!file_exists($templatePath)) {
         error_log("Email template not found: {$templatePath}");

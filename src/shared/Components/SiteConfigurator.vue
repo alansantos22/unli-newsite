@@ -792,15 +792,7 @@
                     </li>
                     <li>
                       <i class="fas fa-check-circle"></i>
-                      <span><strong>Google Analytics</strong> (configurado)</span>
-                    </li>
-                    <li>
-                      <i class="fas fa-check-circle"></i>
-                      <span><strong>Backup Automático</strong> diário</span>
-                    </li>
-                    <li>
-                      <i class="fas fa-check-circle"></i>
-                      <span><strong>CDN Global</strong> (carregamento rápido)</span>
+                      <span><strong>Backup Automático</strong></span>
                     </li>
                   </template>
                 </ul>
@@ -812,7 +804,7 @@
                 >
                   <span v-if="!showAllIncludedItems">
                     <i class="fas fa-plus-circle"></i>
-                    Ver mais 6 itens técnicos
+                    Ver mais 3 itens técnicos
                   </span>
                   <span v-else>
                     <i class="fas fa-minus-circle"></i>
@@ -2247,7 +2239,7 @@ export default {
             const preferenceData = {
               order_id: result.order_id,
               payer_name: this.briefing.customer_name || 'Cliente',
-              payer_email: this.briefing.customer_email || 'cliente@exemplo.com',
+              payer_email: this.briefing.email || 'cliente@exemplo.com',
               payment_type: this.paymentMethod === 'cash' ? 'avista' : 'prazo'
               // SEGURANÇA: selection será carregada da ordem salva para garantir consistência total
             };

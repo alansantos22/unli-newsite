@@ -14,10 +14,18 @@
  */
 
 // ============================================
+// DEBUG TEMPORÁRIO - REMOVER EM PRODUÇÃO
+// ============================================
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// ============================================
 // CONFIGURAÇÃO SEGURA
 // ============================================
 
 define('SECURE_CONFIG_ACCESS', true);
+define('DB_CONFIG_ACCESS', true); // Permite acesso ao database.php
 
 $configFile = __DIR__ . '/config.secure.php';
 
@@ -124,21 +132,128 @@ try {
         'is_approved' => $isApproved
     ]);
     
+    // ============================================
+    // 🔥 CRÍTICO: ATUALIZAR STATUS NO BANCO
+    // ============================================
+    
+    // Mapear status do MP para status interno
+    $statusMap = [
+        'approved' => 'paid',
+        'pending' => 'pending',
+        'in_process' => 'pending',
+        'rejected' => 'failed',
+        'cancelled' => 'failed',
+        'refunded' => 'refunded',
+        'charged_back' => 'refunded'
+    ];
+    
+    $internalStatus = $statusMap[$status] ?? 'pending';
+    
+    // Variáveis para resultados
+    $updateResult = false;
+    $ticketResult = null;
+    $orderData = null;
+    $alreadyProcessed = false;
+    
+    // Atualizar banco de dados
+    if ($orderId) {
+        require_once __DIR__ . '/lib/database.php';
+        
+        // PRIMEIRO: Verificar se já foi processado (evita duplicatas)
+        $previousStatus = getOrderPaymentStatus($orderId);
+        $alreadyProcessed = ($previousStatus === 'paid');
+        
+        debugLog('Status anterior do pedido', [
+            'order_id' => $orderId,
+            'previous_status' => $previousStatus,
+            'already_processed' => $alreadyProcessed
+        ]);
+        
+        $updateResult = updatePaymentStatusFromValidation(
+            $orderId,
+            $internalStatus,
+            $paymentId,
+            $paymentMethod,
+            $amount
+        );
+        
+        debugLog('Atualização do banco', [
+            'order_id' => $orderId,
+            'internal_status' => $internalStatus,
+            'update_result' => $updateResult
+        ]);
+        
+        // Se pagamento foi aprovado E NÃO foi processado antes, criar ticket e enviar email
+        // Isso evita enviar múltiplos emails/tickets se o cliente atualizar a página
+        if ($isApproved && $updateResult && !$alreadyProcessed) {
+            require_once __DIR__ . '/lib/fila-chamados.php';
+            require_once __DIR__ . '/lib/onboarding-helpers.php';
+            
+            // Buscar dados completos do pedido
+            $orderData = getOrderDataForTicket($orderId);
+            
+            if ($orderData) {
+                // Adicionar dados do pagamento ao orderData
+                $orderData['payment_id'] = $paymentId;
+                $orderData['amount'] = $amount;
+                $orderData['payment_method'] = $paymentMethod;
+                $orderData['payer_email'] = $payerEmail;
+                
+                // 1. Criar ticket no Fila Chamados
+                $ticketResult = createTicketForSale($orderData);
+                
+                debugLog('Resultado criação ticket Fila Chamados', [
+                    'success' => $ticketResult['success'] ?? false,
+                    'ticket_id' => $ticketResult['ticket_id'] ?? null,
+                    'error' => $ticketResult['error'] ?? null
+                ]);
+                
+                // 2. Enviar Magic Link por email
+                $emailSent = false;
+                if (!empty($orderData['onboarding_token']) && !empty($orderData['customer_email'])) {
+                    // Montar URL do Magic Link
+                    $baseUrl = defined('SITE_BASE_URL') ? SITE_BASE_URL : 'https://unli.com.br';
+                    $magicLink = $baseUrl . '/setup?token=' . $orderData['onboarding_token'];
+                    
+                    $emailSent = sendOnboardingEmail(
+                        $orderData['customer_email'],
+                        $orderData['customer_name'],
+                        $magicLink,
+                        $orderId,
+                        $orderData['plan_name'] ?? 'Site Vitrine'
+                    );
+                    
+                    debugLog('Envio do Magic Link', [
+                        'email' => $orderData['customer_email'],
+                        'magic_link' => $magicLink,
+                        'sent' => $emailSent
+                    ]);
+                } else {
+                    debugLog('Magic Link não enviado - token ou email ausente', [
+                        'has_token' => !empty($orderData['onboarding_token']),
+                        'has_email' => !empty($orderData['customer_email'])
+                    ]);
+                }
+                
+                // Salvar resultados para response
+                $magicLinkSent = $emailSent;
+            } else {
+                debugLog('Pedido não encontrado para criar ticket', ['order_id' => $orderId]);
+            }
+        }
+    }
+    
+    // ============================================
+    
     if ($isApproved) {
         // ======= PAGAMENTO APROVADO =======
-        
-        // Aqui você pode:
-        // 1. Ativar o serviço no banco de dados
-        // 2. Enviar e-mail de boas-vindas
-        // 3. Integrar com sistemas externos
-        
-        // Exemplo de ativação:
-        // activateService($orderId, $paymentDetails);
         
         echo json_encode([
             'success' => true,
             'approved' => true,
-            'message' => 'Pagamento confirmado com sucesso',
+            'message' => $alreadyProcessed 
+                ? 'Pagamento já confirmado anteriormente' 
+                : 'Pagamento confirmado com sucesso',
             'payment_data' => [
                 'payment_id' => $paymentId,
                 'order_id' => $orderId,
@@ -146,7 +261,12 @@ try {
                 'payment_method' => $paymentMethod,
                 'payer_email' => $payerEmail,
                 'status' => $status
-            ]
+            ],
+            'db_updated' => $updateResult ?? false,
+            'already_processed' => $alreadyProcessed,
+            'ticket_created' => $alreadyProcessed ? false : ($ticketResult['success'] ?? false),
+            'ticket_id' => $alreadyProcessed ? null : ($ticketResult['ticket_id'] ?? null),
+            'magic_link_sent' => $alreadyProcessed ? false : ($magicLinkSent ?? false)
         ], JSON_UNESCAPED_UNICODE);
         
     } else {
@@ -262,9 +382,95 @@ function getPaymentDetails($paymentId) {
 function extractOrderId($externalReference) {
     if (!$externalReference) return null;
     
-    // Format: UNLI-{ORDER_ID}-{TIMESTAMP}
+    // Tentar extrair no formato UNLI-ORDER_ID-TIMESTAMP
+    if (preg_match('/^UNLI-(ORD-\d{8}-[A-Z0-9]+)-\d+$/', $externalReference, $matches)) {
+        return $matches[1];
+    }
+    
+    // Tentar extrair order_id diretamente se começar com ORD-
+    if (preg_match('/^(ORD-\d{8}-[A-Z0-9]+)/', $externalReference, $matches)) {
+        return $matches[1];
+    }
+    
+    // Formato antigo: UNLI-{ORDER_ID}-{TIMESTAMP}
     $parts = explode('-', $externalReference);
-    return isset($parts[1]) ? $parts[1] : null;
+    if (count($parts) >= 2) {
+        // Se segunda parte começa com ORD, retornar ORD-...
+        if (strpos($parts[1], 'ORD') === 0) {
+            return $parts[1] . '-' . $parts[2] . '-' . $parts[3];
+        }
+        return $parts[1];
+    }
+    
+    return null;
+}
+
+// ============================================
+// FUNÇÃO: ATUALIZAR STATUS DO PAGAMENTO NO BANCO
+// ============================================
+function updatePaymentStatusFromValidation($orderId, $status, $paymentId, $paymentMethod = null, $amount = null) {
+    try {
+        $pdo = get_db_connection();
+        
+        if ($pdo === null) {
+            debugLog('AVISO: Banco de dados não disponível para atualização');
+            return false;
+        }
+        
+        $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+        
+        // Atualizar pelo order_id no JSON (JSON_UNQUOTE remove as aspas do valor extraído)
+        $sql = "UPDATE " . $prefix . "orders 
+                SET payment_status = :status,
+                    payment_id = :payment_id,
+                    total_amount = :amount,
+                    updated_at = NOW()
+                WHERE JSON_UNQUOTE(JSON_EXTRACT(order_details, '$.order_id')) = :order_id";
+        
+        $stmt = $pdo->prepare($sql);
+        $result = $stmt->execute([
+            ':status' => $status,
+            ':payment_id' => $paymentId,
+            ':amount' => $amount,
+            ':order_id' => $orderId
+        ]);
+        
+        $rowsAffected = $stmt->rowCount();
+        
+        debugLog('SQL executado', [
+            'sql' => $sql,
+            'order_id_buscado' => $orderId,
+            'prefix' => $prefix
+        ]);
+        
+        debugLog('Resultado da atualização do banco', [
+            'rows_affected' => $rowsAffected,
+            'order_id' => $orderId,
+            'status' => $status,
+            'payment_id' => $paymentId
+        ]);
+        
+        // Se pagamento foi aprovado, atualizar onboarding_status também
+        if ($status === 'paid' && $rowsAffected > 0) {
+            $sql2 = "UPDATE " . $prefix . "orders 
+                     SET onboarding_status = 'ativo'
+                     WHERE JSON_UNQUOTE(JSON_EXTRACT(order_details, '$.order_id')) = :order_id
+                     AND onboarding_status = 'pendente'";
+            
+            $stmt2 = $pdo->prepare($sql2);
+            $stmt2->execute([
+                ':order_id' => $orderId
+            ]);
+            
+            debugLog('Onboarding status atualizado para ativo');
+        }
+        
+        return $rowsAffected > 0;
+        
+    } catch (PDOException $e) {
+        debugLog('Erro PDO ao atualizar', ['error' => $e->getMessage()]);
+        return false;
+    }
 }
 
 // ============================================
@@ -299,5 +505,117 @@ function activateService($orderId, $paymentDetails) {
         debugLog('Erro ao ativar serviço no banco', $e->getMessage());
     }
     */
+}
+
+// ============================================
+// FUNÇÃO: BUSCAR DADOS DO PEDIDO PARA TICKET
+// ============================================
+function getOrderDataForTicket($orderId) {
+    try {
+        $pdo = get_db_connection();
+        
+        if ($pdo === null) {
+            debugLog('AVISO: Banco de dados não disponível para buscar pedido');
+            return null;
+        }
+        
+        $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+        
+        // Colunas conforme o schema real da tabela orders
+        $sql = "SELECT 
+                    id,
+                    customer_name,
+                    email,
+                    phone,
+                    order_details,
+                    total_amount,
+                    payment_method,
+                    payment_status,
+                    onboarding_token,
+                    created_at
+                FROM " . $prefix . "orders 
+                WHERE JSON_UNQUOTE(JSON_EXTRACT(order_details, '$.order_id')) = :order_id
+                LIMIT 1";
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':order_id' => $orderId
+        ]);
+        
+        debugLog('Buscando dados do pedido para ticket', ['order_id' => $orderId]);
+        
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$row) {
+            debugLog('Pedido não encontrado no banco', ['order_id' => $orderId]);
+            return null;
+        }
+        
+        debugLog('Pedido encontrado', ['row' => $row]);
+        
+        // Decodificar order_details se for JSON
+        $orderDetails = [];
+        if (!empty($row['order_details'])) {
+            $orderDetails = json_decode($row['order_details'], true) ?: [];
+        }
+        
+        // Extrair nome do plano do order_details
+        $planName = $orderDetails['product'] ?? $orderDetails['plan'] ?? 'Site Vitrine';
+        
+        // Montar dados para o ticket (mapeando colunas do banco para nomes esperados)
+        return [
+            'order_id' => $orderId,
+            'customer_name' => $row['customer_name'],
+            'customer_email' => $row['email'],  // Coluna real é 'email'
+            'customer_phone' => $row['phone'] ?? null,  // Coluna real é 'phone'
+            'plan_name' => $planName,
+            'total_amount' => $row['total_amount'],
+            'payment_method' => $row['payment_method'],
+            'onboarding_token' => $row['onboarding_token'] ?? null,
+            'selection' => $orderDetails['selection'] ?? null,
+            'briefing' => $orderDetails['briefing'] ?? null,
+            'created_at' => $row['created_at']
+        ];
+        
+    } catch (PDOException $e) {
+        debugLog('Erro PDO ao buscar pedido para ticket', ['error' => $e->getMessage()]);
+        return null;
+    }
+}
+
+// ============================================
+// FUNÇÃO: VERIFICAR STATUS ATUAL DO PEDIDO
+// ============================================
+// Usado para evitar processamento duplicado de tickets/emails
+function getOrderPaymentStatus($orderId) {
+    try {
+        $pdo = get_db_connection();
+        
+        if ($pdo === null) {
+            return null;
+        }
+        
+        $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+        
+        $sql = "SELECT payment_status 
+                FROM " . $prefix . "orders 
+                WHERE JSON_UNQUOTE(JSON_EXTRACT(order_details, '$.order_id')) = :order_id
+                LIMIT 1";
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':order_id' => $orderId
+        ]);
+        
+        debugLog('Buscando status do pedido', ['order_id' => $orderId, 'prefix' => $prefix]);
+        
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return $row ? ($row['payment_status'] ?? null) : null;
+        
+    } catch (PDOException $e) {
+        debugLog('Erro PDO ao verificar status', ['error' => $e->getMessage()]);
+        return null;
+    }
 }
 ?>
