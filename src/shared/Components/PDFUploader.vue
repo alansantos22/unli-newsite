@@ -98,6 +98,10 @@ export default {
     modelValue: {
       type: Array,
       default: () => []
+    },
+    companyName: {
+      type: String,
+      default: ''
     }
   },
   emits: ['update:modelValue', 'files-added', 'file-removed', 'upload-complete', 'upload-error'],
@@ -211,6 +215,11 @@ export default {
         fileObjects.forEach((fileObj) => {
           formData.append(`pdfs[]`, fileObj.file);
         });
+        
+        // Adicionar nome da empresa para organização dos arquivos
+        if (this.companyName) {
+          formData.append('company_name', this.companyName);
+        }
 
         const xhr = new XMLHttpRequest();
 

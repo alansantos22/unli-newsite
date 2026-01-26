@@ -11,7 +11,8 @@ require_once __DIR__ . '/../lib/cors.php';
 
 header('Content-Type: application/json');
 
-require_once __DIR__ . '/../config.php';
+// Carregar configuração do banco de dados
+require_once __DIR__ . '/../lib/database.php';
 
 // Only allow GET requests
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
@@ -45,6 +46,9 @@ try {
     
     $conn->set_charset('utf8mb4');
     
+    // Obter prefixo da tabela
+    $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+    
     // Prepare statement to prevent SQL injection
     $stmt = $conn->prepare("
         SELECT 
@@ -55,13 +59,14 @@ try {
             onboarding_status,
             briefing_data,
             created_at
-        FROM orders 
+        FROM " . $prefix . "orders 
         WHERE onboarding_token = ? 
         LIMIT 1
     ");
     
     if (!$stmt) {
-        throw new Exception('Erro ao preparar consulta.');
+        $errorDetail = $conn->error;
+        throw new Exception('Erro ao preparar consulta: ' . $errorDetail);
     }
     
     $stmt->bind_param('s', $token);

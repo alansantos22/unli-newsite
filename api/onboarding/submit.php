@@ -11,7 +11,9 @@ require_once __DIR__ . '/../lib/cors.php';
 
 header('Content-Type: application/json');
 
-require_once __DIR__ . '/../config.php';
+// Carregar configuração do banco de dados e helpers
+require_once __DIR__ . '/../lib/database.php';
+require_once __DIR__ . '/../lib/upload-helpers.php';
 
 // Only allow POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -66,10 +68,13 @@ try {
     
     $conn->set_charset('utf8mb4');
     
+    // Obter prefixo da tabela
+    $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+    
     // Check if token exists and status is not already 'concluido'
     $stmt = $conn->prepare("
         SELECT id, onboarding_status, email, customer_name 
-        FROM orders 
+        FROM " . $prefix . "orders 
         WHERE onboarding_token = ? 
         LIMIT 1
     ");
@@ -103,10 +108,15 @@ try {
         exit();
     }
     
+    // Obter nome da empresa do briefing para organização dos arquivos
+    $companyName = $briefingData['companyName'] ?? $order['customer_name'] ?? 'cliente-sem-nome';
+    $companyFolder = sanitizeFolderName($companyName);
+    
     // Handle logo upload if present
     $logoPath = null;
     if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
-        $uploadDir = __DIR__ . '/../../public/uploads/logos/';
+        $baseUploadDir = __DIR__ . '/../../uploads/';
+        $uploadDir = $baseUploadDir . $companyFolder . '/';
         
         // Create directory if it doesn't exist
         if (!file_exists($uploadDir)) {
@@ -128,25 +138,26 @@ try {
         
         // Generate unique filename
         $extension = pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION);
-        $filename = 'logo_' . $order['id'] . '_' . uniqid() . '.' . $extension;
+        $filename = 'logo_' . uniqid() . '.' . $extension;
         $targetPath = $uploadDir . $filename;
         
         if (move_uploaded_file($_FILES['logo']['tmp_name'], $targetPath)) {
-            $logoPath = '/uploads/logos/' . $filename;
+            $logoPath = '/uploads/' . $companyFolder . '/' . $filename;
         }
     }
     
-    // Add logo path to briefing data if uploaded
+    // Add logo path and company folder to briefing data
     if ($logoPath) {
         $briefingData['logoUrl'] = $logoPath;
     }
+    $briefingData['companyFolder'] = $companyFolder;
     
     // Re-encode with logo path
     $briefingJson = json_encode($briefingData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     
     // Update order with completed briefing
     $updateStmt = $conn->prepare("
-        UPDATE orders 
+        UPDATE " . $prefix . "orders 
         SET 
             briefing_data = ?,
             onboarding_status = 'concluido',
@@ -165,6 +176,36 @@ try {
         throw new Exception('Erro ao finalizar briefing.');
     }
     
+    // ============================================
+    // CRIAR TICKET NO FILA CHAMADOS COM O BRIEFING
+    // ============================================
+    require_once __DIR__ . '/../lib/fila-chamados.php';
+    
+    // Carregar configuração segura para ter acesso às constantes do Fila Chamados
+    if (!defined('SECURE_CONFIG_ACCESS')) {
+        define('SECURE_CONFIG_ACCESS', true);
+    }
+    $secureConfigPath = __DIR__ . '/../config.secure.php';
+    if (file_exists($secureConfigPath)) {
+        require_once $secureConfigPath;
+    }
+    
+    $ticketResult = createTicketForOnboarding($order, $briefingData);
+    
+    if ($ticketResult['success']) {
+        error_log(sprintf(
+            '✅ ONBOARDING SUBMIT: Ticket criado #%s para pedido #%s',
+            $ticketResult['ticket_id'],
+            $order['id']
+        ));
+    } else {
+        error_log(sprintf(
+            '⚠️ ONBOARDING SUBMIT: Falha ao criar ticket para pedido #%s - %s',
+            $order['id'],
+            $ticketResult['error'] ?? 'Erro desconhecido'
+        ));
+    }
+    
     // Send confirmation email to customer
     sendCompletionEmail($order['email'], $order['customer_name']);
     
@@ -174,7 +215,8 @@ try {
     echo json_encode([
         'success' => true,
         'message' => 'Briefing enviado com sucesso! Nossa equipe já recebeu suas informações.',
-        'orderId' => $order['id']
+        'orderId' => $order['id'],
+        'ticketCreated' => $ticketResult['success'] ?? false
     ]);
     
     $stmt->close();

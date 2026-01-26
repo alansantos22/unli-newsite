@@ -11,7 +11,8 @@ require_once __DIR__ . '/../lib/cors.php';
 
 header('Content-Type: application/json');
 
-require_once __DIR__ . '/../config.php';
+// Carregar configuração do banco de dados
+require_once __DIR__ . '/../lib/database.php';
 
 // Only allow POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -66,10 +67,13 @@ try {
     
     $conn->set_charset('utf8mb4');
     
+    // Obter prefixo da tabela
+    $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+    
     // Check if token exists and status is not 'concluido'
     $stmt = $conn->prepare("
         SELECT id, onboarding_status 
-        FROM orders 
+        FROM " . $prefix . "orders 
         WHERE onboarding_token = ? 
         LIMIT 1
     ");
@@ -105,7 +109,7 @@ try {
     
     // Update briefing data and status to 'preenchendo'
     $updateStmt = $conn->prepare("
-        UPDATE orders 
+        UPDATE " . $prefix . "orders 
         SET 
             briefing_data = ?,
             onboarding_status = IF(onboarding_status = 'pendente', 'preenchendo', onboarding_status),

@@ -8,6 +8,7 @@
 
 // CORS - Configuração segura
 require_once __DIR__ . '/../lib/cors.php';
+require_once __DIR__ . '/../lib/upload-helpers.php';
 
 header('Content-Type: application/json');
 
@@ -22,9 +23,27 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // Configuration
-$uploadDir = __DIR__ . '/../../uploads/pdfs/';
+$baseUploadDir = __DIR__ . '/../../uploads/';
 $allowedExtensions = ['pdf'];
 $maxFileSize = 15 * 1024 * 1024; // 15MB
+
+// Obter nome da empresa (obrigatório para organização dos arquivos)
+$companyName = $_POST['company_name'] ?? '';
+
+if (empty($companyName)) {
+    http_response_code(400);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Nome da empresa é obrigatório para organização dos arquivos.'
+    ]);
+    exit();
+}
+
+// Sanitizar nome da pasta (remover caracteres especiais, acentos, etc)
+$companyFolder = sanitizeFolderName($companyName);
+
+// Estrutura: uploads/{empresa}/pdfs/
+$uploadDir = $baseUploadDir . $companyFolder . '/pdfs/';
 
 // Create upload directory if it doesn't exist
 if (!file_exists($uploadDir)) {
@@ -62,7 +81,7 @@ if (is_array($files['name'])) {
         $fileSize = $files['size'][$i];
         $fileError = $files['error'][$i];
         
-        $result = processPDFUpload($fileName, $fileTmpName, $fileSize, $fileError, $uploadDir, $allowedExtensions, $maxFileSize);
+        $result = processPDFUpload($fileName, $fileTmpName, $fileSize, $fileError, $uploadDir, $allowedExtensions, $maxFileSize, $companyFolder);
         
         if ($result['success']) {
             $uploadedFiles[] = $result['file'];
@@ -72,7 +91,7 @@ if (is_array($files['name'])) {
     }
 } else {
     // Single file
-    $result = processPDFUpload($files['name'], $files['tmp_name'], $files['size'], $files['error'], $uploadDir, $allowedExtensions, $maxFileSize);
+    $result = processPDFUpload($files['name'], $files['tmp_name'], $files['size'], $files['error'], $uploadDir, $allowedExtensions, $maxFileSize, $companyFolder);
     
     if ($result['success']) {
         $uploadedFiles[] = $result['file'];
@@ -101,7 +120,7 @@ if (count($uploadedFiles) > 0) {
 /**
  * Process individual PDF upload
  */
-function processPDFUpload($fileName, $fileTmpName, $fileSize, $fileError, $uploadDir, $allowedExtensions, $maxFileSize) {
+function processPDFUpload($fileName, $fileTmpName, $fileSize, $fileError, $uploadDir, $allowedExtensions, $maxFileSize, $companyFolder) {
     // Check for upload errors
     if ($fileError !== UPLOAD_ERR_OK) {
         return [
@@ -162,9 +181,10 @@ function processPDFUpload($fileName, $fileTmpName, $fileSize, $fileError, $uploa
             'file' => [
                 'name' => $fileName,
                 'filename' => $uniqueFileName,
-                'url' => '/uploads/pdfs/' . $uniqueFileName,
+                'url' => '/uploads/' . $companyFolder . '/pdfs/' . $uniqueFileName,
                 'size' => $fileSize,
-                'type' => 'pdf'
+                'type' => 'pdf',
+                'company_folder' => $companyFolder
             ]
         ];
     } else {

@@ -51,8 +51,14 @@ Options -Indexes
   # Bloqueia acesso a arquivos de configuração via padrão
   RewriteRule ^config\..*\.php$ - [F,L]
   
-  # Bloqueia acesso direto a includes/lib/onboarding
-  RewriteRule ^(lib|includes|onboarding)/.*$ - [F,L]
+  # Bloqueia acesso direto a includes/lib (helpers internos)
+  RewriteRule ^(lib|includes)/.*$ - [F,L]
+  
+  # Permite acesso aos endpoints PHP de onboarding (save-draft, submit, validate)
+  # mas bloqueia outros arquivos sensíveis dentro do diretório
+  RewriteCond %{REQUEST_URI} ^/api/onboarding/
+  RewriteCond %{REQUEST_URI} !\.(php)$
+  RewriteRule .* - [F,L]
 </IfModule>
 
 # Headers de segurança

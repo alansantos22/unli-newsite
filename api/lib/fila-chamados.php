@@ -95,7 +95,9 @@ function createTicketForSale($orderData) {
     ];
     
     // Adicionar categoria se configurada
-    if (defined('FILA_CHAMADOS_CATEGORY_ID') && FILA_CHAMADOS_CATEGORY_ID !== null) {
+    if (defined('FILA_CHAMADOS_CATEGORY_SALE') && FILA_CHAMADOS_CATEGORY_SALE !== null) {
+        $payload['category_id'] = (int) FILA_CHAMADOS_CATEGORY_SALE;
+    } elseif (defined('FILA_CHAMADOS_CATEGORY_ID') && FILA_CHAMADOS_CATEGORY_ID !== null) {
         $payload['category_id'] = (int) FILA_CHAMADOS_CATEGORY_ID;
     }
     
@@ -392,6 +394,199 @@ function makeFilaChamadosRequest($payload) {
         'http_code' => $httpCode,
         'response' => $decodedResponse
     ];
+}
+
+/**
+ * Cria um ticket no Fila Chamados quando o onboarding é concluído
+ * Envia o briefing completo do cliente para iniciar a criação do site
+ * 
+ * @param array $orderData Dados do pedido
+ * @param array $briefingData Dados do briefing preenchido pelo cliente
+ * @return array Resultado da criação do ticket
+ */
+function createTicketForOnboarding($orderData, $briefingData) {
+    // Verificar se a integração está habilitada
+    if (!defined('FILA_CHAMADOS_ENABLED') || !FILA_CHAMADOS_ENABLED) {
+        return [
+            'success' => false,
+            'error' => 'Fila Chamados integration is disabled',
+            'skipped' => true
+        ];
+    }
+    
+    // Validar API Key
+    if (!defined('FILA_CHAMADOS_API_KEY') || FILA_CHAMADOS_API_KEY === 'SUA_API_KEY_AQUI') {
+        error_log('⚠️ FILA CHAMADOS: API Key não configurada');
+        return [
+            'success' => false,
+            'error' => 'API Key not configured',
+            'skipped' => true
+        ];
+    }
+    
+    // Extrair dados
+    $customerName = $orderData['customer_name'] ?? 'Cliente';
+    $customerEmail = $orderData['email'] ?? '';
+    $orderId = $orderData['id'] ?? 'N/A';
+    
+    // Validar email
+    if (empty($customerEmail) || !filter_var($customerEmail, FILTER_VALIDATE_EMAIL)) {
+        error_log('⚠️ FILA CHAMADOS ONBOARDING: Email inválido ou não fornecido');
+        return [
+            'success' => false,
+            'error' => 'Invalid or missing email address',
+            'skipped' => true
+        ];
+    }
+    
+    // Construir assunto do ticket
+    $subject = sprintf(
+        '📋 Briefing Recebido - %s (#%s)',
+        $customerName,
+        $orderId
+    );
+    
+    // Construir mensagem com o briefing
+    $message = buildOnboardingTicketMessage($orderData, $briefingData);
+    
+    // Montar payload para API
+    $payload = [
+        'name' => $customerName,
+        'email' => $customerEmail,
+        'subject' => $subject,
+        'message' => $message
+    ];
+    
+    // Usar categoria de onboarding
+    if (defined('FILA_CHAMADOS_CATEGORY_ONBOARDING') && FILA_CHAMADOS_CATEGORY_ONBOARDING !== null) {
+        $payload['category_id'] = (int) FILA_CHAMADOS_CATEGORY_ONBOARDING;
+    }
+    
+    // Adicionar username se configurado
+    if (defined('FILA_CHAMADOS_USERNAME') && !empty(FILA_CHAMADOS_USERNAME)) {
+        $payload['username'] = FILA_CHAMADOS_USERNAME;
+    }
+    
+    // Fazer requisição para API
+    $result = makeFilaChamadosRequest($payload);
+    
+    // Log do resultado
+    if ($result['success']) {
+        error_log(sprintf(
+            '✅ FILA CHAMADOS ONBOARDING: Ticket #%s criado para pedido #%s (%s)',
+            $result['ticket_id'],
+            $orderId,
+            $customerEmail
+        ));
+    } else {
+        error_log(sprintf(
+            '❌ FILA CHAMADOS ONBOARDING: Falha ao criar ticket para pedido #%s - %s',
+            $orderId,
+            $result['error']
+        ));
+    }
+    
+    return $result;
+}
+
+/**
+ * Constrói a mensagem do ticket de onboarding com os dados do briefing
+ * 
+ * @param array $orderData Dados do pedido
+ * @param array $briefingData Dados do briefing
+ * @return string Mensagem formatada em HTML
+ */
+function buildOnboardingTicketMessage($orderData, $briefingData) {
+    $customerName = $orderData['customer_name'] ?? 'Cliente';
+    $customerEmail = $orderData['email'] ?? '';
+    $orderId = $orderData['id'] ?? 'N/A';
+    
+    $message = "<h2>📋 Briefing do Site Recebido</h2>\n\n";
+    $message .= "<p><strong>O cliente completou o onboarding e está pronto para iniciar o desenvolvimento!</strong></p>\n\n";
+    
+    // Informações do Cliente
+    $message .= "<h3>👤 Dados do Cliente</h3>\n";
+    $message .= "<ul>\n";
+    $message .= "<li><strong>Nome:</strong> {$customerName}</li>\n";
+    $message .= "<li><strong>Email:</strong> {$customerEmail}</li>\n";
+    $message .= "<li><strong>ID do Pedido:</strong> #{$orderId}</li>\n";
+    $message .= "</ul>\n\n";
+    
+    // Dados do Briefing
+    $message .= "<h3>📝 Informações do Briefing</h3>\n";
+    $message .= "<ul>\n";
+    
+    // Mapear campos do briefing para exibição amigável
+    $fieldLabels = [
+        'companyName' => 'Nome da Empresa',
+        'businessType' => 'Ramo de Atuação',
+        'description' => 'Descrição do Negócio',
+        'targetAudience' => 'Público-Alvo',
+        'goals' => 'Objetivos do Site',
+        'hasLogo' => 'Possui Logo',
+        'logoUrl' => 'URL do Logo',
+        'colorPreferences' => 'Preferências de Cores',
+        'primaryColor' => 'Cor Primária',
+        'secondaryColor' => 'Cor Secundária',
+        'referenceWebsites' => 'Sites de Referência',
+        'socialMedia' => 'Redes Sociais',
+        'contactPhone' => 'Telefone de Contato',
+        'contactEmail' => 'Email de Contato',
+        'address' => 'Endereço',
+        'additionalInfo' => 'Informações Adicionais',
+        'services' => 'Serviços Oferecidos',
+        'products' => 'Produtos',
+        'differentials' => 'Diferenciais',
+        'deadline' => 'Prazo Desejado',
+        'domain' => 'Domínio'
+    ];
+    
+    foreach ($briefingData as $key => $value) {
+        if (empty($value) || $key === 'step' || $key === 'lastSaved') continue;
+        
+        $label = $fieldLabels[$key] ?? ucfirst(str_replace(['_', '-'], ' ', $key));
+        
+        if (is_bool($value)) {
+            $displayValue = $value ? 'Sim' : 'Não';
+        } elseif (is_array($value)) {
+            $displayValue = '<ul>' . implode('', array_map(function($item) {
+                if (is_array($item)) {
+                    return '<li>' . json_encode($item, JSON_UNESCAPED_UNICODE) . '</li>';
+                }
+                return '<li>' . htmlspecialchars($item) . '</li>';
+            }, $value)) . '</ul>';
+        } else {
+            $displayValue = nl2br(htmlspecialchars($value));
+        }
+        
+        $message .= "<li><strong>{$label}:</strong> {$displayValue}</li>\n";
+    }
+    
+    $message .= "</ul>\n\n";
+    
+    // JSON completo para referência
+    $message .= "<h3>📦 Dados Completos (JSON)</h3>\n";
+    $message .= "<details>\n";
+    $message .= "<summary>Clique para expandir</summary>\n";
+    $message .= "<pre style=\"background:#f5f5f5; padding:10px; border-radius:5px; overflow:auto; font-size:12px; max-height:400px;\">\n";
+    $message .= htmlspecialchars(json_encode($briefingData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    $message .= "\n</pre>\n";
+    $message .= "</details>\n\n";
+    
+    // Próximos Passos
+    $message .= "<h3>⏭️ Próximos Passos</h3>\n";
+    $message .= "<ol>\n";
+    $message .= "<li>Revisar as informações do briefing</li>\n";
+    $message .= "<li>Preparar wireframe/layout baseado nas preferências</li>\n";
+    $message .= "<li>Entrar em contato para alinhar detalhes se necessário</li>\n";
+    $message .= "<li>Iniciar desenvolvimento do site</li>\n";
+    $message .= "</ol>\n\n";
+    
+    $message .= "<hr>\n";
+    $message .= "<p><em>Este ticket foi criado automaticamente quando o cliente finalizou o onboarding.</em></p>\n";
+    $message .= "<p><em>Data: " . date('d/m/Y H:i:s') . "</em></p>";
+    
+    return $message;
 }
 
 /**
