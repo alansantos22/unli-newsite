@@ -36,8 +36,8 @@ export default [
     },
     {
         path: "/setup",
-        name: "OnboardingWizard",
-        component: () => import("./shared/Components/OnboardingWizard.vue")
+        name: "OnboardingSetup",
+        component: () => import("./pages/OnboardingSetupPage.vue")
     },
     {
         path: "/pagamento/validar",

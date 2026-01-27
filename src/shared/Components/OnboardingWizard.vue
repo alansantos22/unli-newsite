@@ -119,48 +119,189 @@
               </small>
             </div>
 
+            <!-- Social Networks Dynamic List -->
             <div class="form-group">
-              <label for="instagram">Link do Instagram</label>
-              <input
-                id="instagram"
-                v-model="formData.instagram"
-                type="url"
-                placeholder="https://instagram.com/suaempresa"
-                @input="autoSave"
-              />
+              <label>Redes Sociais</label>
+              <div class="social-networks-list">
+                <div 
+                  v-for="(social, index) in formData.socialNetworks" 
+                  :key="index" 
+                  class="social-network-item"
+                >
+                  <div class="social-network-select">
+                    <select 
+                      v-model="social.type" 
+                      @change="autoSave"
+                    >
+                      <option value="" disabled>Selecione...</option>
+                      <option 
+                        v-for="option in availableSocialOptions(index)" 
+                        :key="option.value" 
+                        :value="option.value"
+                      >
+                        {{ option.icon }} {{ option.label }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="social-network-input">
+                    <input
+                      v-model="social.url"
+                      type="url"
+                      :placeholder="getSocialPlaceholder(social.type)"
+                      @input="autoSave"
+                    />
+                  </div>
+                  <button 
+                    v-if="formData.socialNetworks.length > 1"
+                    type="button" 
+                    class="btn-remove-social" 
+                    @click="removeSocialNetwork(index)"
+                    title="Remover rede social"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                class="btn-add-social" 
+                @click="addSocialNetwork"
+                :disabled="formData.socialNetworks.length >= socialNetworkOptions.length"
+              >
+                <span class="add-icon">+</span> Adicionar rede social
+              </button>
             </div>
 
+            <!-- Address Section -->
             <div class="form-group">
-              <label for="facebook">Link do Facebook</label>
-              <input
-                id="facebook"
-                v-model="formData.facebook"
-                type="url"
-                placeholder="https://facebook.com/suaempresa"
-                @input="autoSave"
-              />
-            </div>
+              <div class="address-header">
+                <label>Endereço Físico</label>
+                <div class="switch-container">
+                  <label class="switch">
+                    <input
+                      type="checkbox"
+                      v-model="formData.noPhysicalLocation"
+                      @change="handleNoPhysicalLocationChange"
+                    />
+                    <span class="slider"></span>
+                  </label>
+                  <span class="switch-label">Não tenho endereço físico</span>
+                </div>
+              </div>
 
-            <div class="form-group">
-              <label for="address">Endereço Físico</label>
-              <textarea
-                id="address"
-                v-model="formData.address"
-                rows="3"
-                placeholder="Rua das Flores, 123 - Centro - São Paulo/SP"
-                @input="autoSave"
-                :disabled="formData.noPhysicalLocation"
-              ></textarea>
-              <div class="form-check">
-                <input
-                  id="no-location"
-                  v-model="formData.noPhysicalLocation"
-                  type="checkbox"
-                  @change="autoSave"
-                />
-                <label for="no-location">
-                  Não atendo presencialmente (Esconder endereço)
-                </label>
+              <div v-if="!formData.noPhysicalLocation" class="address-fields">
+                <!-- CEP -->
+                <div class="address-row">
+                  <div class="form-field cep-field">
+                    <label for="cep">CEP *</label>
+                    <div class="cep-input-wrapper">
+                      <input
+                        id="cep"
+                        v-model="formData.addressCep"
+                        type="text"
+                        placeholder="00000-000"
+                        maxlength="9"
+                        @input="handleCepInput"
+                        @blur="fetchAddressByCep"
+                      />
+                      <div v-if="loadingCep" class="cep-loading">
+                        <span class="spinner-small"></span>
+                      </div>
+                    </div>
+                    <small v-if="cepError" class="field-error">{{ cepError }}</small>
+                    <small v-else class="field-hint">💡 Digite o CEP para preencher automaticamente</small>
+                  </div>
+                </div>
+
+                <!-- Street and Number -->
+                <div class="address-row">
+                  <div class="form-field street-field">
+                    <label for="street">Rua / Logradouro *</label>
+                    <input
+                      id="street"
+                      v-model="formData.addressStreet"
+                      type="text"
+                      placeholder="Rua das Flores"
+                      @input="autoSave"
+                    />
+                  </div>
+                  <div class="form-field number-field">
+                    <label for="number">Número *</label>
+                    <input
+                      id="number"
+                      v-model="formData.addressNumber"
+                      type="text"
+                      placeholder="123"
+                      @input="autoSave"
+                    />
+                  </div>
+                </div>
+
+                <!-- Complement -->
+                <div class="address-row">
+                  <div class="form-field">
+                    <label for="complement">Complemento</label>
+                    <input
+                      id="complement"
+                      v-model="formData.addressComplement"
+                      type="text"
+                      placeholder="Sala 101, Bloco A..."
+                      @input="autoSave"
+                    />
+                  </div>
+                </div>
+
+                <!-- Neighborhood and City -->
+                <div class="address-row">
+                  <div class="form-field">
+                    <label for="neighborhood">Bairro *</label>
+                    <input
+                      id="neighborhood"
+                      v-model="formData.addressNeighborhood"
+                      type="text"
+                      placeholder="Centro"
+                      @input="autoSave"
+                    />
+                  </div>
+                  <div class="form-field">
+                    <label for="city">Cidade *</label>
+                    <input
+                      id="city"
+                      v-model="formData.addressCity"
+                      type="text"
+                      placeholder="São Paulo"
+                      @input="autoSave"
+                    />
+                  </div>
+                </div>
+
+                <!-- State and Country -->
+                <div class="address-row">
+                  <div class="form-field state-field">
+                    <label for="state">Estado *</label>
+                    <select
+                      id="state"
+                      v-model="formData.addressState"
+                      @change="autoSave"
+                    >
+                      <option value="" disabled>Selecione...</option>
+                      <option v-for="state in brazilStates" :key="state.value" :value="state.value">
+                        {{ state.label }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="form-field country-field">
+                    <label for="country">País</label>
+                    <input
+                      id="country"
+                      v-model="formData.addressCountry"
+                      type="text"
+                      placeholder="Brasil"
+                      @input="autoSave"
+                      disabled
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -306,7 +447,7 @@
           <!-- Step 5: Finalização -->
           <div v-if="currentStep === 5" class="wizard-step">
           <div class="step-header">
-            <h2>🚀 Quase lá!</h2>
+            <h2>Quase lá!</h2>
             <p>Última etapa antes de começarmos a criar seu site</p>
           </div>
 
@@ -427,6 +568,8 @@ export default {
       autoSaving: false,
       lastSaved: null,
       showSuccessModal: false,
+      loadingCep: false,
+      cepError: null,
       
       // Wizard control
       currentStep: 1,
@@ -447,10 +590,19 @@ export default {
         
         // Step 2: Contato
         whatsapp: '',
-        instagram: '',
-        facebook: '',
-        address: '',
+        socialNetworks: [
+          { type: '', url: '' }
+        ],
         noPhysicalLocation: false,
+        // Address fields
+        addressCep: '',
+        addressStreet: '',
+        addressNumber: '',
+        addressComplement: '',
+        addressNeighborhood: '',
+        addressCity: '',
+        addressState: '',
+        addressCountry: 'Brasil',
         
         // Step 3: Conteúdo
         description: '',
@@ -469,6 +621,53 @@ export default {
         // Step 5: Final
         notes: ''
       },
+      
+      // Social Network Options
+      socialNetworkOptions: [
+        { value: 'instagram', label: 'Instagram', icon: '📸', placeholder: 'https://instagram.com/suaempresa' },
+        { value: 'facebook', label: 'Facebook', icon: '👥', placeholder: 'https://facebook.com/suaempresa' },
+        { value: 'linkedin', label: 'LinkedIn', icon: '💼', placeholder: 'https://linkedin.com/company/suaempresa' },
+        { value: 'twitter', label: 'Twitter / X', icon: '🐦', placeholder: 'https://twitter.com/suaempresa' },
+        { value: 'tiktok', label: 'TikTok', icon: '🎵', placeholder: 'https://tiktok.com/@suaempresa' },
+        { value: 'youtube', label: 'YouTube', icon: '▶️', placeholder: 'https://youtube.com/@suaempresa' },
+        { value: 'discord', label: 'Discord', icon: '🎮', placeholder: 'https://discord.gg/suaempresa' },
+        { value: 'roblox', label: 'Roblox Community', icon: '🎲', placeholder: 'https://roblox.com/groups/suaempresa' },
+        { value: 'twitch', label: 'Twitch', icon: '📺', placeholder: 'https://twitch.tv/suaempresa' },
+        { value: 'pinterest', label: 'Pinterest', icon: '📌', placeholder: 'https://pinterest.com/suaempresa' },
+        { value: 'telegram', label: 'Telegram', icon: '✈️', placeholder: 'https://t.me/suaempresa' },
+        { value: 'other', label: 'Outro', icon: '🔗', placeholder: 'https://...' }
+      ],
+      
+      // Brazil States
+      brazilStates: [
+        { value: 'AC', label: 'Acre' },
+        { value: 'AL', label: 'Alagoas' },
+        { value: 'AP', label: 'Amapá' },
+        { value: 'AM', label: 'Amazonas' },
+        { value: 'BA', label: 'Bahia' },
+        { value: 'CE', label: 'Ceará' },
+        { value: 'DF', label: 'Distrito Federal' },
+        { value: 'ES', label: 'Espírito Santo' },
+        { value: 'GO', label: 'Goiás' },
+        { value: 'MA', label: 'Maranhão' },
+        { value: 'MT', label: 'Mato Grosso' },
+        { value: 'MS', label: 'Mato Grosso do Sul' },
+        { value: 'MG', label: 'Minas Gerais' },
+        { value: 'PA', label: 'Pará' },
+        { value: 'PB', label: 'Paraíba' },
+        { value: 'PR', label: 'Paraná' },
+        { value: 'PE', label: 'Pernambuco' },
+        { value: 'PI', label: 'Piauí' },
+        { value: 'RJ', label: 'Rio de Janeiro' },
+        { value: 'RN', label: 'Rio Grande do Norte' },
+        { value: 'RS', label: 'Rio Grande do Sul' },
+        { value: 'RO', label: 'Rondônia' },
+        { value: 'RR', label: 'Roraima' },
+        { value: 'SC', label: 'Santa Catarina' },
+        { value: 'SP', label: 'São Paulo' },
+        { value: 'SE', label: 'Sergipe' },
+        { value: 'TO', label: 'Tocantins' }
+      ],
       
       // Options
       differentialOptions: [
@@ -772,6 +971,97 @@ export default {
       const hours = now.getHours().toString().padStart(2, '0');
       const minutes = now.getMinutes().toString().padStart(2, '0');
       return `às ${hours}:${minutes}`;
+    },
+    
+    // Social Networks Methods
+    addSocialNetwork() {
+      if (this.formData.socialNetworks.length < this.socialNetworkOptions.length) {
+        this.formData.socialNetworks.push({ type: '', url: '' });
+        this.autoSave();
+      }
+    },
+    
+    removeSocialNetwork(index) {
+      this.formData.socialNetworks.splice(index, 1);
+      this.autoSave();
+    },
+    
+    availableSocialOptions(currentIndex) {
+      const selectedTypes = this.formData.socialNetworks
+        .map((s, i) => i !== currentIndex ? s.type : null)
+        .filter(Boolean);
+      
+      return this.socialNetworkOptions.filter(
+        option => !selectedTypes.includes(option.value) || option.value === 'other'
+      );
+    },
+    
+    getSocialPlaceholder(type) {
+      const option = this.socialNetworkOptions.find(o => o.value === type);
+      return option ? option.placeholder : 'https://...';
+    },
+    
+    // Address Methods
+    handleNoPhysicalLocationChange() {
+      if (this.formData.noPhysicalLocation) {
+        // Clear address fields when user selects no physical location
+        this.formData.addressCep = '';
+        this.formData.addressStreet = '';
+        this.formData.addressNumber = '';
+        this.formData.addressComplement = '';
+        this.formData.addressNeighborhood = '';
+        this.formData.addressCity = '';
+        this.formData.addressState = '';
+      }
+      this.autoSave();
+    },
+    
+    handleCepInput(event) {
+      // Format CEP as user types (00000-000)
+      let value = event.target.value.replace(/\D/g, '');
+      if (value.length > 5) {
+        value = value.slice(0, 5) + '-' + value.slice(5, 8);
+      }
+      this.formData.addressCep = value;
+      this.cepError = null;
+    },
+    
+    async fetchAddressByCep() {
+      const cep = this.formData.addressCep.replace(/\D/g, '');
+      
+      if (cep.length !== 8) {
+        if (cep.length > 0) {
+          this.cepError = 'CEP deve ter 8 dígitos';
+        }
+        return;
+      }
+      
+      this.loadingCep = true;
+      this.cepError = null;
+      
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+        
+        if (data.erro) {
+          this.cepError = 'CEP não encontrado';
+          return;
+        }
+        
+        // Fill address fields
+        this.formData.addressStreet = data.logradouro || '';
+        this.formData.addressNeighborhood = data.bairro || '';
+        this.formData.addressCity = data.localidade || '';
+        this.formData.addressState = data.uf || '';
+        this.formData.addressCountry = 'Brasil';
+        
+        this.autoSave();
+      } catch (err) {
+        console.error('Error fetching CEP:', err);
+        this.cepError = 'Erro ao buscar CEP. Tente novamente.';
+      } finally {
+        this.loadingCep = false;
+      }
     }
   }
 };
@@ -918,6 +1208,282 @@ export default {
     font-weight: 400;
     cursor: pointer;
   }
+}
+
+// Social Networks
+.social-networks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  
+  .social-network-item {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    
+    .social-network-select {
+      flex: 0 0 180px;
+      
+      select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        font-size: 1rem;
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s;
+        
+        &:focus {
+          outline: none;
+          border-color: #0066CC;
+          box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+      }
+    }
+    
+    .social-network-input {
+      flex: 1;
+      
+      input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.2s;
+        
+        &:focus {
+          outline: none;
+          border-color: #0066CC;
+          box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+      }
+    }
+    
+    .btn-remove-social {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border: none;
+      border-radius: 8px;
+      background: #fee2e2;
+      color: #dc3545;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      &:hover {
+        background: #fecaca;
+        color: #b91c1c;
+      }
+    }
+  }
+}
+
+.btn-add-social {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: 2px dashed #dee2e6;
+  border-radius: 8px;
+  background: transparent;
+  color: #0066CC;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  .add-icon {
+    font-size: 1.25rem;
+    font-weight: bold;
+  }
+  
+  &:hover:not(:disabled) {
+    border-color: #0066CC;
+    background: rgba(0, 102, 204, 0.05);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Address Section
+.address-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  
+  > label {
+    margin-bottom: 0;
+  }
+  
+  .switch-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    
+    .switch-label {
+      font-size: 0.95rem;
+      color: #6c757d;
+      font-weight: 500;
+    }
+  }
+}
+
+// Toggle Switch
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 28px;
+  
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    
+    &:checked + .slider {
+      background-color: #0066CC;
+    }
+    
+    &:checked + .slider:before {
+      transform: translateX(24px);
+    }
+  }
+  
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.3s;
+    border-radius: 28px;
+    
+    &:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+  }
+}
+
+// Address Fields
+.address-fields {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+  
+  .address-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+  
+  .form-field {
+    flex: 1;
+    
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #212529;
+      font-size: 0.95rem;
+    }
+    
+    input, select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 2px solid #dee2e6;
+      border-radius: 8px;
+      font-size: 1rem;
+      background: white;
+      transition: all 0.2s;
+      
+      &:focus {
+        outline: none;
+        border-color: #0066CC;
+        box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+      }
+      
+      &:disabled {
+        background: #e9ecef;
+        cursor: not-allowed;
+      }
+    }
+    
+    &.cep-field {
+      flex: 0 0 160px;
+    }
+    
+    &.number-field {
+      flex: 0 0 120px;
+    }
+    
+    &.state-field {
+      flex: 0 0 200px;
+    }
+    
+    &.country-field {
+      flex: 0 0 180px;
+    }
+  }
+}
+
+.cep-input-wrapper {
+  position: relative;
+  
+  input {
+    padding-right: 2.5rem;
+  }
+  
+  .cep-loading {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+}
+
+.spinner-small {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #e9ecef;
+  border-top-color: #0066CC;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.field-error {
+  display: block;
+  margin-top: 0.5rem;
+  color: #dc3545;
+  font-size: 0.875rem;
 }
 
 // Logo Upload
@@ -1488,6 +2054,49 @@ export default {
     right: 1rem;
     left: 1rem;
     text-align: center;
+  }
+  
+  // Social Networks Responsive
+  .social-networks-list .social-network-item {
+    flex-direction: column;
+    
+    .social-network-select {
+      flex: 1;
+      width: 100%;
+    }
+    
+    .social-network-input {
+      width: 100%;
+    }
+    
+    .btn-remove-social {
+      align-self: flex-end;
+      margin-top: -0.5rem;
+    }
+  }
+  
+  // Address Responsive
+  .address-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .address-fields {
+    padding: 1rem;
+    
+    .address-row {
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .form-field {
+      &.cep-field,
+      &.number-field,
+      &.state-field,
+      &.country-field {
+        flex: 1;
+      }
+    }
   }
 }
 </style>

@@ -104,6 +104,12 @@ try {
         $briefingData = json_decode($order['briefing_data'], true);
     }
     
+    // Parse order details if exists
+    $orderDetails = null;
+    if (!empty($order['order_details'])) {
+        $orderDetails = json_decode($order['order_details'], true);
+    }
+    
     // Return success response
     echo json_encode([
         'success' => true,
@@ -112,6 +118,7 @@ try {
         'email' => $order['email'],
         'status' => $order['onboarding_status'],
         'briefing' => $briefingData,
+        'orderDetails' => $orderDetails,
         'message' => $order['onboarding_status'] === 'concluido' 
             ? 'Briefing já foi concluído.' 
             : 'Token válido. Pode prosseguir.'

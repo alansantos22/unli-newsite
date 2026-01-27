@@ -24,35 +24,37 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-// Get POST data
-$token = isset($_POST['token']) ? trim($_POST['token']) : '';
-$briefingJson = isset($_POST['briefing']) ? trim($_POST['briefing']) : '';
+// Get POST data - suporta tanto form-data quanto JSON
+$rawInput = file_get_contents('php://input');
+$jsonInput = json_decode($rawInput, true);
+
+// Prioriza JSON body, fallback para $_POST
+if ($jsonInput !== null) {
+    // JSON body (session_id + data)
+    $token = isset($jsonInput['session_id']) ? trim($jsonInput['session_id']) : '';
+    $briefingData = isset($jsonInput['data']) ? $jsonInput['data'] : null;
+    $briefingJson = $briefingData ? json_encode($briefingData, JSON_UNESCAPED_UNICODE) : '';
+} else {
+    // Form data legado (token + briefing)
+    $token = isset($_POST['token']) ? trim($_POST['token']) : '';
+    $briefingJson = isset($_POST['briefing']) ? trim($_POST['briefing']) : '';
+    $briefingData = json_decode($briefingJson, true);
+}
 
 if (empty($token)) {
     http_response_code(400);
     echo json_encode([
         'success' => false,
-        'message' => 'Token não fornecido.'
+        'message' => 'Token/session_id não fornecido.'
     ]);
     exit();
 }
 
-if (empty($briefingJson)) {
+if (empty($briefingJson) || $briefingData === null) {
     http_response_code(400);
     echo json_encode([
         'success' => false,
         'message' => 'Dados do briefing não fornecidos.'
-    ]);
-    exit();
-}
-
-// Validate JSON
-$briefingData = json_decode($briefingJson, true);
-if (json_last_error() !== JSON_ERROR_NONE) {
-    http_response_code(400);
-    echo json_encode([
-        'success' => false,
-        'message' => 'JSON inválido.'
     ]);
     exit();
 }
