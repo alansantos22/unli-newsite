@@ -88,7 +88,21 @@
           v-show="index === currentStepIndex"
           :key="step.id"
           class="step-section"
+          :class="{ 'layout-cards': step.layout === 'cards' }"
         >
+          <!-- AI Assistant (se configurado) -->
+          <div v-if="step.aiAssistant?.enabled && shouldShowAiAssistant(step)" class="ai-assistant-panel">
+            <div class="assistant-header">
+              <span class="assistant-icon">🤖</span>
+              <h4>{{ step.aiAssistant.suggestions.title }}</h4>
+            </div>
+            <div class="assistant-message" v-html="getAiSuggestionMessage(step)"></div>
+            <div class="assistant-actions">
+              <button @click="dismissAiAssistant(step.id)">Depois</button>
+              <button class="btn-apply" @click="applyAiSuggestions(step)">✨ Aplicar Sugestões</button>
+            </div>
+          </div>
+          
           <!-- Step Header -->
           <div class="step-header">
             <span class="step-icon">{{ step.icon }}</span>
@@ -98,8 +112,130 @@
             </div>
           </div>
           
-          <!-- Step Fields (Grid 2 colunas no desktop) -->
-          <div class="step-fields">
+          <!-- LAYOUT CARDS (para config_contato) -->
+          <div v-if="step.layout === 'cards' && step.cards" class="cards-container">
+            <div 
+              v-for="card in step.cards" 
+              :key="card.id"
+              class="config-card"
+              :class="{ 
+                'collapsible': card.collapsible,
+                'collapsed': collapsedCards[step.id + '_' + card.id]
+              }"
+            >
+              <div 
+                class="card-header"
+                @click="card.collapsible ? toggleCard(step.id, card.id) : null"
+              >
+                <span v-if="card.icon" class="card-icon">{{ card.icon }}</span>
+                <div class="card-title-wrapper">
+                  <h3>{{ card.title }}</h3>
+                  <p v-if="card.subtitle" class="card-subtitle">{{ card.subtitle }}</p>
+                </div>
+                <span v-if="card.collapsible" class="card-toggle" :class="{ 'collapsed': collapsedCards[step.id + '_' + card.id] }">
+                  ▼
+                </span>
+              </div>
+              
+              <div class="card-body">
+                <!-- FIELD LIST (Smart Cards) -->
+                <template v-if="card.type === 'field-list'">
+                  <!-- PRESETS: Atalhos rápidos (Lei de Hick) -->
+                  <div class="form-presets">
+                    <p class="presets-label">Escolha um modelo para começar:</p>
+                    <div class="presets-grid">
+                      <button
+                        v-for="preset in formPresets"
+                        :key="preset.id"
+                        class="preset-card"
+                        :class="{ 'is-selected': selectedPreset === preset.id }"
+                        @click="applyPreset(preset.id)"
+                      >
+                        <span class="preset-icon">{{ preset.icon }}</span>
+                        <div class="preset-info">
+                          <h4 class="preset-name">{{ preset.name }}</h4>
+                          <span class="preset-subtitle">{{ preset.subtitle }}</span>
+                        </div>
+                        <span v-if="selectedPreset === preset.id" class="preset-check">✓</span>
+                      </button>
+                    </div>
+                    <p class="presets-hint">💡 Você pode personalizar os campos abaixo após escolher</p>
+                  </div>
+                  
+                  <!-- Separador visual -->
+                  <div class="fields-divider">
+                    <span>Campos do Formulário</span>
+                  </div>
+                  
+                  <div class="field-list">
+                    <div 
+                      v-for="item in getFieldListItems(card)" 
+                      :key="item.id"
+                      class="field-list-item"
+                      :class="{ 
+                        'is-active': isFieldEnabled(step.id, item.id),
+                        'is-inactive': !isFieldEnabled(step.id, item.id)
+                      }"
+                    >
+                      <!-- BLOCO ESQUERDO: Ativa/Desativa (80% - clicável) -->
+                      <div 
+                        class="field-activation-block"
+                        @click="toggleFieldEnabled(step.id, item.id, !isFieldEnabled(step.id, item.id))"
+                      >
+                        <!-- Checkbox Visual (Fake) -->
+                        <div class="field-checkbox">
+                          <svg v-if="isFieldEnabled(step.id, item.id)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="check-icon">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                          </svg>
+                        </div>
+                        
+                        <!-- Ícone e Textos -->
+                        <span class="field-icon">{{ item.icon }}</span>
+                        <div class="field-label-wrapper">
+                          <h4 class="field-label">{{ item.label }}</h4>
+                          <p class="field-description">{{ item.description }}</p>
+                        </div>
+                      </div>
+                      
+                      <!-- BLOCO DIREITO: Obrigatório (20% - separado) -->
+                      <div 
+                        class="field-required-block"
+                        :class="{ 'is-disabled': !isFieldEnabled(step.id, item.id) }"
+                        @click="isFieldEnabled(step.id, item.id) && toggleFieldRequired(step.id, item.id, !isFieldRequired(step.id, item.id))"
+                      >
+                        <div 
+                          class="required-pill"
+                          :class="{ 'is-checked': isFieldRequired(step.id, item.id) }"
+                        >
+                          Obrigatório
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+                
+                <!-- CAMPOS NORMAIS -->
+                <template v-else>
+                  <template v-for="field in visibleFields({ ...step, fields: card.fields })" :key="field.id">
+                    <div class="field-wrapper" :class="getFieldSizeClass(field)">
+                      <DynamicField
+                        :field="field"
+                        :modelValue="formData[step.id]?.[field.id]"
+                        :voice-tone="formData.identity?.voiceTone || 'profissional'"
+                        :company-name="formData.identity?.companyName || ''"
+                        :niche="formData.identity?.niche || formData.identity?.businessType || ''"
+                        @update:modelValue="updateField(step.id, field.id, $event)"
+                        @cep-found="handleCepFound(step.id, $event)"
+                      />
+                    </div>
+                  </template>
+                </template>
+              </div>
+            </div>
+          </div>
+          
+          <!-- LAYOUT TRADICIONAL (Grid 2 colunas) -->
+          <div v-else class="step-fields">
             <template v-for="field in visibleFields(step)" :key="field.id">
               <div class="field-wrapper" :class="getFieldSizeClass(field)">
                 <DynamicField
@@ -284,7 +420,14 @@ export default {
       generatedPages: {},
       generatedContent: {},
       // Layout responsivo
-      isMobile: true
+      isMobile: true,
+      // Controle de Cards e IA
+      collapsedCards: {},
+      dismissedAiAssistants: {},
+      // Field List (para config_contato)
+      fieldListStates: {}, // { stepId: { fieldId: { enabled: true, required: false } } }
+      // Preset selecionado para formulário de contato (Lei de Hick)
+      selectedPreset: null // 'rapido' | 'padrao' | 'orcamento'
     };
   },
   
@@ -314,6 +457,66 @@ export default {
     
     currentStep() {
       return this.steps[this.currentStepIndex] || null;
+    },
+    
+    // Presets de formulário (Lei de Hick)
+    formPresets() {
+      return [
+        {
+          id: 'rapido',
+          icon: '⚡',
+          name: 'Contato Rápido',
+          subtitle: 'Foco em WhatsApp',
+          description: 'Ideal para: negócios locais, delivery, emergências',
+          fields: {
+            phone: { enabled: true, required: true },
+            message: { enabled: false, required: false },
+            subject: { enabled: false, required: false },
+            company: { enabled: false, required: false },
+            city: { enabled: false, required: false },
+            service: { enabled: false, required: false },
+            attachment: { enabled: false, required: false },
+            insurance: { enabled: false, required: false },
+            address: { enabled: false, required: false }
+          }
+        },
+        {
+          id: 'padrao',
+          icon: '📝',
+          name: 'Fale Conosco',
+          subtitle: 'Formulário padrão',
+          description: 'Ideal para: escritórios, consultórios, prestadores de serviço',
+          fields: {
+            phone: { enabled: true, required: false },
+            message: { enabled: true, required: true },
+            subject: { enabled: false, required: false },
+            company: { enabled: false, required: false },
+            city: { enabled: false, required: false },
+            service: { enabled: false, required: false },
+            attachment: { enabled: false, required: false },
+            insurance: { enabled: false, required: false },
+            address: { enabled: false, required: false }
+          }
+        },
+        {
+          id: 'orcamento',
+          icon: '💼',
+          name: 'Orçamento Detalhado',
+          subtitle: 'Leads qualificados',
+          description: 'Ideal para: construtoras, eventos, B2B, projetos personalizados',
+          fields: {
+            phone: { enabled: true, required: false },
+            message: { enabled: true, required: false },
+            subject: { enabled: false, required: false },
+            company: { enabled: false, required: false },
+            city: { enabled: true, required: false },
+            service: { enabled: true, required: true },
+            attachment: { enabled: true, required: false },
+            insurance: { enabled: false, required: false },
+            address: { enabled: false, required: false }
+          }
+        }
+      ];
     },
     
     isLastStep() {
@@ -371,6 +574,7 @@ export default {
   
   mounted() {
     this.initializeFormData();
+    this.initializeFieldListStates();
     this.startAutosaveInterval();
     this.checkMobile();
     window.addEventListener('resize', this.checkMobile);
@@ -393,7 +597,7 @@ export default {
     
     // Define se campo ocupa largura total ou metade
     getFieldSizeClass(field) {
-      const fullWidthTypes = ['textarea', 'repeater', 'checkbox-group', 'upload'];
+      const fullWidthTypes = ['textarea', 'repeater', 'checkbox-group', 'upload', 'faq-builder'];
       if (fullWidthTypes.includes(field.type) || field.fullWidth) {
         return 'full-width';
       }
@@ -428,6 +632,19 @@ export default {
       }
       
       this.formData = data;
+    },
+    
+    initializeFieldListStates() {
+      // Inicializa estados dos field lists para cada step com cards
+      this.steps.forEach(step => {
+        if (step.cards) {
+          step.cards.forEach(card => {
+            if (card.type === 'field-list') {
+              this.initFieldListState(step.id, card);
+            }
+          });
+        }
+      });
     },
     
     visibleFields(step) {
@@ -718,6 +935,184 @@ export default {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     
+    // ========================================
+    // MÉTODOS PARA CARDS E AI ASSISTANT
+    // ========================================
+    
+    toggleCard(stepId, cardId) {
+      const key = `${stepId}_${cardId}`;
+      this.collapsedCards[key] = !this.collapsedCards[key];
+    },
+    
+    shouldShowAiAssistant(step) {
+      // Não mostra se já foi dispensado
+      if (this.dismissedAiAssistants[step.id]) return false;
+      
+      // Só mostra se tem businessType definido
+      const businessType = this.formData.identity?.businessType;
+      return !!businessType;
+    },
+    
+    getAiSuggestionMessage(step) {
+      const businessType = this.formData.identity?.businessType || 'default';
+      const templates = step.aiAssistant.suggestions.templates;
+      const template = templates[businessType] || templates.default;
+      return template?.message || '';
+    },
+    
+    dismissAiAssistant(stepId) {
+      this.dismissedAiAssistants[stepId] = true;
+    },
+    
+    applyAiSuggestions(step) {
+      const businessType = this.formData.identity?.businessType || 'default';
+      const templates = step.aiAssistant.suggestions.templates;
+      const template = templates[businessType] || templates.default;
+      
+      if (!template) return;
+      
+      // Aplica campos recomendados e obrigatórios
+      if (template.recommendedFields && step.cards) {
+        const fieldListCard = step.cards.find(c => c.type === 'field-list');
+        if (fieldListCard) {
+          this.initFieldListState(step.id, fieldListCard);
+          
+          template.recommendedFields.forEach(fieldId => {
+            this.toggleFieldEnabled(step.id, fieldId, true);
+          });
+          
+          if (template.requiredFields) {
+            template.requiredFields.forEach(fieldId => {
+              this.toggleFieldRequired(step.id, fieldId, true);
+            });
+          }
+        }
+      }
+      
+      this.dismissAiAssistant(step.id);
+      alert('✅ Sugestões aplicadas! Você pode ajustar conforme necessário.');
+    },
+    
+    // ========================================
+    // FIELD LIST (Lista Inteligente de Campos)
+    // ========================================
+    
+    getFieldListItems(card) {
+      const field = card.fields?.find(f => f.type === 'field-list');
+      if (!field || !field.items) return [];
+      
+      // Filtra itens condicionais (ex: seguro saúde só aparece se businessType = saude)
+      return field.items.filter(item => {
+        if (!item.conditional) return true;
+        const condValue = this.formData.identity?.[item.conditional.field];
+        return condValue === item.conditional.value;
+      });
+    },
+    
+    initFieldListState(stepId, card) {
+      if (!this.fieldListStates[stepId]) {
+        this.fieldListStates[stepId] = {};
+      }
+      
+      const items = this.getFieldListItems(card, { id: stepId, cards: [card] });
+      items.forEach(item => {
+        if (!this.fieldListStates[stepId][item.id]) {
+          this.fieldListStates[stepId][item.id] = {
+            enabled: item.enabledByDefault || false,
+            required: item.requiredByDefault || false
+          };
+        }
+      });
+    },
+    
+    isFieldEnabled(stepId, fieldId) {
+      return this.fieldListStates[stepId]?.[fieldId]?.enabled || false;
+    },
+    
+    isFieldRequired(stepId, fieldId) {
+      return this.fieldListStates[stepId]?.[fieldId]?.required || false;
+    },
+    
+    toggleFieldEnabled(stepId, fieldId, enabled) {
+      if (!this.fieldListStates[stepId]) {
+        this.fieldListStates[stepId] = {};
+      }
+      if (!this.fieldListStates[stepId][fieldId]) {
+        this.fieldListStates[stepId][fieldId] = { enabled: false, required: false };
+      }
+      
+      this.fieldListStates[stepId][fieldId].enabled = enabled;
+      
+      // Se desabilitar, remove obrigatório também
+      if (!enabled) {
+        this.fieldListStates[stepId][fieldId].required = false;
+      }
+      
+      // Atualiza formData para salvar estado
+      this.updateField(stepId, `formFieldsList_${fieldId}_enabled`, enabled);
+    },
+    
+    toggleFieldRequired(stepId, fieldId, required) {
+      if (!this.fieldListStates[stepId]?.[fieldId]) return;
+      
+      this.fieldListStates[stepId][fieldId].required = required;
+      this.updateField(stepId, `formFieldsList_${fieldId}_required`, required);
+    },
+    
+    // ========================================
+    // PRESETS DE FORMULÁRIO (Lei de Hick)
+    // ========================================
+    
+    applyPreset(presetId) {
+      const preset = this.formPresets.find(p => p.id === presetId);
+      if (!preset) return;
+      
+      // Atualiza preset selecionado
+      this.selectedPreset = presetId;
+      
+      // Garante que o step config_contato tem estado inicializado
+      const stepId = 'config_contato';
+      if (!this.fieldListStates[stepId]) {
+        this.fieldListStates[stepId] = {};
+      }
+      
+      // Aplica as configurações do preset a cada campo
+      Object.entries(preset.fields).forEach(([fieldId, config]) => {
+        // Inicializa estado do campo se não existe
+        if (!this.fieldListStates[stepId][fieldId]) {
+          this.fieldListStates[stepId][fieldId] = { enabled: false, required: false };
+        }
+        
+        // Aplica enabled e required do preset
+        this.fieldListStates[stepId][fieldId].enabled = config.enabled;
+        this.fieldListStates[stepId][fieldId].required = config.required;
+        
+        // Atualiza formData para persistir
+        this.updateField(stepId, `formFieldsList_${fieldId}_enabled`, config.enabled);
+        this.updateField(stepId, `formFieldsList_${fieldId}_required`, config.required);
+      });
+      
+      // Limpa preset ao modificar manualmente um campo
+      // (será resetado no próximo toggleFieldEnabled/Required chamado pelo usuário)
+    },
+    
+    // Detecta se preset ainda está ativo (campos batem com configuração)
+    isPresetActive(presetId) {
+      const preset = this.formPresets.find(p => p.id === presetId);
+      if (!preset) return false;
+      
+      const stepId = 'config_contato';
+      
+      // Verifica se todos os campos principais batem com o preset
+      const mainFields = ['phone', 'message', 'city', 'service'];
+      return mainFields.every(fieldId => {
+        const expected = preset.fields[fieldId];
+        const current = this.fieldListStates[stepId]?.[fieldId];
+        if (!expected || !current) return true;
+        return expected.enabled === current.enabled;
+      });
+    },
+    
     // === AUTOSAVE INTELIGENTE ===
     // Salva a cada 30 segundos SE houver mudanças
     
@@ -933,6 +1328,7 @@ export default {
   padding: 2rem;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   margin-bottom: 1.5rem;
+  min-height: 70vh;
 }
 
 .step-section {
@@ -1399,13 +1795,14 @@ export default {
     display: flex;
     flex-direction: column;
     width: 280px;
-    min-height: 100vh;
+    min-height: calc(100vh - 70px);
     background: linear-gradient(180deg, #1a1f36 0%, #252b48 100%);
     padding: 0;
     position: fixed;
     left: 0;
     top: 0;
     z-index: 100;
+    margin-top: 70px;
     
     .sidebar-brand {
       display: flex;
@@ -1594,6 +1991,613 @@ export default {
   }
 }
 
+// ======================================
+// CARDS LAYOUT (UX PREMIUM)
+// ======================================
+
+// Container principal com fundo cinza claro
+.step-section.layout-cards {
+  background: #f8f9fa;
+  padding: 2rem;
+  border-radius: 12px;
+  
+  .step-header {
+    background: transparent;
+    margin-bottom: 1.5rem;
+  }
+}
+
+// Card individual (Card 1, Card 2, etc.)
+.config-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+  
+  &:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  }
+  
+  // Cabeçalho do card
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f1f3f5;
+    
+    .card-icon {
+      font-size: 1.75rem;
+      flex-shrink: 0;
+    }
+    
+    .card-title-wrapper {
+      flex: 1;
+      
+      h3 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #212529;
+        margin: 0 0 0.25rem 0;
+        line-height: 1.3;
+      }
+      
+      .card-subtitle {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin: 0;
+      }
+    }
+    
+    // Toggle no cabeçalho (para cards colapsáveis)
+    .card-toggle {
+      cursor: pointer;
+      font-size: 1.25rem;
+      color: #6c757d;
+      transition: transform 0.2s;
+      
+      &.collapsed {
+        transform: rotate(-90deg);
+      }
+    }
+  }
+  
+  // Conteúdo do card
+  .card-body {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.25rem;
+  }
+  
+  // Field-list: força coluna única
+  &[class*="field-list"] .card-body,
+  .card-body:has(.form-presets),
+  .card-body:has(.field-list) {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  // Card colapsável
+  &.collapsible {
+    .card-header {
+      cursor: pointer;
+      user-select: none;
+      
+      &:hover {
+        background: #f8f9fa;
+        margin: -0.5rem -1rem 1rem;
+        padding: 0.5rem 1rem 1rem;
+        border-radius: 8px 8px 0 0;
+      }
+    }
+    
+    &.collapsed .card-body {
+      display: none;
+    }
+  }
+}
+
+// ======================================
+// PRESETS DE FORMULÁRIO (Lei de Hick)
+// ======================================
+
+.form-presets {
+  width: 100%;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-radius: 16px;
+  border: 1px solid #bae6fd;
+  
+  .presets-label {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0369a1;
+    text-align: center;
+  }
+  
+  .presets-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    
+    @media (max-width: 900px) {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+  }
+  
+  .presets-hint {
+    margin: 1rem 0 0 0;
+    font-size: 0.85rem;
+    color: #0284c7;
+    text-align: center;
+  }
+}
+
+.preset-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1rem;
+  background: white;
+  border: 3px solid #e2e8f0;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-align: center;
+  position: relative;
+  min-height: 120px;
+  
+  &:hover {
+    border-color: #3b82f6;
+    background: white;
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2);
+  }
+  
+  &.is-selected {
+    border-color: #3b82f6;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+    transform: translateY(-2px);
+    
+    .preset-icon {
+      transform: scale(1.1);
+    }
+    
+    .preset-name {
+      color: #1d4ed8;
+    }
+  }
+  
+  .preset-icon {
+    font-size: 2.5rem;
+    flex-shrink: 0;
+    transition: transform 0.25s ease;
+  }
+  
+  .preset-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  
+  .preset-name {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f2937;
+    line-height: 1.3;
+  }
+  
+  .preset-subtitle {
+    display: block;
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-top: 0;
+  }
+  
+  .preset-check {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #3b82f6;
+    color: white;
+    border-radius: 50%;
+    font-size: 0.85rem;
+    font-weight: bold;
+    animation: checkPop 0.3s ease;
+  }
+}
+
+.fields-divider {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0 1rem;
+  
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+  }
+  
+  span {
+    padding: 0 1.25rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+}
+
+// ======================================
+// FIELD LIST (Smart Cards Selecionáveis)
+// ======================================
+
+.field-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 0.5rem;
+  
+  .field-list-item {
+    display: flex;
+    align-items: stretch;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid #dee2e6;
+    background: white;
+    transition: all 0.2s ease;
+    min-height: 80px;
+    
+    // Estado ATIVO: borda azul, fundo levemente azulado
+    &.is-active {
+      border-color: #0066CC;
+      background: linear-gradient(to right, #f0f7ff 0%, #ffffff 50%);
+      box-shadow: 0 2px 8px rgba(0, 102, 204, 0.15);
+      
+      .field-activation-block {
+        .field-checkbox {
+          background: #0066CC;
+          border-color: #0066CC;
+          color: white;
+        }
+        
+        .field-icon {
+          filter: grayscale(0);
+          transform: scale(1.05);
+        }
+        
+        .field-label {
+          color: #0066CC;
+          font-weight: 600;
+        }
+      }
+    }
+    
+    // Estado INATIVO: cinza, opaco
+    &.is-inactive {
+      background: #fafbfc;
+      
+      .field-activation-block {
+        .field-checkbox {
+          background: white;
+          border-color: #dee2e6;
+        }
+        
+        .field-icon {
+          filter: grayscale(0.5);
+          opacity: 0.6;
+        }
+        
+        .field-label {
+          color: #6c757d;
+        }
+        
+        .field-description {
+          color: #adb5bd;
+        }
+      }
+    }
+    
+    &:hover:not(.is-active) {
+      border-color: #adb5bd;
+      background: white;
+    }
+    
+    // ========================================
+    // BLOCO ESQUERDO (80%): Ativação do Campo
+    // ========================================
+    .field-activation-block {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background: rgba(0, 102, 204, 0.03);
+      }
+      
+      &:active {
+        transform: scale(0.995);
+      }
+      
+      // Checkbox Visual (Fake)
+      .field-checkbox {
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        border: 2px solid #dee2e6;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.2s ease;
+        
+        .check-icon {
+          width: 16px;
+          height: 16px;
+          animation: checkPop 0.2s ease;
+        }
+      }
+      
+      // Ícone do campo
+      .field-icon {
+        font-size: 1.75rem;
+        flex-shrink: 0;
+        transition: all 0.2s ease;
+      }
+      
+      // Textos
+      .field-label-wrapper {
+        flex: 1;
+        min-width: 0;
+        
+        .field-label {
+          font-size: 0.95rem;
+          font-weight: 500;
+          color: #212529;
+          margin: 0 0 0.25rem 0;
+          line-height: 1.3;
+          transition: all 0.2s ease;
+        }
+        
+        .field-description {
+          font-size: 0.825rem;
+          color: #6c757d;
+          margin: 0;
+          line-height: 1.4;
+          transition: all 0.2s ease;
+        }
+      }
+    }
+    
+    // ========================================
+    // BLOCO DIREITO (20%): Campo Obrigatório
+    // ========================================
+    .field-required-block {
+      width: 140px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: linear-gradient(to left, #f8f9fa 0%, #ffffff 100%);
+      border-left: 1px solid #e9ecef;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      
+      &:hover:not(.is-disabled) {
+        background: linear-gradient(to left, #fff5f5 0%, #ffffff 100%);
+      }
+      
+      &.is-disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        background: #f8f9fa;
+        
+        .required-pill {
+          pointer-events: none;
+        }
+      }
+      
+      // Pill "Obrigatório"
+      .required-pill {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border: 2px solid #dee2e6;
+        background: white;
+        color: #6c757d;
+        transition: all 0.2s ease;
+        text-align: center;
+        white-space: nowrap;
+        
+        &.is-checked {
+          background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+          border-color: #ff6b6b;
+          color: white;
+          font-weight: 600;
+          box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+          animation: pillPop 0.2s ease;
+        }
+      }
+    }
+  }
+}
+
+// Animações
+@keyframes checkPop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pillPop {
+  0% {
+    transform: scale(0.9);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+// ======================================
+// AI ASSISTANT (Assistente de IA)
+// ======================================
+
+.ai-assistant-panel {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.25);
+  
+  .assistant-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    
+    .assistant-icon {
+      font-size: 1.75rem;
+    }
+    
+    h4 {
+      margin: 0;
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+  }
+  
+  .assistant-message {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    opacity: 0.95;
+    margin-bottom: 1rem;
+    
+    strong {
+      font-weight: 600;
+      text-decoration: underline;
+    }
+  }
+  
+  .assistant-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    
+    button {
+      padding: 0.625rem 1.25rem;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      
+      &:hover {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+      
+      &.btn-apply {
+        background: white;
+        color: #667eea;
+        border-color: white;
+        
+        &:hover {
+          background: #f8f9fa;
+        }
+      }
+    }
+  }
+}
+
+// ======================================
+// MELHORIAS TIPOGRÁFICAS E INPUTS
+// ======================================
+
+// Importar Inter (adicionar no head ou aqui)
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.dynamic-onboarding-wizard {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  
+  // Labels mais próximos dos inputs
+  .field-wrapper {
+    label {
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    
+    input:not([type="checkbox"]):not([type="radio"]),
+    textarea,
+    select {
+      min-height: 48px;
+      font-size: 0.95rem;
+      
+      &::placeholder {
+        color: #adb5bd;
+      }
+    }
+    
+    textarea {
+      min-height: 100px;
+    }
+  }
+  
+  // Títulos maiores
+  .step-title {
+    font-size: 1.75rem !important;
+    font-weight: 700 !important;
+  }
+  
+  .card-header h3 {
+    font-weight: 600 !important;
+  }
+}
+
 // Responsive adjustments
 @media (max-width: 1200px) {
   .dynamic-onboarding-wizard.is-desktop {
@@ -1626,6 +2630,25 @@ export default {
       
       .field-wrapper {
         grid-column: 1 !important;
+      }
+    }
+    
+    // Field List responsivo
+    .field-list-item {
+      flex-direction: column !important;
+      min-height: auto !important;
+      
+      .field-activation-block {
+        width: 100%;
+        padding: 1rem;
+      }
+      
+      .field-required-block {
+        width: 100% !important;
+        border-left: none !important;
+        border-top: 1px solid #e9ecef;
+        padding: 0.75rem 1rem;
+        background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%) !important;
       }
     }
   }

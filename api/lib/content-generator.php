@@ -15,7 +15,7 @@
 class ContentGeneratorFactory
 {
     private string $apiKey;
-    private string $apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+    private string $apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
     private int $timeout = 30;
     private int $connectTimeout = 10;
     
@@ -525,32 +525,70 @@ ESTRUTURA JSON OBRIGATÓRIA:
             ]
         ];
         
-        $ch = curl_init($url);
+        // Retry logic para erro 429 (Rate Limit)
+        $maxRetries = 3;
+        $retryDelay = 2; // segundos (exponential backoff)
+        $attempt = 0;
+        $response = null;
+        $httpCode = 0;
+        $error = null;
         
-        curl_setopt_array($ch, [
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => json_encode($payload),
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER => [
-                'Content-Type: application/json'
-            ],
-            CURLOPT_TIMEOUT => $this->timeout,
-            CURLOPT_CONNECTTIMEOUT => $this->connectTimeout,
-            CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_SSL_VERIFYHOST => 2
-        ]);
-        
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-        
-        curl_close($ch);
+        do {
+            $attempt++;
+            
+            $ch = curl_init($url);
+            
+            curl_setopt_array($ch, [
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => json_encode($payload),
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json'
+                ],
+                CURLOPT_TIMEOUT => $this->timeout,
+                CURLOPT_CONNECTTIMEOUT => $this->connectTimeout,
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_SSL_VERIFYHOST => 2
+            ]);
+            
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            
+            curl_close($ch);
+            
+            // Se sucesso, sai do loop
+            if ($httpCode === 200) {
+                break;
+            }
+            
+            // Se erro 429 (Rate Limit), espera e tenta novamente
+            if ($httpCode === 429 && $attempt < $maxRetries) {
+                error_log("[Content Generator] Rate limit hit, tentativa {$attempt}/{$maxRetries}. Aguardando {$retryDelay}s...");
+                sleep($retryDelay);
+                $retryDelay *= 2; // Exponential backoff
+                continue;
+            }
+            
+            // Outros erros ou esgotou tentativas
+            break;
+            
+        } while ($attempt < $maxRetries);
         
         // Erro de conexão
         if ($error) {
             return [
                 'success' => false,
                 'error' => 'Erro de conexão com a API: ' . $error
+            ];
+        }
+        
+        // Erro 429 após todas as tentativas
+        if ($httpCode === 429) {
+            return [
+                'success' => false,
+                'error' => 'O sistema de IA está sobrecarregado. Aguarde alguns segundos e tente novamente.',
+                'retry_after' => 5
             ];
         }
         

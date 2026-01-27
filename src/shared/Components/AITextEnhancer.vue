@@ -18,18 +18,22 @@
           @input="handleInput"
         />
         
-        <!-- Botão de melhorar com IA -->
+        <!-- Botão de melhorar com IA (sempre visível quando aiEnhance=true) -->
         <button
-          v-if="aiEnhance && (internalValue || '').trim().length >= 10"
+          v-if="aiEnhance"
           type="button"
           class="enhance-button"
-          :class="{ 'is-loading': isEnhancing }"
-          :disabled="isEnhancing || (internalValue || '').trim().length < 10"
+          :class="{ 
+            'is-loading': isEnhancing, 
+            'is-disabled': !canEnhance 
+          }"
+          :disabled="isEnhancing || !canEnhance"
           @click="enhanceWithAI"
+          :title="enhanceButtonTooltip"
         >
           <span v-if="isEnhancing" class="spinner"></span>
           <span v-else>✨</span>
-          {{ isEnhancing ? 'Melhorando...' : 'Melhorar com IA' }}
+          {{ enhanceButtonText }}
         </button>
       </div>
       
@@ -158,6 +162,33 @@ export default {
     };
   },
   
+  computed: {
+    currentTextLength() {
+      return (this.internalValue || '').trim().length;
+    },
+    
+    canEnhance() {
+      return this.currentTextLength >= 10;
+    },
+    
+    charsRemaining() {
+      return Math.max(0, 10 - this.currentTextLength);
+    },
+    
+    enhanceButtonText() {
+      if (this.isEnhancing) return 'Melhorando...';
+      if (!this.canEnhance) return `Melhorar com IA (${this.charsRemaining} caracteres)`;
+      return 'Melhorar com IA';
+    },
+    
+    enhanceButtonTooltip() {
+      if (!this.canEnhance) {
+        return `Digite pelo menos 10 caracteres para ativar (faltam ${this.charsRemaining})`;
+      }
+      return 'Clique para melhorar o texto com IA';
+    }
+  },
+  
   watch: {
     modelValue(newVal) {
       this.internalValue = newVal || '';
@@ -174,6 +205,11 @@ export default {
     },
     
     async enhanceWithAI() {
+      // Proteção contra clique duplo
+      if (this.isEnhancing) {
+        return;
+      }
+      
       if (this.internalValue.trim().length < 10) {
         this.error = 'Digite pelo menos 10 caracteres para melhorar com IA';
         return;
@@ -328,9 +364,21 @@ export default {
   }
   
   &:disabled {
-    opacity: 0.6;
     cursor: not-allowed;
     transform: none;
+  }
+  
+  // Estado desabilitado por falta de texto (visualmente diferente)
+  &.is-disabled {
+    background: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%);
+    box-shadow: none;
+    color: #fff;
+    opacity: 0.9;
+    
+    &:hover {
+      // Pequena animação para indicar que precisa escrever mais
+      animation: shake-hint 0.5s ease;
+    }
   }
   
   &.is-loading {
@@ -345,6 +393,12 @@ export default {
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
+}
+
+@keyframes shake-hint {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
 }
 
 @keyframes spin {

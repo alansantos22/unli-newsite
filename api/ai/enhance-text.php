@@ -124,7 +124,7 @@ if (empty($apiKey)) {
     exit;
 }
 
-$apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$apiKey}";
+$apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}";
 
 $requestBody = [
     'contents' => [
@@ -148,23 +148,52 @@ $requestBody = [
     ]
 ];
 
-// Faz a chamada à API
-$ch = curl_init();
-curl_setopt_array($ch, [
-    CURLOPT_URL => $apiUrl,
-    CURLOPT_POST => true,
-    CURLOPT_POSTFIELDS => json_encode($requestBody),
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_HTTPHEADER => [
-        'Content-Type: application/json'
-    ],
-    CURLOPT_TIMEOUT => 30
-]);
+// Faz a chamada à API com retry logic para erro 429 (Rate Limit)
+$maxRetries = 3;
+$retryDelay = 2; // segundos (exponential backoff)
+$attempt = 0;
+$response = null;
+$httpCode = 0;
+$curlError = null;
+$responseData = null;
 
-$response = curl_exec($ch);
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-$curlError = curl_error($ch);
-curl_close($ch);
+do {
+    $attempt++;
+    
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $apiUrl,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode($requestBody),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json'
+        ],
+        CURLOPT_TIMEOUT => 30
+    ]);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+    
+    // Se sucesso, sai do loop
+    if ($httpCode === 200) {
+        break;
+    }
+    
+    // Se erro 429 (Rate Limit), espera e tenta novamente
+    if ($httpCode === 429 && $attempt < $maxRetries) {
+        error_log("[AI Enhance] Rate limit hit, tentativa {$attempt}/{$maxRetries}. Aguardando {$retryDelay}s...");
+        sleep($retryDelay);
+        $retryDelay *= 2; // Exponential backoff
+        continue;
+    }
+    
+    // Outros erros ou esgotou tentativas, sai do loop
+    break;
+    
+} while ($attempt < $maxRetries);
 
 // Verifica erros de curl
 if ($curlError) {
@@ -175,6 +204,15 @@ if ($curlError) {
 
 // Parse da resposta
 $responseData = json_decode($response, true);
+
+if ($httpCode === 429) {
+    http_response_code(429);
+    echo json_encode([
+        'error' => 'O sistema de IA está sobrecarregado. Aguarde alguns segundos e tente novamente.',
+        'retry_after' => 5
+    ]);
+    exit;
+}
 
 if ($httpCode !== 200) {
     $errorMsg = $responseData['error']['message'] ?? 'Erro na API da IA';

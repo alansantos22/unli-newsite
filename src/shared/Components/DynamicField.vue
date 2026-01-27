@@ -373,6 +373,18 @@
       </fieldset>
     </template>
     
+    <!-- FAQ BUILDER (Smart tags + AI rewrite) -->
+    <template v-else-if="field.type === 'faq-builder'">
+      <FaqBuilder
+        :modelValue="modelValue"
+        :show-intro="field.showIntro !== false"
+        :intro-placeholder="field.introPlaceholder"
+        :voice-tone="voiceTone"
+        :max-items="field.maxItems || 15"
+        @update:modelValue="$emit('update:modelValue', $event)"
+      />
+    </template>
+    
     <!-- Fallback para tipos desconhecidos -->
     <template v-else>
       <div class="unknown-field">
@@ -387,12 +399,14 @@
 
 <script>
 import AITextEnhancer from './AITextEnhancer.vue';
+import FaqBuilder from './FaqBuilder.vue';
 
 export default {
   name: 'DynamicField',
   
   components: {
-    AITextEnhancer
+    AITextEnhancer,
+    FaqBuilder
   },
   
   props: {

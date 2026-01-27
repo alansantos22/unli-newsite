@@ -64,6 +64,32 @@ export const identityStep = {
       hint: 'O nome que aparecerá no site'
     },
     {
+      id: 'businessType',
+      type: 'select',
+      label: 'Qual é o seu ramo de atuação?',
+      required: true,
+      hint: '💡 Isso nos ajuda a personalizar sugestões para você',
+      options: [
+        { value: 'alimentacao', label: '🍔 Alimentação (Restaurante, Bar, Padaria...)' },
+        { value: 'saude', label: '🏥 Saúde e Bem-estar (Clínica, Consultório, Academia...)' },
+        { value: 'beleza', label: '💅 Beleza e Estética (Salão, Barbearia, Spa...)' },
+        { value: 'educacao', label: '📚 Educação (Escola, Curso, Treinamento...)' },
+        { value: 'tecnologia', label: '💻 Tecnologia (Software, TI, Consultoria...)' },
+        { value: 'construcao', label: '🏗️ Construção e Reforma' },
+        { value: 'moda', label: '👗 Moda e Vestuário' },
+        { value: 'servicos', label: '🔧 Serviços Gerais (Elétrica, Limpeza, Manutenção...)' },
+        { value: 'juridico', label: '⚖️ Jurídico e Advocacia' },
+        { value: 'eventos', label: '🎉 Eventos e Festas' },
+        { value: 'turismo', label: '✈️ Turismo e Viagens' },
+        { value: 'imoveis', label: '🏡 Imóveis e Imobiliária' },
+        { value: 'automotivo', label: '🚗 Automotivo' },
+        { value: 'pets', label: '🐾 Pet Shop e Veterinária' },
+        { value: 'comercio', label: '🏪 Comércio e Varejo' },
+        { value: 'industria', label: '🏭 Indústria' },
+        { value: 'outro', label: '📦 Outro' }
+      ]
+    },
+    {
       id: 'tagline',
       type: 'text',
       label: 'Em uma frase, o que você faz?',
@@ -265,7 +291,7 @@ export const pageSteps = {
   sobre_nos: {
     id: 'sobre_nos',
     pageType: 'sobre_nos',
-    title: '🏢 A Empresa',
+    title: 'A Empresa',
     subtitle: 'Crie conteúdo institucional que gera autoridade',
     icon: '🏢',
     fields: [
@@ -294,7 +320,7 @@ export const pageSteps = {
         aiEnhance: true,
         aiPrompt: 'Transforme em uma história de marca inspiradora com 2-3 parágrafos persuasivos. Use o tom de voz definido e destaque a jornada, valores e diferenciais.',
         aiContext: 'história institucional para página Sobre Nós',
-        hint: '✨ Escreva de qualquer jeito - depois clique no botão "Melhorar com IA" para transformar em algo profissional'
+        hint: '✨ Escreva livremente - use o botão roxo "Melhorar com IA" no canto inferior do campo para transformar em texto profissional'
       },
       {
         id: 'foundingYear',
@@ -405,7 +431,7 @@ export const pageSteps = {
   servicos: {
     id: 'servicos',
     pageType: 'servicos',
-    title: '⚙️ Nossas Soluções',
+    title: 'Nossas Soluções',
     subtitle: 'Estruture seus serviços de forma profissional',
     icon: '⚙️',
     fields: [
@@ -517,115 +543,216 @@ export const pageSteps = {
     ]
   },
 
-  // ===== CONFIGURAÇÃO DE CONTATO/LEADS (NOVO) =====
+  // ===== CONFIGURAÇÃO DE CONTATO/LEADS (REFORMULADO COM UX PREMIUM) =====
   config_contato: {
     id: 'config_contato',
     pageType: 'config_contato',
     title: 'Configuração de Leads',
-    subtitle: 'Defina como você vai receber contatos do site',
+    subtitle: 'Como você quer receber contatos do seu site',
     icon: '📨',
-    required: true, // Sempre aparece após contato básico
-    fields: [
-      // ---- E-mail para Leads ----
+    required: true,
+    layout: 'cards', // Ativa layout com Cards (fundo cinza + cards brancos)
+    cards: [
+      // ==== CARD 1: Destino dos Leads ====
       {
-        id: 'leadEmail',
-        type: 'text',
-        label: 'E-mail para Recebimento de Leads',
-        placeholder: 'contato@suaempresa.com.br',
-        required: true,
-        hint: 'Onde os formulários do site serão enviados'
-      },
-      {
-        id: 'leadEmailCC',
-        type: 'text',
-        label: 'E-mail em Cópia (opcional)',
-        placeholder: 'vendas@suaempresa.com.br',
-        hint: 'Um segundo e-mail para receber cópia dos contatos'
-      },
-      // ---- Campos do Formulário ----
-      {
-        id: 'formFields',
-        type: 'checkbox-group',
-        label: 'Campos do Formulário de Contato',
-        hint: 'Marque o que você quer perguntar para seu cliente',
-        options: [
-          { value: 'name', label: '👤 Nome (sempre obrigatório)' },
-          { value: 'email', label: '📧 E-mail' },
-          { value: 'phone', label: '📱 Telefone/WhatsApp' },
-          { value: 'subject', label: '📌 Assunto' },
-          { value: 'message', label: '💬 Mensagem' },
-          { value: 'company', label: '🏢 Nome da Empresa' },
-          { value: 'city', label: '📍 Cidade' },
-          { value: 'service', label: '⚙️ Serviço de Interesse (select)' },
-          { value: 'attachment', label: '📎 Anexar Arquivo' }
+        id: 'destination',
+        title: '📩 Para onde enviamos os contatos?',
+        icon: '📧',
+        fields: [
+          {
+            id: 'leadEmail',
+            type: 'text',
+            label: 'E-mail Principal',
+            placeholder: 'contato@suaempresa.com.br',
+            required: true,
+            hint: 'Todos os formulários serão enviados para este e-mail',
+            fullWidth: false
+          },
+          {
+            id: 'leadEmailCC',
+            type: 'text',
+            label: 'E-mail em Cópia (opcional)',
+            placeholder: 'vendas@suaempresa.com.br',
+            hint: 'Um segundo e-mail receberá cópia de todos os contatos',
+            fullWidth: false
+          }
         ]
       },
+      // ==== CARD 2: Campos do Formulário (LISTA INTELIGENTE) ====
       {
-        id: 'formRequiredFields',
-        type: 'checkbox-group',
-        label: 'Quais campos são obrigatórios?',
-        options: [
-          { value: 'email', label: '📧 E-mail' },
-          { value: 'phone', label: '📱 Telefone/WhatsApp' },
-          { value: 'message', label: '💬 Mensagem' }
+        id: 'form-builder',
+        title: '📝 Campos do Formulário',
+        subtitle: 'Selecione o que o cliente precisa preencher',
+        icon: '✍️',
+        type: 'field-list', // Tipo especial: renderiza lista com toggle + checkbox obrigatório
+        fields: [
+          {
+            id: 'formFieldsList',
+            type: 'field-list',
+            hint: 'Nome e E-mail são sempre incluídos',
+            items: [
+              {
+                id: 'phone',
+                icon: '📱',
+                label: 'Telefone / WhatsApp',
+                description: 'Bom para contato rápido e agendamentos',
+                enabledByDefault: true,
+                requiredByDefault: false
+              },
+              {
+                id: 'message',
+                icon: '💬',
+                label: 'Mensagem',
+                description: 'Campo de texto livre para o cliente detalhar',
+                enabledByDefault: true,
+                requiredByDefault: true
+              },
+              {
+                id: 'subject',
+                icon: '📌',
+                label: 'Assunto',
+                description: 'Dropdown ou texto livre com o motivo do contato',
+                enabledByDefault: false,
+                requiredByDefault: false
+              },
+              {
+                id: 'company',
+                icon: '🏢',
+                label: 'Nome da Empresa',
+                description: 'Ideal para negócios B2B',
+                enabledByDefault: false,
+                requiredByDefault: false
+              },
+              {
+                id: 'city',
+                icon: '📍',
+                label: 'Cidade',
+                description: 'Para validar área de atendimento',
+                enabledByDefault: false,
+                requiredByDefault: false
+              },
+              {
+                id: 'service',
+                icon: '⚙️',
+                label: 'Serviço de Interesse',
+                description: 'Dropdown com seus serviços/produtos',
+                enabledByDefault: false,
+                requiredByDefault: false
+              },
+              {
+                id: 'attachment',
+                icon: '📎',
+                label: 'Anexar Arquivo',
+                description: 'Permite upload de documentos, fotos, etc',
+                enabledByDefault: false,
+                requiredByDefault: false
+              },
+              {
+                id: 'insurance',
+                icon: '🏥',
+                label: 'Convênio Médico',
+                description: 'Específico para clínicas (só aparece se negócio = saúde)',
+                enabledByDefault: false,
+                requiredByDefault: false,
+                conditional: { field: 'businessType', value: 'saude' }
+              },
+              {
+                id: 'address',
+                icon: '🏠',
+                label: 'Endereço de Entrega',
+                description: 'Para delivery e entregas (só aparece se negócio = alimentação)',
+                enabledByDefault: false,
+                requiredByDefault: false,
+                conditional: { field: 'businessType', value: 'alimentacao' }
+              }
+            ]
+          }
         ]
       },
-      // ---- WhatsApp Flutuante ----
+      // ==== CARD 3: Canais Diretos (WhatsApp e Mapa) ====
       {
-        id: 'whatsappFloatingEnabled',
-        type: 'switch',
-        label: 'Botão Flutuante de WhatsApp',
-        default: true,
-        hint: 'Botão fixo no canto da tela para contato direto'
+        id: 'channels',
+        title: '💬 Canais Diretos',
+        subtitle: 'WhatsApp flutuante e mapa de localização',
+        icon: '📍',
+        fields: [
+          // --- WhatsApp ---
+          {
+            id: 'whatsappFloatingEnabled',
+            type: 'switch',
+            label: 'Botão Flutuante de WhatsApp',
+            labelPosition: 'left',
+            default: true,
+            hint: 'Botão fixo no canto da tela para contato instantâneo',
+            size: 'large'
+          },
+          {
+            id: 'whatsappPosition',
+            type: 'select',
+            label: 'Posição do Botão',
+            options: [
+              { value: 'bottom-right', label: '↘️ Canto Inferior Direito' },
+              { value: 'bottom-left', label: '↙️ Canto Inferior Esquerdo' }
+            ],
+            default: 'bottom-right',
+            conditional: { field: 'whatsappFloatingEnabled', value: true }
+          },
+          {
+            id: 'whatsappGreeting',
+            type: 'text',
+            label: 'Mensagem Automática do WhatsApp',
+            placeholder: 'Olá! Vi seu site e gostaria de mais informações...',
+            hint: 'Texto que aparecerá pré-preenchido no WhatsApp',
+            maxLength: 200,
+            conditional: { field: 'whatsappFloatingEnabled', value: true }
+          },
+          // --- Mapa ---
+          {
+            id: 'showMap',
+            type: 'switch',
+            label: 'Mostrar Mapa de Localização',
+            labelPosition: 'left',
+            default: true,
+            hint: 'Exibe Google Maps com seu endereço (se cadastrado)',
+            size: 'large'
+          }
+        ]
       },
+      // ==== CARD 4: Configurações Avançadas (Colapsável) ====
       {
-        id: 'whatsappGreeting',
-        type: 'text',
-        label: 'Mensagem de Saudação Automática',
-        placeholder: 'Olá! Vi seu site e gostaria de mais informações...',
-        conditional: { field: 'whatsappFloatingEnabled', value: true },
-        hint: 'Texto que aparecerá pré-preenchido no WhatsApp do cliente'
-      },
-      {
-        id: 'whatsappPosition',
-        type: 'select',
-        label: 'Posição do Botão',
-        options: [
-          { value: 'bottom-right', label: 'Canto Inferior Direito' },
-          { value: 'bottom-left', label: 'Canto Inferior Esquerdo' }
-        ],
-        default: 'bottom-right',
-        conditional: { field: 'whatsappFloatingEnabled', value: true }
-      },
-      // ---- Mapa ----
-      {
-        id: 'showMap',
-        type: 'switch',
-        label: 'Mostrar Mapa de Localização no Site',
-        default: true,
-        hint: 'Exibe o Google Maps com seu endereço (se informado)'
-      },
-      // ---- Configurações Avançadas ----
-      {
-        id: 'enableCaptcha',
-        type: 'switch',
-        label: 'Ativar Proteção Anti-Spam (reCAPTCHA)',
-        default: true
-      },
-      {
-        id: 'autoReply',
-        type: 'switch',
-        label: 'Enviar e-mail automático de confirmação para o cliente',
-        default: false
-      },
-      {
-        id: 'autoReplyMessage',
-        type: 'textarea',
-        label: 'Mensagem de Confirmação',
-        placeholder: 'Recebemos sua mensagem e entraremos em contato em até 24 horas...',
-        rows: 3,
-        aiEnhance: true,
-        conditional: { field: 'autoReply', value: true }
+        id: 'advanced',
+        title: '⚙️ Configurações Avançadas',
+        icon: '🔧',
+        collapsible: true,
+        defaultCollapsed: true,
+        fields: [
+          {
+            id: 'enableCaptcha',
+            type: 'switch',
+            label: 'Proteção Anti-Spam (reCAPTCHA)',
+            labelPosition: 'left',
+            default: true,
+            hint: 'Recomendado para evitar formulários falsos'
+          },
+          {
+            id: 'autoReply',
+            type: 'switch',
+            label: 'E-mail Automático de Confirmação',
+            labelPosition: 'left',
+            default: false,
+            hint: 'O cliente recebe um e-mail confirmando que a mensagem foi enviada'
+          },
+          {
+            id: 'autoReplyMessage',
+            type: 'textarea',
+            label: 'Mensagem de Confirmação',
+            placeholder: 'Olá! Recebemos sua mensagem e entraremos em contato em até 24 horas. Obrigado!',
+            rows: 3,
+            aiEnhance: true,
+            conditional: { field: 'autoReply', value: true },
+            hint: 'Personalize o texto que o cliente receberá'
+          }
+        ]
       }
     ]
   },
@@ -634,77 +761,16 @@ export const pageSteps = {
   faq: {
     id: 'faq',
     pageType: 'faq',
-    title: '❓ Perguntas Frequentes',
+    title: 'Perguntas Frequentes',
     subtitle: 'Quais dúvidas seus clientes sempre perguntam?',
     icon: '❓',
     fields: [
       {
-        id: 'faqIntro',
-        type: 'textarea',
-        label: 'Texto de introdução do FAQ (opcional)',
-        placeholder: 'Reunimos aqui as principais dúvidas...',
-        rows: 2,
-        aiEnhance: true
-      },
-      {
-        id: 'commonQuestions',
-        type: 'checkbox-group',
-        label: 'Marque as dúvidas comuns no seu negócio:',
-        hint: 'A IA vai gerar respostas personalizadas para cada uma',
-        options: [
-          { value: 'pricing', label: '💰 Formas de pagamento / Preços' },
-          { value: 'delivery', label: '🚚 Prazos de entrega' },
-          { value: 'warranty', label: '🛡️ Garantia e trocas' },
-          { value: 'support', label: '📞 Suporte e atendimento' },
-          { value: 'process', label: '📋 Como funciona o processo' },
-          { value: 'coverage', label: '📍 Área de atendimento' }
-        ]
-      },
-      {
-        id: 'pricingDetails',
-        type: 'textarea',
-        label: 'Detalhes sobre pagamento/preços',
-        placeholder: 'Aceitamos cartão, pix, boleto... Parcelamos em até...',
-        conditional: { field: 'commonQuestions', contains: 'pricing' },
-        aiEnhance: true
-      },
-      {
-        id: 'deliveryDetails',
-        type: 'textarea',
-        label: 'Detalhes sobre prazos',
-        placeholder: 'O prazo médio é de... depende de...',
-        conditional: { field: 'commonQuestions', contains: 'delivery' },
-        aiEnhance: true
-      },
-      {
-        id: 'warrantyDetails',
-        type: 'textarea',
-        label: 'Detalhes sobre garantia',
-        placeholder: 'Oferecemos garantia de... Para acionar...',
-        conditional: { field: 'commonQuestions', contains: 'warranty' },
-        aiEnhance: true
-      },
-      {
-        id: 'customQuestions',
-        type: 'repeater',
-        label: 'Outras dúvidas frequentes',
-        addButtonText: '+ Adicionar Pergunta',
-        maxItems: 10,
-        fields: [
-          {
-            id: 'question',
-            type: 'text',
-            label: 'Pergunta',
-            placeholder: 'Ex: Vocês atendem aos finais de semana?'
-          },
-          {
-            id: 'answer',
-            type: 'textarea',
-            label: 'Resposta',
-            placeholder: 'Sim, atendemos...',
-            aiEnhance: true
-          }
-        ]
+        id: 'faqData',
+        type: 'faq-builder',
+        showIntro: true,
+        introPlaceholder: 'Reunimos aqui as principais dúvidas dos nossos clientes...',
+        maxItems: 15
       }
     ]
   },
@@ -713,7 +779,7 @@ export const pageSteps = {
   portfolio: {
     id: 'portfolio',
     pageType: 'portfolio',
-    title: '🖼️ Portfólio / Trabalhos Realizados',
+    title: 'Portfólio / Trabalhos Realizados',
     subtitle: 'Mostre o que você já fez de incrível',
     icon: '🖼️',
     fields: [
@@ -1315,7 +1381,7 @@ export const pageSteps = {
  */
 export const finalizationStep = {
   id: 'finalization',
-  title: 'Quase Lá!',
+  title: 'Referências',
   subtitle: 'Últimos detalhes antes de começarmos',
   icon: '🚀',
   required: true,
