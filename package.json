@@ -9,10 +9,13 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.1.0",
+    "@types/dompurify": "^3.2.0",
     "@vueuse/core": "^14.0.0",
     "core-js": "^3.8.3",
+    "dompurify": "^3.3.1",
     "gsap": "^3.13.0",
     "intersection-observer": "^0.12.2",
+    "marked": "^17.0.1",
     "node-sass": "^9.0.0",
     "sass-loader": "^14.1.1",
     "swiper": "^11.1.9",

@@ -15,12 +15,24 @@
     </div>
     
     <!-- Wizard -->
-    <DynamicOnboardingWizard
-      v-else
+    <ConversationalOnboardingWizard
+      v-if="!showTraditionalForm"
       :purchased-pages="purchasedPages"
       :initial-data="initialData"
       :session-id="sessionId"
+      @complete="handleConversationalComplete"
+      @go-to-form="showTraditionalForm = true"
+      @error="handleError"
+    />
+    
+    <!-- Traditional Form (after conversation) -->
+    <DynamicOnboardingWizard
+      v-else
+      :purchased-pages="purchasedPages"
+      :initial-data="conversationalData"
+      :session-id="sessionId"
       @complete="handleComplete"
+      @back-to-conversation="showTraditionalForm = false"
       @error="handleError"
     />
   </div>
@@ -28,12 +40,14 @@
 
 <script>
 import DynamicOnboardingWizard from '@/shared/Components/DynamicOnboardingWizard.vue';
+import ConversationalOnboardingWizard from '@/shared/Components/ConversationalOnboardingWizard.vue';
 
 export default {
   name: 'OnboardingSetupPage',
   
   components: {
-    DynamicOnboardingWizard
+    DynamicOnboardingWizard,
+    ConversationalOnboardingWizard
   },
   
   data() {
@@ -43,7 +57,9 @@ export default {
       purchasedPages: [],
       initialData: {},
       sessionId: '',
-      orderId: null
+      orderId: null,
+      showTraditionalForm: false,
+      conversationalData: {}
     };
   },
   
@@ -132,6 +148,32 @@ export default {
     
     retryValidation() {
       this.validateToken();
+    },
+    
+    handleConversationalComplete(data) {
+      console.log('[OnboardingSetup] Conversa concluída:', data);
+      
+      // Salvar dados da conversa para passar ao formulário tradicional
+      this.conversationalData = {
+        ...this.initialData,
+        ...data
+      };
+      
+      // Perguntar se quer revisar no formulário ou finalizar direto
+      const wantToReview = confirm(
+        '🎉 Conversa finalizada!\n\n' +
+        'Suas informações foram coletadas com sucesso.\n\n' +
+        '✅ Clique em "OK" para revisar no formulário tradicional\n' +
+        '❌ Clique em "Cancelar" para finalizar direto'
+      );
+      
+      if (wantToReview) {
+        // Ir para o formulário tradicional para revisão
+        this.showTraditionalForm = true;
+      } else {
+        // Finalizar direto
+        this.handleComplete(this.conversationalData);
+      }
     },
     
     handleComplete(data) {

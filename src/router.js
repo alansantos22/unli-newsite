@@ -48,5 +48,10 @@ export default [
         path: "/sucesso",
         name: "PaymentSuccess",
         component: () => import("./pages/PaymentSuccess.vue")
+    },
+    {
+        path: "/teste-conversational",
+        name: "TesteConversational",
+        component: () => import("./pages/Teste-Conversational.vue")
     }
 ]
