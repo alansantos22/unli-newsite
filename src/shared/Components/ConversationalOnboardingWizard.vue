@@ -21,6 +21,29 @@
     </Transition>
     
     <!-- ============================================ -->
+    <!-- MODAL CONTINUAR SESSÃO -->
+    <!-- ============================================ -->
+    <Transition name="modal-fade">
+      <div v-if="showRestoreModal" class="modal-overlay" @click.self="handleRestoreDecision(false)">
+        <div class="modal-content restore-session-modal">
+          <div class="modal-icon">💬</div>
+          <h3>Bem-vindo de volta!</h3>
+          <p>Encontramos uma conversa anterior com <strong>{{ previousSessionInfo.messageCount }} mensagens</strong>.</p>
+          <p class="modal-hint">Atualizada {{ formatLastUpdate(previousSessionInfo.lastUpdated) }}</p>
+          
+          <div class="modal-actions">
+            <button class="btn-secondary" @click="handleRestoreDecision(false)">
+              🔄 Começar do zero
+            </button>
+            <button class="btn-primary" @click="handleRestoreDecision(true)">
+              ▶️ Continuar de onde parei
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+    
+    <!-- ============================================ -->
     <!-- CHAT SECTION -->
     <!-- ============================================ -->
     <section v-if="!isReviewMode" class="chat-section">
@@ -96,43 +119,66 @@
         
         <!-- Input Principal -->
         <div class="input-wrapper">
-          <!-- Textarea -->
-          <textarea 
-            ref="inputTextarea"
-            v-model="userInput"
-            @keydown.enter.exact.prevent="sendMessage"
-            @input="autoResizeTextarea"
-            placeholder="Digite sua mensagem..."
-            rows="1"
-            :disabled="isProcessing"
-          />
-          
-          <!-- Botões de Ação -->
-          <div class="input-actions">
-            <!-- Botão de Áudio - DESABILITADO POR ENQUANTO
-            <button 
-              class="btn-audio"
-              :class="{ 
-                'is-recording': isRecording,
-                'is-disabled': !speechSupported
-              }"
-              @click="toggleRecording"
+          <div>
+            <!-- Textarea -->
+            <textarea 
+              ref="inputTextarea"
+              v-model="userInput"
+              @keydown.enter.exact.prevent="sendMessage"
+              @input="handleTextInput"
+              placeholder="Digite sua mensagem..."
+              rows="1"
+              :maxlength="maxChars"
               :disabled="isProcessing"
-              :title="speechSupported ? 'Gravar áudio' : 'Áudio não suportado neste navegador'"
-            >
-              <span v-if="isRecording" class="recording-pulse"></span>
-              {{ isRecording ? '⏹️' : '🎤' }}
-            </button>
-            -->
+            />
             
-            <!-- Botão Enviar -->
-            <button 
-              class="btn-send"
-              @click="sendMessage"
-              :disabled="!userInput.trim() || isProcessing"
-            >
-              ➤
-            </button>
+            <!-- Componente de Upload de Imagens -->
+            <div v-if="shouldShowImageUpload" class="chat-image-uploader">
+              <ImageUploader
+                v-model="selectedImages"
+                :multiple="allowMultipleImages"
+                :maxSizeMB="5"
+                uploadText="📎 Adicionar imagem"
+                @files-added="handleImagesAdded"
+                @file-removed="handleImageRemoved"
+              />
+            </div>
+            
+            <!-- Botões de Ação -->
+            <div class="input-actions">
+              
+              <!-- Botão de Áudio - DESABILITADO POR ENQUANTO
+              <button 
+                class="btn-audio"
+                :class="{ 
+                  'is-recording': isRecording,
+                  'is-disabled': !speechSupported
+                }"
+                @click="toggleRecording"
+                :disabled="isProcessing"
+                :title="speechSupported ? 'Gravar áudio' : 'Áudio não suportado neste navegador'"
+              >
+                <span v-if="isRecording" class="recording-pulse"></span>
+                {{ isRecording ? '⏹️' : '🎤' }}
+              </button>
+              -->
+              
+              <!-- Botão Enviar -->
+              <button 
+                class="btn-send"
+                @click="sendMessage"
+                :disabled="(!userInput.trim() && selectedImages.length === 0) || isProcessing"
+              >
+                ➤
+              </button>
+            </div>
+          </div>
+          
+          <!-- Contador de Caracteres -->
+          <div class="char-counter" :class="{ 'is-warning': userInput.length > maxChars * 0.8 }">
+            <span v-if="maxChars > 500" class="char-bonus">✨</span>
+            {{ userInput.length }} / {{ maxChars }}
+            <span v-if="maxChars > 500" class="char-hint">(texto elaborado)</span>
           </div>
         </div>
         
@@ -182,29 +228,47 @@
       
       <!-- Gamification Bar -->
       <div class="gamification-bar">
-        <!-- Level Display -->
-        <div class="level-display">
-          <span class="level-icon">{{ currentLevel?.icon }}</span>
-          <div class="level-info">
-            <span class="level-name">{{ currentLevel?.name }}</span>
-            <span class="level-xp">{{ xp }} XP</span>
+        <!-- Step Tracker (substituiu o Level/XP) -->
+        <div class="step-tracker">
+          <div class="step-tracker-header">
+            <span class="tracker-label">📍 Etapa atual</span>
+            <span class="tracker-current">{{ currentStepIndex + 1 }} de {{ totalSteps }}</span>
+          </div>
+          <div class="step-dots">
+            <span 
+              v-for="(step, index) in ONBOARDING_STEPS"
+              :key="step.id"
+              class="step-dot"
+              :class="{
+                'is-complete': index < currentStepIndex,
+                'is-current': index === currentStepIndex,
+                'is-pending': index > currentStepIndex
+              }"
+              :title="step.name"
+            >
+              {{ step.icon }}
+            </span>
           </div>
         </div>
         
-        <!-- Progress to Next Level -->
-        <div class="xp-progress">
-          <div class="xp-bar">
-            <div 
-              class="xp-fill"
-              :style="{ 
-                width: xpProgressPercentage + '%',
-                backgroundColor: currentLevel?.color
-              }"
-            ></div>
-          </div>
-          <span v-if="nextLevel" class="xp-next">
-            {{ xpToNextLevel }} XP para {{ nextLevel.name }}
-          </span>
+        <!-- Undo/Redo Buttons -->
+        <div class="undo-redo-bar">
+          <button 
+            class="btn-undo"
+            :disabled="!canUndo"
+            @click="handleUndo"
+            title="Desfazer última alteração"
+          >
+            ↩️ Voltar
+          </button>
+          <button 
+            class="btn-redo"
+            :disabled="!canRedo"
+            @click="handleRedo"
+            title="Refazer alteração"
+          >
+            Avançar ↪️
+          </button>
         </div>
         
         <!-- Site Potential -->
@@ -357,6 +421,10 @@ export default {
     initialData: {
       type: Object,
       default: () => ({})
+    },
+    purchasedPages: {
+      type: Array,
+      default: () => []
     }
   },
   
@@ -375,17 +443,24 @@ export default {
       progressPercentage,
       currentLevel,
       nextLevel,
-      xpToNextLevel,
       isReviewMode,
       canPublish,
       pendingRequiredFields,
+      canUndo,
+      canRedo,
       initSession,
       sendUserMessage,
       updateField,
+      undo,
+      redo,
       dismissAchievementPopup,
       nextStep,
       goToStep,
       exitReviewMode,
+      setPurchasedPages,
+      checkPreviousSession,
+      clearSession,
+      restoreSession,
       ONBOARDING_STEPS
     } = useConversationalAI();
     
@@ -400,6 +475,11 @@ export default {
     const interimResult = ref('');
     const showFormPreview = ref(true);
     const showMobileFormSheet = ref(false);
+    const selectedImages = ref([]);
+    
+    // Modal de restaurar sessão
+    const showRestoreModal = ref(false);
+    const previousSessionInfo = ref(null);
     
     // ============================================
     // COMPUTED
@@ -418,19 +498,9 @@ export default {
     const shimmeringFields = computed(() => state.shimmeringFields);
     const recentlyFilledFields = computed(() => state.recentlyFilledFields);
     const validationErrors = computed(() => state.validationErrors);
-    const xp = computed(() => state.xp);
     const currentStepIndex = computed(() => state.currentStepIndex);
     
     const speechSupported = computed(() => speechToTextService.isSupported);
-    
-    const xpProgressPercentage = computed(() => {
-      if (!nextLevel.value) return 100;
-      const currentMin = currentLevel.value?.minXP || 0;
-      const nextMin = nextLevel.value.minXP;
-      const range = nextMin - currentMin;
-      const progress = xp.value - currentMin;
-      return Math.min(100, Math.round((progress / range) * 100));
-    });
     
     const quickActions = computed(() => {
       const stepId = currentStepId.value;
@@ -465,16 +535,143 @@ export default {
       return assistantMsgs.length ? assistantMsgs[assistantMsgs.length - 1].content : '';
     });
     
+    // Limite dinâmico de caracteres baseado no step/contexto
+    const maxChars = computed(() => {
+      const stepId = currentStepId.value;
+      const lastMsg = lastAssistantMessage.value.toLowerCase();
+      
+      // FAQ - respostas podem ser longas
+      if (stepId === 'faq' || lastMsg.includes('resposta') || lastMsg.includes('pergunta')) {
+        return 1000;
+      }
+      
+      // About - textos elaborados
+      if (stepId === 'about' || lastMsg.includes('história') || lastMsg.includes('sobre') || lastMsg.includes('biografia')) {
+        return 1000;
+      }
+      
+      // Services - descrições de serviços
+      if (stepId === 'services' || lastMsg.includes('serviço') || lastMsg.includes('descrição')) {
+        return 1000;
+      }
+      
+      // Finalization - observações podem ser longas
+      if (stepId === 'finalization') {
+        return 800;
+      }
+      
+      // Identity e Contact - respostas curtas
+      return 500;
+    });
+    
+    // Permitir múltiplas imagens em steps específicos
+    const allowMultipleImages = computed(() => {
+      const step = currentStepId.value;
+      // Services e Finalization permitem múltiplas imagens
+      return step === 'services' || step === 'finalization';
+    });
+
+    // Mostrar botão de upload quando IA perguntar sobre imagens ou quando o usuário indicar que tem
+    const shouldShowImageUpload = computed(() => {
+      const stepId = currentStepId.value;
+      const lastAssistantMsg = lastAssistantMessage.value.toLowerCase();
+      
+      // Pegar última mensagem do usuário
+      const userMessages = messages.value.filter(m => m.type === 'user_text' || m.type === 'user_audio');
+      const lastUserMsg = (userMessages[userMessages.length - 1]?.content || '').toLowerCase();
+      
+      // Steps que aceitam imagens - identity (logo)
+      if (stepId === 'identity') {
+        // Mostrar se IA perguntar sobre logo
+        if (lastAssistantMsg.includes('logo') || lastAssistantMsg.includes('anexo') || lastAssistantMsg.includes('📎')) {
+          return true;
+        }
+        // Mostrar se usuário disser que tem logo
+        if (lastUserMsg.includes('tenho logo') || lastUserMsg.includes('tenho sim') || 
+            lastUserMsg.includes('logo sim') || lastUserMsg.includes('já tenho')) {
+          return true;
+        }
+      }
+      
+      // About (foto da empresa)
+      if (stepId === 'about' && (lastAssistantMsg.includes('foto') || lastAssistantMsg.includes('imagem'))) {
+        return true;
+      }
+      
+      // Finalization (referências visuais)
+      if (stepId === 'finalization' && lastAssistantMsg.includes('imagem')) {
+        return true;
+      }
+      
+      return false;
+    });
+    
     // ============================================
     // METHODS
     // ============================================
     
     async function sendMessage() {
       const content = userInput.value.trim();
-      if (!content || isProcessing.value) return;
+      if (!content && selectedImages.value.length === 0) return;
+      if (isProcessing.value) return;
       
       userInput.value = '';
-      await sendUserMessage(content, false);
+      
+      // Resetar altura do textarea
+      if (inputTextarea.value) {
+        inputTextarea.value.style.height = 'auto';
+      }
+      
+      // Processar imagens que foram uploaded pelo componente
+      let imageInfo = null;
+      if (selectedImages.value.length > 0) {
+        try {
+          // Pegar URLs das imagens que já foram enviadas pelo ImageUploader
+          const uploadedImages = selectedImages.value
+            .filter(img => img.uploaded && img.url)
+            .map(img => img.url);
+          
+          if (uploadedImages.length > 0) {
+            // Mapear para o campo correto baseado no step
+            const stepId = currentStepId.value;
+            let fieldId = null;
+            
+            if (stepId === 'identity') fieldId = 'logo';
+            else if (stepId === 'about') fieldId = 'aboutImage';
+            else if (stepId === 'services') fieldId = 'serviceImages';
+            else if (stepId === 'finalization') fieldId = 'inspirationImages';
+            
+            if (fieldId) {
+              // Para campos que aceitam array, enviar array; senão, enviar apenas a primeira
+              const value = (fieldId === 'serviceImages' || fieldId === 'inspirationImages')
+                ? uploadedImages
+                : uploadedImages[0];
+              updateField(fieldId, value);
+              
+              imageInfo = {
+                count: uploadedImages.length,
+                field: fieldId
+              };
+            }
+            
+            // Limpar seleção após processar
+            selectedImages.value = [];
+          }
+        } catch (error) {
+          console.error('[Image Process Error]', error);
+          alert('Erro ao processar as imagens. Tente novamente.');
+          return;
+        }
+      }
+      
+      // Adicionar indicador visual se tinha imagem(ns)
+      let messageText = content || 'Imagem(ns) enviada(s)';
+      if (imageInfo) {
+        const plural = imageInfo.count > 1 ? 's' : '';
+        messageText += ` 📎 ${imageInfo.count} imagem${plural}`;
+      }
+      
+      await sendUserMessage(messageText, false);
       scrollToBottom();
     }
     
@@ -539,12 +736,19 @@ export default {
     }
     
     async function handleSuggestionAccept(suggestion) {
+      console.log('[Suggestion Accept]', suggestion);
+      
       if (suggestion.field && suggestion.value) {
+        // Atualizar campo no formulário
         updateField(suggestion.field, suggestion.value);
+        console.log('[Field Updated]', suggestion.field, '=', suggestion.value);
+        console.log('[FormData after update]', formData.value);
         
         // Enviar confirmação ao chat para continuar o fluxo
         await sendUserMessage(`Gostei! Vou usar: "${suggestion.value}"`, false);
         scrollToBottom();
+      } else {
+        console.error('[Suggestion Accept] Missing field or value', suggestion);
       }
     }
     
@@ -552,6 +756,15 @@ export default {
       // Quando o cliente quer escrever sua própria frase
       userInput.value = `Quero escrever minha própria ${label}. `;
       inputTextarea.value?.focus();
+    }
+    
+    function handleImagesAdded(files) {
+      // Imagens foram adicionadas - botão de enviar já estará habilitado
+      console.log('[Images Added]', files.length, 'image(s)');
+    }
+    
+    function handleImageRemoved(file) {
+      console.log('[Image Removed]', file.name);
     }
     
     function focusField(fieldId) {
@@ -580,11 +793,23 @@ export default {
       emit('go-to-form', formData.value);
     }
     
+    function handleUndo() {
+      undo();
+    }
+    
+    function handleRedo() {
+      redo();
+    }
+    
+    function handleTextInput() {
+      autoResizeTextarea();
+    }
+    
     function autoResizeTextarea() {
       const textarea = inputTextarea.value;
       if (textarea) {
         textarea.style.height = 'auto';
-        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
       }
     }
     
@@ -595,6 +820,39 @@ export default {
           container.scrollTop = container.scrollHeight;
         }
       });
+    }
+    
+    function formatLastUpdate(timestamp) {
+      const now = Date.now();
+      const diff = now - timestamp;
+      const minutes = Math.floor(diff / 60000);
+      const hours = Math.floor(diff / 3600000);
+      const days = Math.floor(diff / 86400000);
+      
+      if (minutes < 1) return 'agora mesmo';
+      if (minutes < 60) return `há ${minutes} minuto${minutes > 1 ? 's' : ''}`;
+      if (hours < 24) return `há ${hours} hora${hours > 1 ? 's' : ''}`;
+      return `há ${days} dia${days > 1 ? 's' : ''}`;
+    }
+    
+    function handleRestoreDecision(shouldRestore) {
+      if (shouldRestore && previousSessionInfo.value) {
+        // Restaurar sessão anterior
+        const restored = restoreSession(previousSessionInfo.value);
+        if (restored) {
+          console.log('[Restore] Sessão restaurada com sucesso');
+        }
+      } else {
+        // Começar do zero - limpar sessão anterior
+        if (previousSessionInfo.value) {
+          clearSession(previousSessionInfo.value.sessionId);
+        }
+        // Iniciar nova sessão
+        initSession(props.sessionId, props.initialData, props.purchasedPages);
+      }
+      
+      showRestoreModal.value = false;
+      scrollToBottom();
     }
     
     function formatMarkdown(text) {
@@ -608,13 +866,28 @@ export default {
     // ============================================
     
     onMounted(() => {
-      initSession(props.sessionId, props.initialData);
-      scrollToBottom();
+      // Verificar se existe sessão anterior
+      const prevSession = checkPreviousSession();
+      
+      if (prevSession && prevSession.messageCount > 2) {
+        // Mostrar modal para escolher
+        previousSessionInfo.value = prevSession;
+        showRestoreModal.value = true;
+      } else {
+        // Iniciar nova sessão normalmente
+        initSession(props.sessionId, props.initialData, props.purchasedPages);
+        scrollToBottom();
+      }
     });
     
     // Auto-scroll quando novas mensagens chegam
     watch(messages, () => {
       scrollToBottom();
+    }, { deep: true });
+    
+    // Atualizar páginas compradas quando a prop mudar
+    watch(() => props.purchasedPages, (newPages) => {
+      setPurchasedPages(newPages);
     }, { deep: true });
     
     // ============================================
@@ -630,6 +903,9 @@ export default {
       interimResult,
       showFormPreview,
       showMobileFormSheet,
+      selectedImages,
+      showRestoreModal,
+      previousSessionInfo,
       
       // Computed
       isMobile,
@@ -641,7 +917,6 @@ export default {
       shimmeringFields,
       recentlyFilledFields,
       validationErrors,
-      xp,
       currentStep,
       currentStepId,
       currentStepIndex,
@@ -649,14 +924,17 @@ export default {
       progressPercentage,
       currentLevel,
       nextLevel,
-      xpToNextLevel,
-      xpProgressPercentage,
       isReviewMode,
       canPublish,
       pendingRequiredFields,
+      canUndo,
+      canRedo,
       speechSupported,
       quickActions,
       lastAssistantMessage,
+      maxChars,
+      shouldShowImageUpload,
+      allowMultipleImages,
       ONBOARDING_STEPS,
       
       // Methods
@@ -666,13 +944,20 @@ export default {
       handleMessageAction,
       handleSuggestionAccept,
       handleCustomInput,
+      handleImagesAdded,
+      handleImageRemoved,
       focusField,
       editFieldManually,
       openStepEditor,
       handlePublish,
       handleGoToForm,
+      handleUndo,
+      handleRedo,
+      handleTextInput,
       autoResizeTextarea,
       formatMarkdown,
+      formatLastUpdate,
+      handleRestoreDecision,
       dismissAchievementPopup,
       goToStep,
       exitReviewMode
@@ -793,6 +1078,127 @@ export default {
 .achievement-slide-leave-to {
   transform: translateX(100%);
   opacity: 0;
+}
+
+// ============================================
+// MODAL RESTAURAR SESSÃO
+// ============================================
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal-content {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 1.5rem;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: modal-slide-up 0.3s ease-out;
+  
+  .modal-icon {
+    font-size: 3rem;
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+  
+  h3 {
+    margin: 0 0 1rem;
+    font-size: 1.75rem;
+    text-align: center;
+    color: #fff;
+  }
+  
+  p {
+    color: rgba(255, 255, 255, 0.8);
+    text-align: center;
+    margin: 0.5rem 0;
+    font-size: 1rem;
+    
+    strong {
+      color: #6366f1;
+      font-weight: 600;
+    }
+  }
+  
+  .modal-hint {
+    font-size: 0.85rem;
+    opacity: 0.6;
+    margin-bottom: 2rem;
+  }
+  
+  .modal-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    
+    button {
+      flex: 1;
+      padding: 0.875rem 1.5rem;
+      border: none;
+      border-radius: 0.75rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      
+      &.btn-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        
+        &:hover {
+          background: rgba(255, 255, 255, 0.15);
+          transform: translateY(-2px);
+        }
+      }
+      
+      &.btn-primary {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: #fff;
+        box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+        
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 25px rgba(99, 102, 241, 0.5);
+        }
+      }
+    }
+  }
+}
+
+@keyframes modal-slide-up {
+  from { 
+    opacity: 0;
+    transform: translateY(20px) scale(0.95); 
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0) scale(1); 
+  }
+}
+
+.modal-fade-enter-active, .modal-fade-leave-active {
+  transition: opacity 0.3s ease;
+  
+  .modal-content {
+    transition: transform 0.3s ease;
+  }
+}
+
+.modal-fade-enter-from, .modal-fade-leave-to {
+  opacity: 0;
+  
+  .modal-content {
+    transform: translateY(20px) scale(0.95);
+  }
 }
 
 // ============================================
@@ -981,6 +1387,95 @@ export default {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.chat-image-uploader {
+  margin-bottom: 1rem;
+  
+  // Estilos override para o ImageUploader dentro do chat
+  :deep(.image-uploader) {
+    .uploader-header label {
+      color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .upload-area {
+      background: rgba(99, 102, 241, 0.1);
+      border-color: rgba(99, 102, 241, 0.3);
+      transition: all 0.3s;
+      
+      &.drag-over {
+        background: rgba(99, 102, 241, 0.2);
+        border-color: rgba(99, 102, 241, 0.5);
+      }
+    }
+    
+    .upload-label {
+      padding: 1.5rem 1rem;
+      
+      .upload-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      .upload-text {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.9rem;
+      }
+      
+      .upload-hint {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.75rem;
+      }
+    }
+    
+    .uploaded-images {
+      margin-bottom: 1rem;
+      
+      .image-preview-item {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.1);
+        
+        &:hover {
+          border-color: rgba(99, 102, 241, 0.5);
+          background: rgba(99, 102, 241, 0.1);
+        }
+      }
+      
+      .file-name,
+      .file-size {
+        color: rgba(255, 255, 255, 0.9);
+      }
+      
+      .btn-remove {
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+        
+        &:hover {
+          background: rgba(239, 68, 68, 0.3);
+        }
+      }
+    }
+    
+    .upload-error {
+      color: #fca5a5;
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+    
+    .upload-progress {
+      .progress-bar {
+        background: rgba(255, 255, 255, 0.1);
+        
+        .progress-fill {
+          background: linear-gradient(90deg, #6366f1, #8b5cf6);
+        }
+      }
+      
+      .progress-text {
+        color: rgba(255, 255, 255, 0.9);
+      }
+    }
+  }
+}
+
 .quick-actions {
   display: flex;
   gap: 0.5rem;
@@ -1015,12 +1510,18 @@ export default {
 
 .input-wrapper {
   display: flex;
-  align-items: flex-end;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 0.5rem;
   padding: 0.75rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 1rem;
+  
+  > div:first-child {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.75rem;
+  }
   
   textarea {
     flex: 1;
@@ -1031,11 +1532,43 @@ export default {
     font-size: 1rem;
     line-height: 1.5;
     resize: none;
-    max-height: 120px;
+    max-height: 150px;
+    overflow-y: auto;
     
     &::placeholder {
       color: rgba(255, 255, 255, 0.4);
     }
+  }
+  
+  .char-counter {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.4);
+    text-align: right;
+    padding: 0 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    
+    .char-bonus {
+      animation: sparkle 2s ease-in-out infinite;
+    }
+    
+    .char-hint {
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.3);
+      font-style: italic;
+    }
+    
+    &.is-warning {
+      color: #fbbf24;
+      font-weight: 600;
+    }
+  }
+  
+  @keyframes sparkle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
   }
   
   .input-actions {
@@ -1044,6 +1577,7 @@ export default {
   }
   
   .btn-audio,
+  .btn-attachment,
   .btn-send {
     width: 40px;
     height: 40px;
@@ -1055,6 +1589,21 @@ export default {
     cursor: pointer;
     font-size: 1.25rem;
     transition: all 0.2s;
+  }
+  
+  .btn-attachment {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    
+    &:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.15);
+      transform: rotate(15deg);
+    }
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   }
   
   .btn-audio {
@@ -1139,53 +1688,90 @@ export default {
   background: rgba(255, 255, 255, 0.03);
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   
-  .level-display {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
+  .step-tracker {
+    margin-bottom: 1rem;
     
-    .level-icon {
-      font-size: 1.5rem;
-    }
-    
-    .level-info {
+    .step-tracker-header {
       display: flex;
-      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
       
-      .level-name {
-        font-weight: 600;
-        font-size: 1rem;
+      .tracker-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.8);
       }
       
-      .level-xp {
+      .tracker-current {
         font-size: 0.75rem;
         color: rgba(255, 255, 255, 0.5);
       }
     }
-  }
-  
-  .xp-progress {
-    margin-bottom: 1rem;
     
-    .xp-bar {
-      height: 6px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 3px;
-      overflow: hidden;
+    .step-dots {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: space-between;
       
-      .xp-fill {
-        height: 100%;
-        border-radius: inherit;
-        transition: width 0.5s ease;
+      .step-dot {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-size: 1rem;
+        transition: all 0.3s;
+        cursor: default;
+        
+        &.is-complete {
+          background: rgba(34, 197, 94, 0.2);
+          border: 2px solid #22c55e;
+        }
+        
+        &.is-current {
+          background: rgba(99, 102, 241, 0.3);
+          border: 2px solid #6366f1;
+          transform: scale(1.15);
+          box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
+        }
+        
+        &.is-pending {
+          background: rgba(255, 255, 255, 0.05);
+          border: 2px solid rgba(255, 255, 255, 0.15);
+          opacity: 0.5;
+        }
       }
     }
+  }
+  
+  .undo-redo-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
     
-    .xp-next {
-      display: block;
-      margin-top: 0.5rem;
+    .btn-undo,
+    .btn-redo {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 0.5rem;
+      color: rgba(255, 255, 255, 0.8);
       font-size: 0.75rem;
-      color: rgba(255, 255, 255, 0.5);
+      cursor: pointer;
+      transition: all 0.2s;
+      
+      &:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+      
+      &:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
     }
   }
   

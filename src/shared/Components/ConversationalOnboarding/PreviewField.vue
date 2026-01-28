@@ -5,9 +5,10 @@
       'is-shimmering': isShimmering,
       'is-filled': isFilled,
       'is-recently-filled': isRecentlyFilled,
-      'has-error': error
+      'has-error': error,
+      'is-editing': isEditing
     }"
-    @click="$emit('click')"
+    @click="handleClick"
   >
     <span class="field-label">{{ label }}:</span>
     
@@ -15,13 +16,33 @@
       <!-- Shimmer Effect -->
       <div v-if="isShimmering" class="shimmer-bar"></div>
       
+      <!-- Editing Mode -->
+      <template v-else-if="isEditing">
+        <input
+          ref="inputRef"
+          v-model="editValue"
+          class="field-input"
+          :placeholder="label"
+          @blur="saveEdit"
+          @keyup.enter="saveEdit"
+          @keyup.escape="cancelEdit"
+        />
+        <button class="btn-save" @click.stop="saveEdit" title="Salvar">✓</button>
+        <button class="btn-cancel" @click.stop="cancelEdit" title="Cancelar">✕</button>
+      </template>
+      
       <!-- Value or Placeholder -->
-      <span v-else class="field-value" :class="{ 'is-empty': !value }">
-        {{ value || 'Não definido' }}
-      </span>
+      <template v-else>
+        <span class="field-value" :class="{ 'is-empty': !value }">
+          {{ value || 'Não definido' }}
+        </span>
+        
+        <!-- Edit hint on hover -->
+        <span class="edit-hint" title="Clique para editar">✏️</span>
+      </template>
       
       <!-- Recently Filled Indicator -->
-      <span v-if="isRecentlyFilled" class="filled-check">✓</span>
+      <span v-if="isRecentlyFilled && !isEditing" class="filled-check">✓</span>
     </div>
     
     <!-- Error -->
@@ -30,7 +51,7 @@
 </template>
 
 <script>
-import { computed } from 'vue';
+import { ref, computed, nextTick } from 'vue';
 
 export default {
   name: 'PreviewField',
@@ -59,17 +80,63 @@ export default {
     error: {
       type: String,
       default: null
+    },
+    editable: {
+      type: Boolean,
+      default: true
     }
   },
   
   emits: ['click', 'edit'],
   
-  setup(props) {
+  setup(props, { emit }) {
+    const isEditing = ref(false);
+    const editValue = ref('');
+    const inputRef = ref(null);
+    
     const isFilled = computed(() => {
       return props.value !== '' && props.value !== null && props.value !== undefined;
     });
     
-    return { isFilled };
+    function handleClick() {
+      if (props.editable && !isEditing.value) {
+        startEdit();
+      } else {
+        emit('click');
+      }
+    }
+    
+    function startEdit() {
+      editValue.value = props.value || '';
+      isEditing.value = true;
+      nextTick(() => {
+        inputRef.value?.focus();
+        inputRef.value?.select();
+      });
+    }
+    
+    function saveEdit() {
+      if (editValue.value !== props.value) {
+        emit('edit', editValue.value);
+      }
+      isEditing.value = false;
+    }
+    
+    function cancelEdit() {
+      isEditing.value = false;
+      editValue.value = props.value || '';
+    }
+    
+    return { 
+      isFilled,
+      isEditing,
+      editValue,
+      inputRef,
+      handleClick,
+      startEdit,
+      saveEdit,
+      cancelEdit
+    };
   }
 };
 </script>
@@ -84,11 +151,23 @@ export default {
   cursor: pointer;
   transition: all 0.2s;
   
-  &:hover {
+  &:hover:not(.is-editing) {
     background: rgba(255, 255, 255, 0.03);
     border-radius: 0.25rem;
     margin: 0 -0.5rem;
     padding: 0.5rem;
+    
+    .edit-hint {
+      opacity: 1;
+    }
+  }
+  
+  &.is-editing {
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 0.25rem;
+    margin: 0 -0.5rem;
+    padding: 0.5rem;
+    cursor: default;
   }
   
   &:last-child {
@@ -141,6 +220,66 @@ export default {
     font-weight: 400;
     font-style: italic;
   }
+}
+
+.field-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.5);
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  color: #fff;
+  outline: none;
+  
+  &:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  }
+  
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+  }
+}
+
+.btn-save,
+.btn-cancel {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-save {
+  background: #22c55e;
+  color: #fff;
+  
+  &:hover {
+    background: #16a34a;
+    transform: scale(1.1);
+  }
+}
+
+.btn-cancel {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  
+  &:hover {
+    background: rgba(239, 68, 68, 0.3);
+    transform: scale(1.1);
+  }
+}
+
+.edit-hint {
+  opacity: 0;
+  font-size: 0.75rem;
+  transition: opacity 0.2s;
 }
 
 .shimmer-bar {

@@ -35,6 +35,7 @@
           :is-shimmering="shimmeringFields.includes('businessType')"
           :is-recently-filled="recentlyFilledFields.includes('businessType')"
           :error="validationErrors.businessType"
+          :editable="false"
           @click="$emit('field-click', 'businessType')"
         />
         
@@ -45,6 +46,7 @@
           :is-shimmering="shimmeringFields.includes('tagline')"
           :is-recently-filled="recentlyFilledFields.includes('tagline')"
           @click="$emit('field-click', 'tagline')"
+          @edit="(val) => $emit('field-edit', 'tagline', val)"
         />
         
         <div class="color-preview">
@@ -87,6 +89,7 @@
           :is-recently-filled="recentlyFilledFields.includes('whatsapp')"
           :error="validationErrors.whatsapp"
           @click="$emit('field-click', 'whatsapp')"
+          @edit="(val) => $emit('field-edit', 'whatsapp', val)"
         />
         
         <div v-if="socialNetworksCount" class="social-preview">
@@ -122,6 +125,7 @@
           :value="formData.foundingYear"
           :is-recently-filled="recentlyFilledFields.includes('foundingYear')"
           @click="$emit('field-click', 'foundingYear')"
+          @edit="(val) => $emit('field-edit', 'foundingYear', val)"
         />
         
         <div v-if="formData.companyBio" class="bio-preview">

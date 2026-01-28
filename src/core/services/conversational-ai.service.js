@@ -9,12 +9,14 @@
  */
 
 import { reactive, computed, readonly, watch } from 'vue';
+import { buildOnboardingSteps } from '@/core/config/onboarding-steps.config.js';
 
 // ============================================
-// CONFIGURAÇÃO DOS STEPS
+// CONFIGURAÇÃO DOS STEPS (BASE)
 // ============================================
 
-export const ONBOARDING_STEPS = [
+// Steps básicos - usados como fallback ou quando sem purchasedPages
+export const ONBOARDING_STEPS_BASE = [
   {
     id: 'identity',
     name: 'Identidade da Marca',
@@ -227,22 +229,48 @@ const state = reactive({
   validationErrors: {},
   
   // Campos pendentes por step
-  pendingFieldsByStep: {}
+  pendingFieldsByStep: {},
+  
+  // Histórico para Undo/Redo
+  formHistory: [],
+  historyIndex: -1,
+  maxHistorySize: 50,
+  
+  // Flag para modo demo (sem token real)
+  isDemoMode: false,
+  
+  // Contador de falhas da IA
+  aiFailureCount: 0,
+  maxAiFailures: 3,
+  
+  // Páginas compradas pelo cliente (para steps dinâmicos)
+  purchasedPages: []
 });
 
 // ============================================
 // COMPUTED PROPERTIES
 // ============================================
 
-const currentStep = computed(() => ONBOARDING_STEPS[state.currentStepIndex]);
+// Steps dinâmicos baseados nas páginas compradas
+const activeSteps = computed(() => {
+  if (state.purchasedPages && state.purchasedPages.length > 0) {
+    return buildOnboardingSteps(state.purchasedPages);
+  }
+  // Fallback para steps básicos
+  return ONBOARDING_STEPS_BASE;
+});
+
+const currentStep = computed(() => activeSteps.value[state.currentStepIndex]);
 
 const currentStepId = computed(() => currentStep.value?.id || 'identity');
 
-const totalSteps = computed(() => ONBOARDING_STEPS.length);
+const totalSteps = computed(() => activeSteps.value.length);
 
 const progressPercentage = computed(() => {
-  const totalFields = ONBOARDING_STEPS.reduce((acc, step) => {
-    return acc + step.requiredFields.length + step.optionalFields.length;
+  const totalFields = activeSteps.value.reduce((acc, step) => {
+    const requiredCount = step.requiredFields?.length || 0;
+    const optionalCount = step.optionalFields?.length || 0;
+    return acc + requiredCount + optionalCount;
   }, 0);
   
   // eslint-disable-next-line no-unused-vars
@@ -272,9 +300,14 @@ const xpToNextLevel = computed(() => {
 
 const isReviewMode = computed(() => state.mode === 'review');
 
+const canUndo = computed(() => state.historyIndex > 0);
+
+const canRedo = computed(() => state.historyIndex < state.formHistory.length - 1);
+
 const canPublish = computed(() => {
   // Verificar campos obrigatórios de todos os steps
-  for (const step of ONBOARDING_STEPS) {
+  for (const step of activeSteps.value) {
+    if (!step.requiredFields) continue;
     for (const field of step.requiredFields) {
       const value = state.formData[field];
       if (!value || (Array.isArray(value) && value.length === 0)) {
@@ -287,7 +320,8 @@ const canPublish = computed(() => {
 
 const pendingRequiredFields = computed(() => {
   const pending = [];
-  for (const step of ONBOARDING_STEPS) {
+  for (const step of activeSteps.value) {
+    if (!step.requiredFields) continue;
     for (const field of step.requiredFields) {
       const value = state.formData[field];
       if (!value || (Array.isArray(value) && value.length === 0)) {
@@ -304,9 +338,21 @@ const pendingRequiredFields = computed(() => {
 
 /**
  * Inicializa uma nova sessão de onboarding
+ * @param {string} sessionId - ID da sessão
+ * @param {object} initialData - Dados iniciais do formulário
+ * @param {string[]} purchasedPages - Array com IDs das páginas compradas
  */
-function initSession(sessionId, initialData = {}) {
+function initSession(sessionId, initialData = {}, purchasedPages = []) {
   state.sessionId = sessionId || `session_${Date.now()}`;
+  
+  // Detectar modo demo (IDs locais ou que começam com 'demo-' ou 'session_')
+  state.isDemoMode = !sessionId || sessionId.startsWith('demo-') || sessionId.startsWith('session_');
+  
+  // Resetar contador de falhas da IA
+  state.aiFailureCount = 0;
+  
+  // Definir páginas compradas (para steps dinâmicos)
+  state.purchasedPages = purchasedPages || [];
   
   // Mesclar dados iniciais
   if (initialData && typeof initialData === 'object') {
@@ -316,6 +362,10 @@ function initSession(sessionId, initialData = {}) {
       }
     });
   }
+  
+  // Inicializar histórico com estado atual
+  state.formHistory = [JSON.parse(JSON.stringify(state.formData))];
+  state.historyIndex = 0;
   
   // Tentar carregar chat salvo
   const savedChat = loadSavedChat(state.sessionId);
@@ -377,6 +427,82 @@ function loadSavedChat(sessionId) {
     console.warn('[ConversationalAI] Erro ao carregar chat:', e);
   }
   return null;
+}
+
+/**
+ * Verifica se existe uma sessão anterior não finalizada
+ * Retorna informações da sessão se encontrada
+ */
+function checkPreviousSession() {
+  try {
+    // Procurar todas as chaves de chat no localStorage
+    const keys = Object.keys(localStorage).filter(key => key.startsWith('chat_'));
+    
+    if (keys.length === 0) return null;
+    
+    // Pegar a sessão mais recente
+    let latestSession = null;
+    let latestTime = 0;
+    
+    for (const key of keys) {
+      const data = JSON.parse(localStorage.getItem(key));
+      if (data.lastUpdated > latestTime) {
+        latestTime = data.lastUpdated;
+        latestSession = data;
+      }
+    }
+    
+    // Verificar se a sessão tem menos de 7 dias
+    const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+    if (latestSession && latestSession.lastUpdated > sevenDaysAgo) {
+      return {
+        sessionId: latestSession.sessionId,
+        messageCount: latestSession.messages?.length || 0,
+        lastUpdated: latestSession.lastUpdated,
+        data: latestSession
+      };
+    }
+  } catch (e) {
+    console.warn('[ConversationalAI] Erro ao verificar sessão anterior:', e);
+  }
+  return null;
+}
+
+/**
+ * Limpa uma sessão específica
+ */
+function clearSession(sessionId) {
+  try {
+    localStorage.removeItem(`chat_${sessionId}`);
+    localStorage.removeItem(`draft_${sessionId}`);
+  } catch (e) {
+    console.warn('[ConversationalAI] Erro ao limpar sessão:', e);
+  }
+}
+
+/**
+ * Restaura uma sessão anterior
+ */
+function restoreSession(sessionData) {
+  if (!sessionData || !sessionData.data) return false;
+  
+  try {
+    state.sessionId = sessionData.sessionId;
+    state.messages = sessionData.data.messages || [];
+    
+    // Detectar modo demo
+    state.isDemoMode = !sessionData.sessionId || 
+      sessionData.sessionId.startsWith('demo-') || 
+      sessionData.sessionId.startsWith('session_');
+    
+    // Tentar carregar draft
+    loadDraft();
+    
+    return true;
+  } catch (e) {
+    console.warn('[ConversationalAI] Erro ao restaurar sessão:', e);
+    return false;
+  }
 }
 
 /**
@@ -519,10 +645,41 @@ async function sendUserMessage(content, isAudio = false) {
     }
   } catch (error) {
     console.error('[ConversationalAI] Erro:', error);
-    addMessage({
-      type: 'assistant',
-      content: 'Eita, algo deu errado aqui. Tenta de novo? 🙈'
-    });
+    
+    // Incrementa contador de falhas
+    const exceededLimit = incrementAIFailure();
+    
+    if (exceededLimit) {
+      // Excedeu limite - oferece alternativas
+      addMessage({
+        type: 'assistant',
+        content: `Desculpe, estou com dificuldades técnicas no momento. 😓
+
+Você tem duas opções:
+1. **Tentar mais tarde** - o problema pode ser temporário
+2. **Usar o formulário tradicional** - você pode preencher manualmente sem depender de mim
+
+Seus dados estão salvos e não serão perdidos! 💾`,
+        actions: [
+          {
+            id: 'retry_later',
+            label: '🔄 Tentar de novo',
+            type: 'retry'
+          },
+          {
+            id: 'go_to_form',
+            label: '📝 Ir para o formulário',
+            type: 'go_to_form'
+          }
+        ]
+      });
+    } else {
+      // Ainda tem tentativas
+      addMessage({
+        type: 'assistant',
+        content: `Ops, tive um probleminha. Pode tentar de novo? 🙈`
+      });
+    }
   } finally {
     state.isTyping = false;
     state.isProcessing = false;
@@ -587,6 +744,94 @@ async function updateFieldsWithAnimation(fields) {
   setTimeout(() => {
     state.recentlyFilledFields = [];
   }, 2000);
+  
+  // Valida formatos e adiciona avisos se necessário
+  validateFormats(fields);
+}
+
+/**
+ * Valida formatos de campos específicos e adiciona aviso gentil
+ * NÃO bloqueia, apenas avisa
+ */
+function validateFormats(fields) {
+  const warnings = [];
+  
+  // Padrões de validação
+  const patterns = {
+    // Telefone brasileiro (aceita vários formatos)
+    phone: /^[\s()]*-(\d{2})[\s)-]*(\d{4,5})[\s-]*(\d{4})[\s]*$/,
+    // Email simples
+    email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    // CPF (aceita com ou sem pontos/traços)
+    cpf: /^\d{3}\.?\d{3}\.?\d{3}[-.]?\d{2}$/,
+    // CNPJ
+    cnpj: /^\d{2}\.?\d{3}\.?\d{3}\/?\d{4}[-.]?\d{2}$/,
+    // CEP
+    cep: /^\d{5}[-.]?\d{3}$/
+  };
+  
+  // Formatos esperados para mensagem amigável
+  const expectedFormats = {
+    whatsapp: '(11) 99999-9999',
+    phone: '(11) 99999-9999 ou (11) 3333-3333',
+    email: 'exemplo@email.com',
+    cpf: '123.456.789-00',
+    cnpj: '12.345.678/0001-00',
+    cep: '01234-567'
+  };
+  
+  // Mapeamento de campos para tipo de validação
+  const fieldValidations = {
+    whatsapp: 'phone',
+    leadEmail: 'email',
+    addressCep: 'cep'
+  };
+  
+  Object.entries(fields).forEach(([fieldId, value]) => {
+    if (!value || typeof value !== 'string') return;
+    
+    const validationType = fieldValidations[fieldId];
+    if (!validationType) return;
+    
+    const pattern = patterns[validationType];
+    const cleanValue = value.trim();
+    
+    // Se não passar na validação, adiciona aviso
+    if (cleanValue && !pattern.test(cleanValue)) {
+      warnings.push({
+        field: fieldId,
+        value: cleanValue,
+        expectedFormat: expectedFormats[validationType] || expectedFormats[fieldId]
+      });
+    }
+  });
+  
+  // Se tiver avisos, adiciona mensagem informativa (não bloqueante)
+  if (warnings.length > 0) {
+    const warningMessages = warnings.map(w => 
+      `• **${getFieldLabel(w.field)}**: formato esperado: \`${w.expectedFormat}\``
+    ).join('\n');
+    
+    addMessage({
+      type: 'assistant',
+      content: `💡 **Dica de formatação:**\n\n${warningMessages}\n\nMas não se preocupe, salvei como você digitou! Você pode corrigir depois se quiser.`,
+      isWarning: true
+    });
+  }
+}
+
+/**
+ * Retorna label amigável para o campo
+ */
+function getFieldLabel(fieldId) {
+  const labels = {
+    whatsapp: 'WhatsApp',
+    leadEmail: 'Email',
+    addressCep: 'CEP',
+    cpf: 'CPF',
+    cnpj: 'CNPJ'
+  };
+  return labels[fieldId] || fieldId;
 }
 
 /**
@@ -594,12 +839,59 @@ async function updateFieldsWithAnimation(fields) {
  */
 function updateField(fieldId, value) {
   if (fieldId in state.formData) {
+    // Salvar estado anterior no histórico antes de alterar
+    pushToHistory();
+    
     state.formData[fieldId] = value;
     
     // Limpa erro de validação se existir
     if (state.validationErrors[fieldId]) {
       delete state.validationErrors[fieldId];
     }
+  }
+}
+
+/**
+ * Salva estado atual no histórico (para undo)
+ */
+function pushToHistory() {
+  // Remove itens após o índice atual (se fizemos undo e agora estamos editando)
+  if (state.historyIndex < state.formHistory.length - 1) {
+    state.formHistory = state.formHistory.slice(0, state.historyIndex + 1);
+  }
+  
+  // Adiciona estado atual
+  state.formHistory.push(JSON.parse(JSON.stringify(state.formData)));
+  state.historyIndex = state.formHistory.length - 1;
+  
+  // Limita tamanho do histórico
+  if (state.formHistory.length > state.maxHistorySize) {
+    state.formHistory.shift();
+    state.historyIndex--;
+  }
+}
+
+/**
+ * Desfaz última alteração
+ */
+function undo() {
+  if (state.historyIndex > 0) {
+    state.historyIndex--;
+    const previousState = state.formHistory[state.historyIndex];
+    Object.assign(state.formData, JSON.parse(JSON.stringify(previousState)));
+    console.log('[Undo] Voltou para estado', state.historyIndex);
+  }
+}
+
+/**
+ * Refaz alteração desfeita
+ */
+function redo() {
+  if (state.historyIndex < state.formHistory.length - 1) {
+    state.historyIndex++;
+    const nextState = state.formHistory[state.historyIndex];
+    Object.assign(state.formData, JSON.parse(JSON.stringify(nextState)));
+    console.log('[Redo] Avançou para estado', state.historyIndex);
   }
 }
 
@@ -650,7 +942,7 @@ function dismissAchievementPopup() {
  */
 function checkStepCompletion() {
   const step = currentStep.value;
-  if (!step) return;
+  if (!step || !step.requiredFields) return;
   
   // Verifica se todos os campos obrigatórios estão preenchidos
   const allRequiredFilled = step.requiredFields.every(field => {
@@ -667,7 +959,7 @@ function checkStepCompletion() {
  * Avança para o próximo step
  */
 function nextStep() {
-  if (state.currentStepIndex < ONBOARDING_STEPS.length - 1) {
+  if (state.currentStepIndex < activeSteps.value.length - 1) {
     state.currentStepIndex++;
     
     // Mensagem de transição do assistente
@@ -695,7 +987,7 @@ function previousStep() {
  * Vai para um step específico
  */
 function goToStep(stepIndex) {
-  if (stepIndex >= 0 && stepIndex < ONBOARDING_STEPS.length) {
+  if (stepIndex >= 0 && stepIndex < activeSteps.value.length) {
     state.currentStepIndex = stepIndex;
   }
 }
@@ -724,12 +1016,21 @@ function enterReviewMode() {
   // Valida todos os campos
   validateAllFields();
   
-  // Mensagem final do assistente
-  const verdict = generateVerdict();
+  // Gera resumo conversacional dos dados
+  const summary = generateConversationalSummary();
   addMessage({
     type: 'assistant',
-    content: verdict
+    content: summary
   });
+  
+  // Após o resumo, mostra o veredito com potencial
+  setTimeout(() => {
+    const verdict = generateVerdict();
+    addMessage({
+      type: 'assistant',
+      content: verdict
+    });
+  }, 500);
 }
 
 /**
@@ -766,6 +1067,101 @@ Tá bom, mas pode ficar ainda melhor! Veja os cards abaixo e adicione mais infor
 }
 
 /**
+ * Gera um resumo conversacional de todos os dados preenchidos
+ * Sem usar IA - apenas formata os dados de forma amigável
+ */
+function generateConversationalSummary() {
+  const data = state.formData;
+  let summary = `📋 **Vamos revisar tudo que você me contou?**\n\n`;
+  
+  // === IDENTIDADE DA MARCA ===
+  if (data.companyName || data.businessType || data.frase) {
+    summary += `**🏢 Sobre sua empresa:**\n`;
+    if (data.companyName) summary += `• Nome: **${data.companyName}**\n`;
+    if (data.businessType) summary += `• Tipo de negócio: ${data.businessType}\n`;
+    if (data.frase) summary += `• Slogan: "${data.frase}"\n`;
+    if (data.voiceTone) summary += `• Tom de voz: ${data.voiceTone}\n`;
+    summary += `\n`;
+  }
+  
+  // === CONTATO ===
+  if (data.whatsapp || data.leadEmail || (data.socialNetworks && data.socialNetworks.length > 0)) {
+    summary += `**📞 Contato:**\n`;
+    if (data.whatsapp) summary += `• WhatsApp: ${data.whatsapp}\n`;
+    if (data.leadEmail) summary += `• E-mail para leads: ${data.leadEmail}\n`;
+    if (data.socialNetworks && data.socialNetworks.length > 0) {
+      const networks = data.socialNetworks.filter(n => n.url).map(n => n.type).join(', ');
+      if (networks) summary += `• Redes sociais: ${networks}\n`;
+    }
+    if (data.hasPhysicalLocation && data.addressCity) {
+      summary += `• Endereço: ${data.addressCity}${data.addressState ? ', ' + data.addressState : ''}\n`;
+    }
+    if (data.businessHours) summary += `• Horário: ${data.businessHours}\n`;
+    summary += `\n`;
+  }
+  
+  // === SOBRE A EMPRESA ===
+  if (data.companyBio || data.foundingYear || (data.companyHighlights && data.companyHighlights.length > 0)) {
+    summary += `**📖 História:**\n`;
+    if (data.companyBio) {
+      const bioPreview = data.companyBio.length > 150 
+        ? data.companyBio.substring(0, 150) + '...' 
+        : data.companyBio;
+      summary += `• Bio: "${bioPreview}"\n`;
+    }
+    if (data.foundingYear) summary += `• Fundação: ${data.foundingYear}\n`;
+    if (data.companyHighlights && data.companyHighlights.length > 0) {
+      summary += `• Diferenciais: ${data.companyHighlights.join(', ')}\n`;
+    }
+    summary += `\n`;
+  }
+  
+  // === SERVIÇOS ===
+  if (data.services && data.services.length > 0) {
+    summary += `**⚙️ Serviços:**\n`;
+    const serviceNames = data.services.map(s => s.title || s.name).filter(Boolean).slice(0, 5);
+    if (serviceNames.length > 0) {
+      summary += `• ${serviceNames.join(', ')}`;
+      if (data.services.length > 5) summary += ` (+${data.services.length - 5} mais)`;
+      summary += `\n`;
+    }
+    if (data.hasGuarantee && data.guaranteeDetails) {
+      summary += `• Garantia: ${data.guaranteeDetails}\n`;
+    }
+    summary += `\n`;
+  }
+  
+  // === FAQ ===
+  if (data.faqItems && data.faqItems.length > 0) {
+    summary += `**❓ FAQ:**\n`;
+    summary += `• ${data.faqItems.length} perguntas cadastradas\n`;
+    summary += `\n`;
+  }
+  
+  // === FINALIZAÇÃO ===
+  if (data.additionalNotes || (data.inspirationUrls && data.inspirationUrls.length > 0)) {
+    summary += `**🚀 Observações finais:**\n`;
+    if (data.additionalNotes) {
+      const notesPreview = data.additionalNotes.length > 100 
+        ? data.additionalNotes.substring(0, 100) + '...' 
+        : data.additionalNotes;
+      summary += `• Notas: "${notesPreview}"\n`;
+    }
+    if (data.inspirationUrls && data.inspirationUrls.length > 0) {
+      summary += `• Sites de referência: ${data.inspirationUrls.length}\n`;
+    }
+    summary += `\n`;
+  }
+  
+  // === RODAPÉ ===
+  summary += `---\n`;
+  summary += `✅ **Tudo certo?** Se quiser mudar algo, é só clicar no campo ao lado ou me falar aqui no chat.\n`;
+  summary += `🚀 Quando estiver pronto, clique em **"Finalizar"** para enviar!`;
+  
+  return summary;
+}
+
+/**
  * Valida todos os campos
  */
 function validateAllFields() {
@@ -781,7 +1177,8 @@ function validateAllFields() {
   }
   
   // Campos obrigatórios vazios
-  for (const step of ONBOARDING_STEPS) {
+  for (const step of activeSteps.value) {
+    if (!step.requiredFields) continue;
     for (const field of step.requiredFields) {
       const value = state.formData[field];
       if (!value || (Array.isArray(value) && value.length === 0)) {
@@ -789,6 +1186,15 @@ function validateAllFields() {
       }
     }
   }
+}
+
+/**
+ * Define as páginas compradas pelo cliente
+ * Isso afeta quais steps são mostrados no onboarding
+ * @param {string[]} pages - Array com IDs das páginas (ex: ['sobre_nos', 'servicos', 'faq'])
+ */
+function setPurchasedPages(pages) {
+  state.purchasedPages = pages || [];
 }
 
 /**
@@ -833,24 +1239,86 @@ async function suggestColors() {
 
 /**
  * Salva rascunho automaticamente
+ * Em modo demo: salva no localStorage
+ * Com token real: salva no backend
  */
 async function saveDraft() {
+  if (!state.sessionId) return;
+  
+  const draftData = {
+    session_id: state.sessionId,
+    current_step: state.currentStepIndex,
+    data: state.formData,
+    is_draft: true,
+    timestamp: Date.now()
+  };
+  
+  // Modo demo: salvar no localStorage
+  if (state.isDemoMode) {
+    try {
+      localStorage.setItem(`draft_${state.sessionId}`, JSON.stringify(draftData));
+      console.log('[Autosave] Salvo localmente (modo demo)');
+    } catch (e) {
+      console.warn('[Autosave] Erro ao salvar localmente:', e);
+    }
+    return;
+  }
+  
+  // Token real: salvar no backend
   try {
-    await fetch('/api/onboarding/save-draft.php', {
+    const response = await fetch('/api/onboarding/save-draft.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        session_id: state.sessionId,
-        current_step: state.currentStepIndex,
-        data: state.formData,
-        xp: state.xp,
-        achievements: state.unlockedAchievements,
-        is_draft: true
-      })
+      body: JSON.stringify(draftData)
     });
+    
+    if (response.ok) {
+      console.log('[Autosave] Salvo no servidor');
+    } else {
+      console.warn('[Autosave] Servidor retornou erro, salvando localmente');
+      // Fallback para localStorage
+      localStorage.setItem(`draft_${state.sessionId}`, JSON.stringify(draftData));
+    }
   } catch (error) {
-    console.error('[ConversationalAI] Erro ao salvar rascunho:', error);
+    console.error('[Autosave] Erro ao salvar no servidor:', error);
+    // Fallback para localStorage
+    localStorage.setItem(`draft_${state.sessionId}`, JSON.stringify(draftData));
   }
+}
+
+/**
+ * Carrega rascunho salvo
+ */
+function loadDraft(sessionId) {
+  // Tentar localStorage primeiro
+  try {
+    const saved = localStorage.getItem(`draft_${sessionId}`);
+    if (saved) {
+      const data = JSON.parse(saved);
+      if (data && data.data) {
+        return data.data;
+      }
+    }
+  } catch (e) {
+    console.warn('[LoadDraft] Erro ao carregar do localStorage:', e);
+  }
+  return null;
+}
+
+/**
+ * Incrementa contador de falhas da IA
+ * Retorna true se excedeu o limite
+ */
+function incrementAIFailure() {
+  state.aiFailureCount++;
+  return state.aiFailureCount >= state.maxAiFailures;
+}
+
+/**
+ * Reseta contador de falhas da IA
+ */
+function resetAIFailures() {
+  state.aiFailureCount = 0;
 }
 
 // ============================================
@@ -896,6 +1364,8 @@ export function useConversationalAI() {
     isReviewMode,
     canPublish,
     pendingRequiredFields,
+    canUndo,
+    canRedo,
     
     // Actions
     initSession,
@@ -913,9 +1383,19 @@ export function useConversationalAI() {
     validateAllFields,
     suggestColors,
     saveDraft,
+    loadDraft,
+    undo,
+    redo,
+    incrementAIFailure,
+    resetAIFailures,
+    setPurchasedPages,
+    generateConversationalSummary,
+    checkPreviousSession,
+    clearSession,
+    restoreSession,
     
     // Constants
-    ONBOARDING_STEPS,
+    ONBOARDING_STEPS: activeSteps,
     ACHIEVEMENTS,
     SITE_LEVELS
   };

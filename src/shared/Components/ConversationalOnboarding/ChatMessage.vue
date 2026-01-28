@@ -47,10 +47,24 @@
           v-for="(suggestion, idx) in message.suggestions" 
           :key="idx"
           class="suggestion-item"
+          :class="{ 'is-color': isColorField(suggestion.field) }"
         >
           <div class="suggestion-content">
-            <span class="suggestion-field">{{ formatFieldKey(suggestion.field) }}:</span>
-            <span class="suggestion-value">{{ suggestion.value }}</span>
+            <!-- Preview de cor se for campo de cor -->
+            <div v-if="isColorField(suggestion.field)" class="color-preview-box">
+              <div 
+                class="color-swatch" 
+                :style="{ backgroundColor: suggestion.value }"
+              ></div>
+            </div>
+            
+            <div class="suggestion-text">
+              <span class="suggestion-field">{{ formatFieldKey(suggestion.field) }}:</span>
+              <span class="suggestion-value">{{ suggestion.value }}</span>
+              <span v-if="isColorField(suggestion.field)" class="color-name">
+                {{ getColorName(suggestion.value) }}
+              </span>
+            </div>
           </div>
           <div class="suggestion-actions">
             <button 
@@ -137,17 +151,20 @@ export default {
     const fieldKeyMap = {
       companyName: 'Nome',
       businessType: 'Ramo',
-      tagline: 'Frase',
+      frase: 'Frase de Destaque',
       primaryColor: 'Cor Principal',
       secondaryColor: 'Cor Secundária',
       voiceTone: 'Tom de Voz',
       whatsapp: 'WhatsApp',
       instagram: 'Instagram',
       facebook: 'Facebook',
+      linkedin: 'LinkedIn',
       foundingYear: 'Ano de Fundação',
       companyBio: 'História',
       mission: 'Missão',
-      vision: 'Visão'
+      vision: 'Visão',
+      services: 'Serviços',
+      faqItems: 'Perguntas Frequentes'
     };
     
     function formatFieldKey(key) {
@@ -161,6 +178,37 @@ export default {
       return String(value);
     }
     
+    function isColorField(field) {
+      return field === 'primaryColor' || field === 'secondaryColor';
+    }
+    
+    function getColorName(hexColor) {
+      const colorNames = {
+        '#2563eb': 'Azul',
+        '#1e40af': 'Azul Escuro',
+        '#3b82f6': 'Azul Claro',
+        '#dc2626': 'Vermelho',
+        '#16a34a': 'Verde',
+        '#15803d': 'Verde Escuro',
+        '#28A745': 'Verde Saúde',
+        '#17A2B8': 'Azul Claro',
+        '#0066CC': 'Azul',
+        '#6F42C1': 'Roxo',
+        '#FF6B35': 'Laranja',
+        '#FFC107': 'Amarelo',
+        '#E83E8C': 'Rosa',
+        '#212529': 'Preto',
+        '#eab308': 'Amarelo',
+        '#ea580c': 'Laranja',
+        '#7c3aed': 'Roxo',
+        '#db2777': 'Rosa',
+        '#000000': 'Preto',
+        '#ffffff': 'Branco',
+        '#6b7280': 'Cinza'
+      };
+      return colorNames[hexColor] || hexColor;
+    }
+    
     return {
       messageType,
       isAssistant,
@@ -169,7 +217,9 @@ export default {
       hasSuggestions,
       formattedTime,
       formatFieldKey,
-      formatFieldValue
+      formatFieldValue,
+      isColorField,
+      getColorName
     };
   }
 };
@@ -335,15 +385,59 @@ export default {
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
-    padding: 0.5rem 0;
+    padding: 0.75rem;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 0.75rem;
+    transition: all 0.2s;
+    
+    &.is-color {
+      background: rgba(99, 102, 241, 0.15);
+    }
+    
+    &:hover {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: rgba(99, 102, 241, 0.5);
+      transform: translateX(4px);
+    }
     
     &:not(:last-child) {
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 0.5rem;
     }
+  }
+  
+  .color-preview-box {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .color-swatch {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.5rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+  }
+  
+  .suggestion-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .color-name {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.6);
+    font-style: italic;
   }
   
   .suggestion-content {
     flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     
     .suggestion-field {
       font-size: 0.75rem;

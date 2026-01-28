@@ -46,7 +46,7 @@ if ($now > $_SESSION[$rateKey]['reset']) {
 
 $_SESSION[$rateKey]['count']++;
 
-if ($_SESSION[$rateKey]['count'] > 30) { // 30 mensagens por minuto
+if ($_SESSION[$rateKey]['count'] > 20) { // 20 mensagens por minuto
     http_response_code(429);
     echo json_encode([
         'success' => false,
@@ -85,9 +85,9 @@ if (empty(trim($userMessage))) {
     exit;
 }
 
-// Sanitizar
+// Sanitizar e limitar a 1000 caracteres (máximo para textos elaborados)
 $userMessage = strip_tags($userMessage);
-$userMessage = mb_substr($userMessage, 0, 2000);
+$userMessage = mb_substr($userMessage, 0, 1000);
 
 // =============================================
 // EXTRAÇÃO LOCAL (sem IA) para casos simples
@@ -161,95 +161,81 @@ function processConversation(
  * Monta o System Prompt baseado no step atual
  */
 function buildSystemPrompt(string $step, array $formData, string $voiceTone): string {
+    $stepFields = getStepFields($step);
+    
+    // Filtrar apenas campos do step atual (economia de tokens)
     $filledFields = [];
     $missingFields = [];
     
-    foreach ($formData as $key => $value) {
-        if (!empty($value) && $value !== false) {
-            if (is_array($value) && count($value) === 0) continue;
-            $filledFields[$key] = $value;
+    foreach ($stepFields as $field) {
+        if (isset($formData[$field]) && !empty($formData[$field])) {
+            if (is_array($formData[$field]) && count($formData[$field]) === 0) {
+                $missingFields[] = $field;
+                continue;
+            }
+            $filledFields[$field] = $formData[$field];
+        } else {
+            $missingFields[] = $field;
         }
     }
     
     $filledFieldsJson = json_encode($filledFields, JSON_UNESCAPED_UNICODE);
-    
-    $stepFields = getStepFields($step);
     $stepFieldsList = implode(', ', $stepFields);
-    
-    // Calcular campos que ainda faltam
-    foreach ($stepFields as $field) {
-        if (!isset($filledFields[$field]) || empty($filledFields[$field])) {
-            $missingFields[] = $field;
-        }
-    }
     $missingFieldsList = implode(', ', $missingFields);
     
     $basePrompt = <<<PROMPT
-Você é o **Jules**, um assistente de criação de sites amigável e profissional da Unli.
+Voce e **Jules**, assistente de criacao de sites da Unli. Seja simpatico, conciso e profissional. Use emojis ocasionalmente.
 
-PERSONALIDADE:
-- Simpático, descontraído mas profissional
-- Use emojis ocasionalmente (sem exagero)
-- Fale em português brasileiro natural
-- Seja conciso mas informativo
-- Demonstre entusiasmo genuíno pelo projeto do cliente
-
-CONTEXTO ATUAL:
+CONTEXTO:
 - Step: {$step}
-- Tom de voz do cliente: {$voiceTone}
-- Campos já preenchidos: {$filledFieldsJson}
-- CAMPOS QUE FALTAM: {$missingFieldsList}
+- Tom: {$voiceTone}
+- Preenchidos: {$filledFieldsJson}
+- FALTAM: {$missingFieldsList}
+- Campos do step: {$stepFieldsList}
 
-CAMPOS DESTE STEP: {$stepFieldsList}
+REGRA FUNDAMENTAL (NUNCA QUEBRE):
+*** VOCE NUNCA PODE PARAR SEM FAZER UMA PERGUNTA! ***
+- Toda resposta DEVE terminar com uma pergunta clara sobre o proximo campo
+- NUNCA termine com "O que mais?" ou "Pode me contar mais?"
+- SEMPRE seja ESPECIFICO sobre qual informacao voce quer
+- Se nao souber o que perguntar, olhe os campos que FALTAM e pergunte o proximo
+- A conversa so para quando step_complete = true
 
-SUA TAREFA PRINCIPAL:
-1. EXTRAIR informações da mensagem do usuário e mapear para os campos
-2. CONFIRMAR os dados extraídos de forma amigável
-3. SUGERIR melhorias quando aplicável (ex: frases mais impactantes)
-4. **SEMPRE perguntar sobre o PRÓXIMO CAMPO que falta** - não deixe o fluxo morrer!
-5. Se o usuário confirmar algo, PERGUNTE SOBRE O PRÓXIMO CAMPO PENDENTE
+TAREFA:
+1. Extrair dados e mapear para campos
+2. Confirmar de forma amigavel EM UMA MENSAGEM
+3. NA MESMA MENSAGEM, perguntar o PROXIMO campo especifico
+4. Sugerir melhorias quando aplicavel
+5. Guiar o usuario passo a passo - ele nao sabe o que vem depois
 
-REGRA CRÍTICA: 
-- NUNCA responda apenas "O que mais posso te ajudar?" sem direção
-- SEMPRE guie o cliente para o próximo passo
-- Se o step estiver completo, diga que está indo para o próximo step
-- Seja proativo: sugira o próximo passo sempre
+EXTRACAO:
+- businessType: alimentacao, saude, beleza, educacao, tecnologia, construcao, moda, servicos, juridico, eventos, turismo, imoveis, automotivo, pets, comercio, industria, outro
+- voiceTone: profissional, amigavel, descontraido, luxuoso, tecnico, inspirador
+- Telefones: so numeros
+- Cores: nomes ou hex (#0066CC)
+- Anos: 1900-2026
 
-REGRAS DE EXTRAÇÃO:
-- Para "businessType", mapeie para: alimentacao, saude, beleza, educacao, tecnologia, construcao, moda, servicos, juridico, eventos, turismo, imoveis, automotivo, pets, comercio, industria, outro
-- Para "voiceTone", mapeie para: profissional, amigavel, descontraido, luxuoso, tecnico, inspirador
-- Para telefones, extraia apenas números (aceite formatos brasileiros)
-- Para cores, aceite nomes ("azul", "vermelho") ou hexadecimais (#0066CC)
-- Para anos, extraia números de 4 dígitos entre 1900 e 2026
-
-FORMATO DE RESPOSTA (JSON OBRIGATÓRIO):
+FORMATO DE RESPOSTA (JSON OBRIGATORIO):
 {
   "success": true,
-  "assistant_message": "Sua mensagem amigável aqui. Use **negrito** para destacar campos extraídos.",
+  "assistant_message": "Entendi! [confirmacao curta] **campo extraido**. Agora, [pergunta especifica sobre proximo campo]?",
   "extracted_fields": {
-    "campo1": "valor1",
-    "campo2": "valor2"
+    "campo1": "valor1"
   },
-  "suggestions": [
-    {
-      "field": "frase",
-      "value": "Sugestão de frase melhorada",
-      "reason": "Mais impactante e profissional"
-    }
-  ],
+  "suggestions": [],
   "next_question": {
-    "field": "primaryColor",
-    "question": "Pergunta sobre o próximo campo"
+    "field": "proximoCampo",
+    "question": "Pergunta especifica"
   },
   "achievements": [],
   "step_complete": false
 }
 
 IMPORTANTE:
-- Se não extrair nenhum campo, extracted_fields deve ser {}
-- Se não tiver sugestões, suggestions deve ser []
-- Se o step estiver completo, step_complete = true
-- Não invente dados que o usuário não forneceu
+- assistant_message DEVE ter confirmacao + pergunta na mesma mensagem
+- Se nao extrair campo, extracted_fields = {}
+- Nao invente dados que o usuario nao forneceu
+- next_question SEMPRE deve estar preenchido (exceto se step_complete = true)
 PROMPT;
 
     // Adicionar instruções específicas por step
@@ -275,96 +261,45 @@ function getStepFields(string $step): array {
 }
 
 /**
- * Instruções específicas por step
+ * Instruções específicas por step (versão compacta)
  */
 function getStepInstructions(string $step): string {
+    $identityInstructions = <<<'EOT'
+Step: Identidade. 
+
+SEQUENCIA OBRIGATORIA (depois de cada resposta do usuario, va para o proximo):
+1. Se nao tem companyName: Pergunte nome + ramo juntos
+2. Se tem companyName mas nao tem frase: Pergunte sobre frase/slogan
+3. Se tem frase mas nao tem cores: Pergunte cores (sugira baseado no ramo)
+4. Se tem cores mas nao perguntou sobre logo: Ofereca opcao de enviar logo
+5. Se tudo preenchido: Avance para proximo step
+
+EXEMPLO DE FLUXO:
+User: Unli Games, desenvolvimento de games
+You: Entendi! **Unli Games** e o ramo e **desenvolvimento de games**. Agora me conta, qual e a frase ou slogan que representa a empresa?
+
+User: A revolucao do mundo dos games no Brasil
+You: Que frase impactante! Vou usar **Unli Games: A revolucao do mundo dos games no Brasil**. E as cores? Que tal #0066CC (azul tech) e #6F42C1 (roxo vibrante) para transmitir inovacao?
+
+IMPORTANTE: SEMPRE pergunte o PROXIMO campo na mesma mensagem da confirmacao!
+
+Extraia: companyName, businessType, frase, primaryColor, secondaryColor, voiceTone, logo, hasNoLogo.
+Cores sugeridas: Saude:#28A745+#17A2B8, Tech:#0066CC+#6F42C1, Alimentos:#FF6B35+#FFC107, Beleza:#E83E8C+#6F42C1, Juridico:#212529+#0066CC.
+Conquista: companyName+businessType+frase = identity_unlocked.
+EOT;
+
     $instructions = [
-        'identity' => <<<STEP
-STEP: IDENTIDADE DA MARCA
-
-Foco: Coletar nome da empresa, ramo, frase de destaque, cores e tom de voz.
-
-COMPORTAMENTOS ESPECIAIS:
-1. Se o usuário mencionar o ramo, SUGIRA cores que combinem:
-   - Saúde: #28A745 (verde) + #17A2B8 (azul claro)
-   - Tecnologia: #0066CC (azul) + #6F42C1 (roxo)
-   - Alimentação: #FF6B35 (laranja) + #FFC107 (amarelo)
-   - Beleza: #E83E8C (rosa) + #6F42C1 (roxo)
-   - Jurídico: #212529 (preto) + #0066CC (azul)
-
-2. Se o usuário der uma frase simples, sugira uma versão mais impactante.
-
-3. Se o usuário disser "não tenho logo", defina hasNoLogo = true.
-
-CONQUISTA: Quando preencher companyName + businessType + frase, adicione "identity_unlocked" em achievements.
-STEP,
-
-        'contact' => <<<STEP
-STEP: CONTATO E LOCALIZAÇÃO
-
-Foco: WhatsApp principal, redes sociais, endereço (se aplicável).
-
-COMPORTAMENTOS:
-1. Extraia números de telefone brasileiros (aceite com ou sem formatação)
-2. Para redes sociais, aceite @usuario ou URLs completas
-3. Se o usuário mencionar "não tenho loja física", defina hasPhysicalLocation = false
-
-CONQUISTA: Quando preencher whatsapp + 1 rede social, adicione "connection_established".
-STEP,
-
-        'about' => <<<STEP
-STEP: HISTÓRIA DA EMPRESA
-
-Foco: Biografia, ano de fundação, diferenciais, missão/visão/valores.
-
-COMPORTAMENTOS ESPECIAIS:
-1. Se o usuário contar a história de forma desorganizada, REFORMULE em um texto profissional para companyBio
-2. Extraia o ano de fundação se mencionado
-3. Identifique diferenciais mencionados e sugira como companyHighlights
-4. Se mencionar missão/visão/valores, extraia e sugira ativar showMissionVision = true
-
-CONQUISTA: Quando tiver companyBio preenchido, adicione "story_mastered".
-STEP,
-
-        'services' => <<<STEP
-STEP: SERVIÇOS E SOLUÇÕES
-
-Foco: Lista de serviços com nome e descrição.
-
-COMPORTAMENTOS:
-1. Se o usuário listar serviços de forma simples, estruture em array:
-   services: [{ name: "Nome", shortDescription: "Descrição gerada" }]
-2. Crie descrições profissionais e persuasivas para cada serviço
-3. Pergunte sobre preços e garantia
-
-CONQUISTA: Quando tiver 3+ serviços, adicione "services_catalog".
-STEP,
-
-        'faq' => <<<STEP
-STEP: PERGUNTAS FREQUENTES
-
-Foco: Perguntas que os clientes fazem frequentemente.
-
-COMPORTAMENTOS:
-1. Se o usuário descrever o nicho, SUGIRA 5-7 perguntas que quebram objeções de venda
-2. Estruture como: faqItems: [{ question: "...", answer: "..." }]
-3. As respostas devem ser profissionais e persuasivas
-
-CONQUISTA: Quando tiver 5+ FAQs, adicione "faq_strategic".
-STEP,
-
-        'finalization' => <<<STEP
-STEP: FINALIZAÇÃO
-
-Foco: Observações extras, urgência, referências.
-
-COMPORTAMENTOS:
-1. Pergunte sobre urgência: urgent (até 3 dias), normal (até 7 dias), relaxed
-2. Aceite URLs de sites de inspiração
-3. Agradeça e parabenize pelo progresso
-
-Quando este step estiver completo, defina step_complete = true.
-STEP
+        'identity' => $identityInstructions,
+        
+        'contact' => "Step: Contato. Extraia: whatsapp, redes sociais, endereco. Aceite @usuario ou URLs. Nao tenho loja fisica = hasPhysicalLocation:false. Se mencionar horario de atendimento, extraia para businessHours. Se der detalhes sobre localizacao (bairro, regiao), use para addressNeighborhood/addressCity mesmo sem CEP completo. Conquista: whatsapp+1 rede = connection_established.",
+        
+        'about' => "Step: Historia. Reformule textos desorganizados em companyBio profissional. Extraia foundingYear (anos). Identifique diferenciais para companyHighlights. Missao/visao/valores = showMissionVision:true. Se mencionar SERVICOS/PRODUTOS na historia, pergunte se quer anotar para detalhar depois. Se falar de CLIENTES/CASES, sugira adicionar como depoimentos futuros. Conquista: companyBio = story_mastered.",
+        
+        'services' => "Step: Servicos. Estruture: services:[{name,shortDescription}]. Crie descricoes profissionais e persuasivas. Pergunte sobre garantia. Se mencionar DUVIDAS COMUNS dos clientes sobre os servicos, sugira adicionar ao FAQ. Se der PRECOS, extraia para pricing info. Conquista: 3+ servicos = services_catalog.",
+        
+        'faq' => "Step: FAQ. Sugira 5-7 perguntas anti-objecao baseadas no ramo. Estruture: faqItems:[{question,answer}]. Respostas persuasivas (max 1000 chars). Se a resposta for muito tecnica, sugira uma versao mais acessivel. Se mencionar POLITICAS (devolucao, garantia, prazo), extraia para campos especificos. Conquista: 5+ FAQs = faq_strategic.",
+        
+        'finalization' => "Step: Final. Urgencia: urgent/normal/relaxed. Aceite URLs inspiracao. Quando completo: step_complete=true."
     ];
     
     return $instructions[$step] ?? '';
@@ -417,7 +352,7 @@ function callGeminiAPI(
         ],
         'generationConfig' => [
             'temperature' => 0.7,
-            'maxOutputTokens' => 1024,
+            'maxOutputTokens' => 600,
             'responseMimeType' => 'application/json'
         ],
         'safetySettings' => [
@@ -603,12 +538,20 @@ function tryLocalExtraction(string $step, string $message, array $formData): ?ar
             ];
         }
         
-        // Não tem endereço físico
-        if (preg_match('/(não tenho|nao tenho|sem endereço|só online|trabalho de casa|home office|remoto)/i', $messageLower)) {
+    }
+    
+    // =============================================
+    // STEP ABOUT - Anos específicos (MUITO óbvio)
+    // =============================================
+    if ($step === 'about') {
+        // Ano de fundação - apenas quando é SÓ o ano
+        if (preg_match('/^\s*(19[5-9]\d|20[0-2]\d)\s*$/', $message, $matches)) {
+            $year = (int)$matches[1];
+            $yearsOld = 2026 - $year;
             return [
                 'success' => true,
-                'assistant_message' => "Entendido! Trabalho online, sem endereço físico. 🏠💻\n\nVamos para o próximo passo?",
-                'extracted_fields' => ['hasPhysicalLocation' => false],
+                'assistant_message' => "Legal! Empresa fundada em **{$year}** ({$yearsOld} anos de experiência). 🎂\n\nConte um pouco da história da empresa?",
+                'extracted_fields' => ['foundingYear' => $year],
                 'suggestions' => [],
                 'achievements' => [],
                 'skip_ai' => true
