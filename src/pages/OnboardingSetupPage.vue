@@ -14,27 +14,29 @@
       <button @click="retryValidation" class="retry-btn">Tentar Novamente</button>
     </div>
     
-    <!-- Wizard -->
-    <ConversationalOnboardingWizard
-      v-if="!showTraditionalForm"
-      :purchased-pages="purchasedPages"
-      :initial-data="initialData"
-      :session-id="sessionId"
-      @complete="handleConversationalComplete"
-      @go-to-form="showTraditionalForm = true"
-      @error="handleError"
-    />
-    
-    <!-- Traditional Form (after conversation) -->
-    <DynamicOnboardingWizard
-      v-else
-      :purchased-pages="purchasedPages"
-      :initial-data="conversationalData"
-      :session-id="sessionId"
-      @complete="handleComplete"
-      @back-to-conversation="showTraditionalForm = false"
-      @error="handleError"
-    />
+    <!-- Wizard (só renderiza após carregar dados) -->
+    <template v-else>
+      <ConversationalOnboardingWizard
+        v-if="!showTraditionalForm"
+        :purchased-pages="purchasedPages"
+        :initial-data="initialData"
+        :session-id="sessionId"
+        @complete="handleConversationalComplete"
+        @go-to-form="showTraditionalForm = true"
+        @error="handleError"
+      />
+      
+      <!-- Traditional Form (after conversation) -->
+      <DynamicOnboardingWizard
+        v-else
+        :purchased-pages="purchasedPages"
+        :initial-data="conversationalData"
+        :session-id="sessionId"
+        @complete="handleComplete"
+        @back-to-conversation="showTraditionalForm = false"
+        @error="handleError"
+      />
+    </template>
   </div>
 </template>
 

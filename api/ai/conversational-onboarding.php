@@ -108,6 +108,12 @@ try {
         throw new Exception('GEMINI_API_KEY não configurada no servidor.');
     }
     
+    // DEBUG: Log do formData recebido
+    error_log("📥 [Request] Step: $currentStep | User: " . substr($userMessage, 0, 50));
+    error_log("📥 [Request] FormData keys: " . json_encode(array_keys($currentFormData)));
+    error_log("📥 [Request] Frase atual: " . ($currentFormData['frase'] ?? 'VAZIO'));
+    error_log("📥 [Request] Cores: " . ($currentFormData['primaryColor'] ?? 'VAZIO') . ' / ' . ($currentFormData['secondaryColor'] ?? 'VAZIO'));
+    
     // Processar com Gemini
     $result = processConversation(
         $geminiApiKey,
@@ -147,8 +153,8 @@ function processConversation(
     // Montar histórico de conversa
     $conversationHistory = buildConversationHistory($previousMessages);
     
-    // Chamar API do Gemini
-    $response = callGeminiAPI($apiKey, $systemPrompt, $conversationHistory, $userMessage);
+    // Chamar API do Gemini (passa step e formData para validação)
+    $response = callGeminiAPI($apiKey, $systemPrompt, $conversationHistory, $userMessage, $step, $formData);
     
     if (!$response['success']) {
         return $response;
@@ -163,17 +169,30 @@ function processConversation(
 function buildSystemPrompt(string $step, array $formData, string $voiceTone): string {
     $stepFields = getStepFields($step);
     
+    // Cores default que NÃO devem ser consideradas como preenchidas
+    $defaultColors = ['#0066CC', '#28A745'];
+    
     // Filtrar apenas campos do step atual (economia de tokens)
     $filledFields = [];
     $missingFields = [];
     
     foreach ($stepFields as $field) {
-        if (isset($formData[$field]) && !empty($formData[$field])) {
-            if (is_array($formData[$field]) && count($formData[$field]) === 0) {
+        $value = $formData[$field] ?? null;
+        
+        // Verificar se é campo de cor com valor default
+        if (in_array($field, ['primaryColor', 'secondaryColor'])) {
+            if ($value === null || in_array(strtoupper($value), array_map('strtoupper', $defaultColors))) {
                 $missingFields[] = $field;
                 continue;
             }
-            $filledFields[$field] = $formData[$field];
+        }
+        
+        if (isset($value) && !empty($value)) {
+            if (is_array($value) && count($value) === 0) {
+                $missingFields[] = $field;
+                continue;
+            }
+            $filledFields[$field] = $value;
         } else {
             $missingFields[] = $field;
         }
@@ -193,12 +212,14 @@ CONTEXTO:
 - FALTAM: {$missingFieldsList}
 - Campos do step: {$stepFieldsList}
 
-REGRA FUNDAMENTAL (NUNCA QUEBRE):
-*** VOCE NUNCA PODE PARAR SEM FAZER UMA PERGUNTA! ***
-- Toda resposta DEVE terminar com uma pergunta clara sobre o proximo campo
-- NUNCA termine com "O que mais?" ou "Pode me contar mais?"
-- SEMPRE seja ESPECIFICO sobre qual informacao voce quer
-- Se nao souber o que perguntar, olhe os campos que FALTAM e pergunte o proximo
+REGRAS FUNDAMENTAIS (NUNCA QUEBRE):
+*** VOCE NUNCA PODE PULAR CAMPOS DO STEP ATUAL! ***
+*** VOCE NUNCA PODE PERGUNTAR CAMPOS DE OUTRO STEP! ***
+- SEMPRE verifique quais campos do step atual FALTAM antes de perguntar
+- NUNCA pergunte WhatsApp se ainda falta cores/logo no step identity
+- NUNCA avance para o proximo step sem completar o atual
+- Toda resposta DEVE terminar com uma pergunta clara sobre o PROXIMO campo DO STEP ATUAL
+- Se nao souber o que perguntar, olhe {$missingFieldsList} e pergunte o primeiro que falta
 - A conversa so para quando step_complete = true
 
 TAREFA:
@@ -222,7 +243,12 @@ FORMATO DE RESPOSTA (JSON OBRIGATORIO):
   "extracted_fields": {
     "campo1": "valor1"
   },
-  "suggestions": [],
+  "suggestions": [
+    {"field": "frase", "value": "Opcao 1 criativa"},
+    {"field": "frase", "value": "Opcao 2 emocional"},
+    {"field": "frase", "value": "Opcao 3 impactante"}
+  ],
+  "ui_action": null,
   "next_question": {
     "field": "proximoCampo",
     "question": "Pergunta especifica"
@@ -231,11 +257,48 @@ FORMATO DE RESPOSTA (JSON OBRIGATORIO):
   "step_complete": false
 }
 
+UI_ACTION (gatilhos de interface):
+- "upload_logo": Quando usuario concordar em enviar logo
+- "show_color_picker": Quando for escolher cores
+- null: Quando nao precisar de acao especial
+
+SUGESTOES (Copywriting Profissional):
+- Use tecnicas AIDA: Atencao, Interesse, Desejo, Acao
+- Crie 3 opcoes: 1 curta/impactante (punchy), 1 emocional, 1 profissional
+- NUNCA use frases genericas como "Qualidade e servico" ou "Excelencia garantida"
+- Exemplos por ramo:
+  * Padaria: "O pao que abraca seu dia", "Sabor de infancia em cada fatia"
+  * Tech: "Codigo que transforma negocios", "Inovacao que escala"
+  * Advocacia: "Seu direito, nossa missao", "Justica acessivel"
+  * Saude: "Cuidar e nossa essencia", "Saude que inspira vida"
+- Envie sugestoes quando: usuario pedir ajuda, resposta vaga, campo criativo (frase, bio, missao)
+
+SUGESTOES DE CORES (OBRIGATORIO quando perguntar sobre cores):
+- SEMPRE envie cores como sugestoes estruturadas no array "suggestions"
+- Para cores, crie 3 paletas diferentes no formato:
+  [
+    {"field": "primaryColor", "value": "#0066CC"},
+    {"field": "secondaryColor", "value": "#28A745"}
+  ]
+- Cada paleta deve ter primaryColor E secondaryColor
+- Exemplo de resposta com cores:
+  "suggestions": [
+    {"field": "primaryColor", "value": "#0066CC"},
+    {"field": "secondaryColor", "value": "#6F42C1"},
+    {"field": "primaryColor", "value": "#28A745"},
+    {"field": "secondaryColor", "value": "#17A2B8"},
+    {"field": "primaryColor", "value": "#FF6B35"},
+    {"field": "secondaryColor", "value": "#FFC107"}
+  ]
+- Paletas por ramo: Saude:#28A745+#17A2B8, Tech:#0066CC+#6F42C1, Alimentos:#FF6B35+#FFC107, Beleza:#E83E8C+#6F42C1, Juridico:#212529+#0066CC, Games:#6F42C1+#22C55E, Pets:#FF6B35+#22C55E
+- Use ui_action: "show_color_picker" quando perguntar sobre cores
+
 IMPORTANTE:
 - assistant_message DEVE ter confirmacao + pergunta na mesma mensagem
 - Se nao extrair campo, extracted_fields = {}
 - Nao invente dados que o usuario nao forneceu
 - next_question SEMPRE deve estar preenchido (exceto se step_complete = true)
+- suggestions so envia quando usuario pedir ajuda ou der resposta muito vaga
 PROMPT;
 
     // Adicionar instruções específicas por step
@@ -307,6 +370,7 @@ EOT;
 
 /**
  * Monta histórico de conversa para contexto
+ * Limita a 10 interações (20 mensagens) para evitar estouro de tokens
  */
 function buildConversationHistory(array $messages): array {
     $history = [];
@@ -325,6 +389,12 @@ function buildConversationHistory(array $messages): array {
         }
     }
     
+    // Limitar janela de contexto: pegar apenas as últimas 20 mensagens
+    // (10 interações usuário-bot) para não estourar limite de tokens
+    if (count($history) > 20) {
+        $history = array_slice($history, -20);
+    }
+    
     return $history;
 }
 
@@ -335,7 +405,9 @@ function callGeminiAPI(
     string $apiKey,
     string $systemPrompt,
     array $conversationHistory,
-    string $userMessage
+    string $userMessage,
+    string $step = 'identity',
+    array $formData = []
 ): array {
     $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}";
     
@@ -345,13 +417,17 @@ function callGeminiAPI(
         'parts' => [['text' => $userMessage]]
     ];
     
+    // Temperature mais alta para steps criativos (frase, bio, serviços)
+    $isCreativeStep = in_array($step, ['identity', 'services', 'about']);
+    $temperature = $isCreativeStep ? 0.9 : 0.7;
+    
     $payload = [
         'contents' => $conversationHistory,
         'systemInstruction' => [
             'parts' => [['text' => $systemPrompt]]
         ],
         'generationConfig' => [
-            'temperature' => 0.7,
+            'temperature' => $temperature,
             'maxOutputTokens' => 600,
             'responseMimeType' => 'application/json'
         ],
@@ -405,8 +481,19 @@ function callGeminiAPI(
     
     $generatedText = $data['candidates'][0]['content']['parts'][0]['text'];
     
+    // Limpar markdown blocks que o Gemini às vezes adiciona
+    // Remove ```json e ``` no início/fim
+    $generatedText = preg_replace('/^```json\s*|\s*```$/s', '', trim($generatedText));
+    $generatedText = preg_replace('/^```\s*|\s*```$/s', '', trim($generatedText));
+    
     // Parse do JSON gerado
     $result = json_decode($generatedText, true);
+    
+    // DEBUG: Log do que o Gemini retornou
+    error_log("🤖 [Gemini Response] Raw text: " . substr($generatedText, 0, 200));
+    if ($result && isset($result['suggestions'])) {
+        error_log("🔍 [Gemini Response] Suggestions: " . json_encode($result['suggestions']));
+    }
     
     if (!$result) {
         // Se não for JSON válido, retorna como mensagem simples
@@ -419,12 +506,101 @@ function callGeminiAPI(
         ];
     }
     
+    // Processar ui_action e converter em actions para o Vue
+    $actions = null;
+    if (isset($result['ui_action'])) {
+        switch ($result['ui_action']) {
+            case 'upload_logo':
+                $actions = [[
+                    'id' => 'upload_logo',
+                    'label' => '📁 Carregar Logo',
+                    'type' => 'trigger_upload',
+                    'variant' => 'primary'
+                ]];
+                break;
+            case 'show_color_picker':
+                $actions = [[
+                    'id' => 'color_picker',
+                    'label' => '🎨 Escolher Cores',
+                    'type' => 'show_color_picker',
+                    'variant' => 'secondary'
+                ]];
+                break;
+        }
+    }
+    
+    // VALIDAÇÃO CRÍTICA: Verificar se a IA está respeitando o step atual
+    // Previne que pergunte campos de outros steps OU que fique repetindo o mesmo campo
+    if (isset($result['next_question']['field'])) {
+        $nextField = $result['next_question']['field'];
+        $currentStepFields = getStepFields($step);
+        
+        // Verificação 1: Campo pertence a outro step?
+        if (!in_array($nextField, $currentStepFields)) {
+            error_log("⚠️ [Step Validation] IA tentou perguntar '$nextField' no step '$step' (inválido!)");
+            
+            // Encontrar primeiro campo que falta no step atual
+            foreach ($currentStepFields as $field) {
+                if (empty($formData[$field]) || $formData[$field] === '' || $formData[$field] === null) {
+                    error_log("✅ [Step Validation] Corrigido para perguntar '$field' (step correto)");
+                    $result['next_question']['field'] = $field;
+                    
+                    // Reescrever a mensagem para perguntar o campo correto
+                    if ($field === 'primaryColor' || $field === 'secondaryColor') {
+                        $result['assistant_message'] = $result['assistant_message'] . "\n\nE as cores da sua marca? Tem preferência ou quer sugestões?";
+                    } elseif ($field === 'logo' || $field === 'hasNoLogo') {
+                        $result['assistant_message'] = $result['assistant_message'] . "\n\nVocê tem um logo para enviar? Se tiver, clique no 📎 para anexar.";
+                    }
+                    break;
+                }
+            }
+        }
+        
+        // Verificação 2: Está tentando perguntar um campo que JÁ FOI PREENCHIDO?
+        elseif (!empty($formData[$nextField]) && $formData[$nextField] !== '' && $formData[$nextField] !== null) {
+            error_log("⚠️ [Step Validation] IA tentou perguntar '$nextField' que JÁ está preenchido!");
+            error_log("⚠️ [Step Validation] Valor atual de $nextField: " . json_encode($formData[$nextField]));
+            
+            // Buscar PRÓXIMO campo que falta (na ordem do step)
+            $foundNext = false;
+            foreach ($currentStepFields as $field) {
+                if (empty($formData[$field]) || $formData[$field] === '' || $formData[$field] === null) {
+                    error_log("✅ [Step Validation] Corrigido para perguntar '$field' (próximo campo vazio)");
+                    $result['next_question']['field'] = $field;
+                    $foundNext = true;
+                    
+                    // Reescrever a mensagem
+                    if ($field === 'primaryColor' || $field === 'secondaryColor') {
+                        $result['assistant_message'] = "Perfeito! Agora vamos definir as cores da sua marca. Tem alguma preferência ou quer que eu sugira baseado no ramo?";
+                        $result['suggestions'] = []; // Limpar sugestões antigas
+                    } elseif ($field === 'logo' || $field === 'hasNoLogo') {
+                        $result['assistant_message'] = "Ótimo! Você tem um logo para enviar? Se tiver, pode clicar no 📎 abaixo.";
+                        $result['suggestions'] = [];
+                        $result['ui_action'] = 'upload_logo';
+                    } elseif ($field === 'voiceTone') {
+                        $result['assistant_message'] = "Legal! Qual tom de voz prefere para o site? Profissional, amigável ou descontraído?";
+                        $result['suggestions'] = [];
+                    }
+                    break;
+                }
+            }
+            
+            // Se todos os campos do step estão preenchidos, marcar como completo
+            if (!$foundNext) {
+                error_log("✅ [Step Validation] Todos os campos do step '$step' estão preenchidos!");
+                $result['step_complete'] = true;
+                $result['next_question'] = null;
+            }
+        }
+    }
+    
     // Garantir estrutura completa
     return [
         'success' => true,
         'assistant_message' => $result['assistant_message'] ?? $generatedText,
         'extracted_fields' => $result['extracted_fields'] ?? [],
         'suggestions' => $result['suggestions'] ?? [],
+        'actions' => $actions,
         'next_question' => $result['next_question'] ?? null,
         'achievements' => $result['achievements'] ?? [],
         'step_complete' => $result['step_complete'] ?? false
@@ -442,8 +618,56 @@ function tryLocalExtraction(string $step, string $message, array $formData): ?ar
     $messageLower = mb_strtolower($message);
     
     // =============================================
+    // CONSCIÊNCIA DE ESTADO - O QUE O BOT PERGUNTOU?
+    // Se já temos nome+ramo mas falta frase, a próxima resposta É a frase
+    // =============================================
+    if ($step === 'identity') {
+        // CASO: Usuário está respondendo a pergunta sobre FRASE
+        $hasName = !empty($formData['companyName']);
+        $hasType = !empty($formData['businessType']);
+        $hasFrase = !empty($formData['frase']);
+        $messageLen = mb_strlen($message);
+        
+        // Se a mensagem parece ser uma frase (5-150 chars, não é só "sim/não")
+        $isLikelyFrase = $messageLen >= 5 && $messageLen <= 150 
+            && !preg_match('/^(sim|nao|ok|gostei|pode ser|legal|isso|exato|perfeito|nope|nada)$/i', $messageLower);
+        
+        if ($hasName && $hasType && !$hasFrase && $isLikelyFrase) {
+            $frase = preg_replace('/^["\']|["\']$/u', '', $message);
+            
+            return [
+                'success' => true,
+                'assistant_message' => "Adorei a frase: **\"$frase\"** 🚀\n\nAgora vamos definir as cores da sua marca. Tem alguma preferência ou quer que eu sugira baseado no seu ramo?",
+                'extracted_fields' => ['frase' => $frase],
+                'suggestions' => [],
+                'achievements' => [],
+                'skip_ai' => true
+            ];
+        }
+        
+        // CASO: Usuário quer enviar logo
+        if (preg_match('/(tenho|sim|vou|quero|pode|manda|enviar|upload).*(logo|imagem|arquivo)/i', $messageLower)) {
+            return [
+                'success' => true,
+                'assistant_message' => "Perfeito! Clique no botão abaixo para enviar seu logo. 📁",
+                'extracted_fields' => [],
+                'suggestions' => [],
+                'achievements' => [],
+                'actions' => [
+                    [
+                        'id' => 'upload_logo',
+                        'label' => '📁 Carregar Logo',
+                        'type' => 'trigger_upload',
+                        'variant' => 'primary'
+                    ]
+                ],
+                'skip_ai' => true
+            ];
+        }
+    }
+    
+    // =============================================
     // CONFIRMAÇÕES SIMPLES - NÃO TRAVAR O FLUXO
-    // Deixar para a IA responder confirmações para manter o fluxo natural
     // =============================================
     // NÃO INTERCEPTAR: sim, ok, gostei, etc. - deixar IA decidir próximo passo
     
@@ -451,7 +675,6 @@ function tryLocalExtraction(string $step, string $message, array $formData): ?ar
     // FRASES PERSONALIZADAS (quando o cliente escreve manualmente)
     // =============================================
     if (preg_match('/^(minha frase|quero escrever|a frase|usar essa frase)/i', $messageLower)) {
-        // Extrair a frase após os dois pontos ou entre aspas
         $frase = null;
         
         if (preg_match('/[:\-]\s*["\']?(.+?)["\']?\s*$/i', $message, $matches)) {

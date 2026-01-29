@@ -216,6 +216,10 @@ if ($httpCode !== 200) {
 $content = '';
 if (isset($data['candidates'][0]['content']['parts'][0]['text'])) {
     $content = trim($data['candidates'][0]['content']['parts'][0]['text']);
+    
+    // Limpar markdown blocks (```json ... ```) se existirem
+    $content = preg_replace('/^```json\s*|\s*```$/s', '', $content);
+    $content = preg_replace('/^```\s*|\s*```$/s', '', trim($content));
 }
 
 if (empty($content)) {

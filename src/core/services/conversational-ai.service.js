@@ -142,8 +142,8 @@ const state = reactive({
     companyName: '',
     businessType: '',
     frase: '',
-    primaryColor: '#0066CC',
-    secondaryColor: '#28A745',
+    primaryColor: null,      // null = não definido (diferente de valor default)
+    secondaryColor: null,    // null = não definido
     voiceTone: 'profissional',
     logo: null,
     hasNoLogo: false,
@@ -244,7 +244,11 @@ const state = reactive({
   maxAiFailures: 3,
   
   // Páginas compradas pelo cliente (para steps dinâmicos)
-  purchasedPages: []
+  purchasedPages: [],
+  
+  // Flag para evitar inicialização duplicada
+  _isInitialized: false,
+  _initializingSessionId: null
 });
 
 // ============================================
@@ -343,7 +347,18 @@ const pendingRequiredFields = computed(() => {
  * @param {string[]} purchasedPages - Array com IDs das páginas compradas
  */
 function initSession(sessionId, initialData = {}, purchasedPages = []) {
-  state.sessionId = sessionId || `session_${Date.now()}`;
+  const targetSessionId = sessionId || `session_${Date.now()}`;
+  
+  // Evitar inicialização duplicada para a mesma sessão
+  if (state._isInitialized && state.sessionId === targetSessionId) {
+    console.log('[InitSession] Sessão já inicializada, ignorando chamada duplicada');
+    return;
+  }
+  
+  // Marcar como em processo de inicialização
+  state._initializingSessionId = targetSessionId;
+  
+  state.sessionId = targetSessionId;
   
   // Detectar modo demo (IDs locais ou que começam com 'demo-' ou 'session_')
   state.isDemoMode = !sessionId || sessionId.startsWith('demo-') || sessionId.startsWith('session_');
@@ -354,13 +369,43 @@ function initSession(sessionId, initialData = {}, purchasedPages = []) {
   // Definir páginas compradas (para steps dinâmicos)
   state.purchasedPages = purchasedPages || [];
   
-  // Mesclar dados iniciais
-  if (initialData && typeof initialData === 'object') {
+  // Cores default que não devem ser consideradas como preenchidas
+  const defaultColors = ['#0066CC', '#28A745'];
+  
+  // PRIMEIRO: Aplicar dados do backend (initialData tem precedência máxima)
+  if (initialData && typeof initialData === 'object' && Object.keys(initialData).length > 0) {
+    console.log('[InitSession] Carregando dados do backend:', Object.keys(initialData).filter(k => initialData[k]).length, 'campos');
     Object.keys(initialData).forEach(key => {
       if (key in state.formData) {
-        state.formData[key] = initialData[key];
+        // Ignorar cores default - tratá-las como null
+        if ((key === 'primaryColor' || key === 'secondaryColor') && 
+            defaultColors.includes(initialData[key]?.toUpperCase?.())) {
+          console.log(`[InitSession] Ignorando cor default: ${key} = ${initialData[key]}`);
+          state.formData[key] = null;
+        } else {
+          state.formData[key] = initialData[key];
+        }
       }
     });
+  }
+  
+  // DEPOIS: Se não tiver dados significativos do backend, tentar localStorage
+  const hasBackendData = initialData && Object.keys(initialData).some(k => {
+    const val = initialData[k];
+    // Ignorar cores default na verificação
+    if ((k === 'primaryColor' || k === 'secondaryColor') && defaultColors.includes(val?.toUpperCase?.())) {
+      return false;
+    }
+    return val !== null && val !== '' && !(Array.isArray(val) && val.length === 0);
+  });
+  
+  if (!hasBackendData) {
+    const savedDraft = loadDraft(state.sessionId, true);
+    if (savedDraft !== null) {
+      console.log('[InitSession] Sem dados do backend, usando rascunho local');
+    }
+  } else {
+    console.log('[InitSession] Dados do backend carregados, ignorando localStorage');
   }
   
   // Inicializar histórico com estado atual
@@ -371,19 +416,17 @@ function initSession(sessionId, initialData = {}, purchasedPages = []) {
   const savedChat = loadSavedChat(state.sessionId);
   
   if (savedChat && savedChat.messages && savedChat.messages.length > 0) {
-    // Restaurar mensagens salvas
+    // Restaurar mensagens salvas - NÃO adicionar nova mensagem
+    // para evitar duplicação a cada F5
     state.messages = savedChat.messages;
-    
-    // Verificar o que falta e adicionar mensagem de continuação
-    const missingInfo = getMissingInfo();
-    if (missingInfo) {
-      addMessage({
-        type: 'assistant',
-        content: getContinueMessage(missingInfo)
-      });
-    }
+    console.log('[InitSession] Chat restaurado com', savedChat.messages.length, 'mensagens');
+    // NÃO adiciona mensagem de continuação aqui - o usuário já tem o histórico
+    // e pode ver o que falta no FormPreview
   } else {
     // Primeira vez - mensagem de abertura
+    // Reset messages para garantir array limpo
+    state.messages = [];
+    
     const hasExistingData = checkHasExistingData();
     addMessage({
       type: 'assistant',
@@ -393,6 +436,11 @@ function initSession(sessionId, initialData = {}, purchasedPages = []) {
   
   // Calcular XP inicial baseado nos dados existentes
   recalculateXP();
+  
+  // Marcar como inicializado
+  state._isInitialized = true;
+  state._initializingSessionId = null;
+  console.log('[InitSession] Sessão inicializada com sucesso:', state.sessionId);
 }
 
 /**
@@ -475,6 +523,11 @@ function clearSession(sessionId) {
   try {
     localStorage.removeItem(`chat_${sessionId}`);
     localStorage.removeItem(`draft_${sessionId}`);
+    
+    // Resetar flag de inicialização se for a sessão atual
+    if (state.sessionId === sessionId) {
+      state._isInitialized = false;
+    }
   } catch (e) {
     console.warn('[ConversationalAI] Erro ao limpar sessão:', e);
   }
@@ -497,6 +550,10 @@ function restoreSession(sessionData) {
     
     // Tentar carregar draft
     loadDraft();
+    
+    // Marcar como inicializado
+    state._isInitialized = true;
+    console.log('[RestoreSession] Sessão restaurada:', state.sessionId);
     
     return true;
   } catch (e) {
@@ -568,7 +625,9 @@ Enquanto a gente conversa, o formulário ao lado vai sendo preenchido automatica
 
 /**
  * Mensagem de continuação após carregar chat salvo
+ * (Mantida para uso futuro - não adiciona mais a cada F5)
  */
+// eslint-disable-next-line no-unused-vars
 function getContinueMessage(missingInfo) {
   const missingText = missingInfo.slice(0, 3).join(', ');
   
@@ -625,6 +684,11 @@ async function sendUserMessage(content, isAudio = false) {
       // Verifica conquistas
       if (response.achievements) {
         response.achievements.forEach(ach => unlockAchievement(ach));
+      }
+      
+      // DEBUG: Log das sugestões antes de adicionar mensagem
+      if (response.suggestions && response.suggestions.length > 0) {
+        console.log('🔍 [Service] Sugestões da API:', response.suggestions);
       }
       
       // Adiciona resposta do assistente
@@ -838,16 +902,19 @@ function getFieldLabel(fieldId) {
  * Atualiza um campo manualmente (edição no formulário)
  */
 function updateField(fieldId, value) {
-  if (fieldId in state.formData) {
-    // Salvar estado anterior no histórico antes de alterar
-    pushToHistory();
-    
-    state.formData[fieldId] = value;
-    
-    // Limpa erro de validação se existir
-    if (state.validationErrors[fieldId]) {
-      delete state.validationErrors[fieldId];
-    }
+  console.log('[updateField] Attempting to update:', fieldId, '=', value);
+  console.log('[updateField] Field exists in formData:', fieldId in state.formData);
+  
+  // Permitir adicionar campos que existem no schema original OU novos campos
+  // Salvar estado anterior no histórico antes de alterar
+  pushToHistory();
+  
+  state.formData[fieldId] = value;
+  console.log('[updateField] Updated formData:', fieldId, '→', state.formData[fieldId]);
+  
+  // Limpa erro de validação se existir
+  if (state.validationErrors[fieldId]) {
+    delete state.validationErrors[fieldId];
   }
 }
 
@@ -1287,15 +1354,38 @@ async function saveDraft() {
 }
 
 /**
- * Carrega rascunho salvo
+ * Carrega rascunho salvo do localStorage
+ * @param {string} [sessionId] - ID da sessão (usa state.sessionId se não fornecido)
+ * @param {boolean} [applyToState=true] - Se true, aplica os dados no state.formData
+ * @returns {object|null} Dados do rascunho ou null
  */
-function loadDraft(sessionId) {
+function loadDraft(sessionId = null, applyToState = true) {
+  const sid = sessionId || state.sessionId;
+  if (!sid) return null;
+  
   // Tentar localStorage primeiro
   try {
-    const saved = localStorage.getItem(`draft_${sessionId}`);
+    const saved = localStorage.getItem(`draft_${sid}`);
     if (saved) {
       const data = JSON.parse(saved);
       if (data && data.data) {
+        console.log('[LoadDraft] Rascunho encontrado no localStorage');
+        
+        // Só aplica no state se solicitado
+        if (applyToState) {
+          console.log('[LoadDraft] Aplicando dados no state...');
+          Object.keys(data.data).forEach(key => {
+            if (key in state.formData) {
+              state.formData[key] = data.data[key];
+            }
+          });
+          
+          // Restaurar step se disponível
+          if (typeof data.current_step === 'number') {
+            state.currentStepIndex = data.current_step;
+          }
+        }
+        
         return data.data;
       }
     }
@@ -1334,12 +1424,30 @@ function sleep(ms) {
 // ============================================
 
 let saveTimeout = null;
+let chatSaveTimeout = null;
 
+// Auto-save do formData (com debounce de 2 segundos)
 watch(
   () => state.formData,
   () => {
     if (saveTimeout) clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(saveDraft, 2000);
+    saveTimeout = setTimeout(() => {
+      saveDraft();
+      console.log('[AutoSave] FormData salvo após alteração');
+    }, 2000);
+  },
+  { deep: true }
+);
+
+// Auto-save do chat (mensagens) - com debounce de 1 segundo
+watch(
+  () => state.messages,
+  () => {
+    if (chatSaveTimeout) clearTimeout(chatSaveTimeout);
+    chatSaveTimeout = setTimeout(() => {
+      saveChat();
+      console.log('[AutoSave] Chat salvo após nova mensagem');
+    }, 1000);
   },
   { deep: true }
 );
@@ -1349,9 +1457,15 @@ watch(
 // ============================================
 
 export function useConversationalAI() {
+  // Computed para formData direto (sem readonly wrapper)
+  const formData = computed(() => state.formData);
+  
   return {
     // Estado (readonly para prevenir mutações diretas)
     state: readonly(state),
+    
+    // FormData reativo direto (para componentes que precisam atualizar)
+    formData,
     
     // Computed
     currentStep,

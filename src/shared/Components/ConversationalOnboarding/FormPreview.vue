@@ -40,30 +40,33 @@
         />
         
         <PreviewField
-          field-id="tagline"
+          field-id="frase"
           label="Frase"
-          :value="formData.tagline"
-          :is-shimmering="shimmeringFields.includes('tagline')"
-          :is-recently-filled="recentlyFilledFields.includes('tagline')"
-          @click="$emit('field-click', 'tagline')"
-          @edit="(val) => $emit('field-edit', 'tagline', val)"
+          :value="formData.frase"
+          :is-shimmering="shimmeringFields.includes('frase')"
+          :is-recently-filled="recentlyFilledFields.includes('frase')"
+          @click="$emit('field-click', 'frase')"
+          @edit="(val) => $emit('field-edit', 'frase', val)"
         />
         
         <div class="color-preview">
           <span class="color-label">Cores:</span>
           <div class="color-swatches">
-            <span 
-              class="color-swatch"
-              :class="{ 'is-shimmering': shimmeringFields.includes('primaryColor') }"
-              :style="{ backgroundColor: formData.primaryColor || '#ccc' }"
-              :title="formData.primaryColor"
-            ></span>
-            <span 
-              class="color-swatch"
-              :class="{ 'is-shimmering': shimmeringFields.includes('secondaryColor') }"
-              :style="{ backgroundColor: formData.secondaryColor || '#ccc' }"
-              :title="formData.secondaryColor"
-            ></span>
+            <template v-if="formData.primaryColor && formData.secondaryColor">
+              <span 
+                class="color-swatch"
+                :class="{ 'is-shimmering': shimmeringFields.includes('primaryColor') }"
+                :style="{ backgroundColor: formData.primaryColor }"
+                :title="formData.primaryColor"
+              ></span>
+              <span 
+                class="color-swatch"
+                :class="{ 'is-shimmering': shimmeringFields.includes('secondaryColor') }"
+                :style="{ backgroundColor: formData.secondaryColor }"
+                :title="formData.secondaryColor"
+              ></span>
+            </template>
+            <span v-else class="color-placeholder">Não definido</span>
           </div>
         </div>
       </div>
@@ -274,7 +277,12 @@ export default {
     
     function isSectionComplete(section) {
       const checks = {
-        identity: () => props.formData.companyName && props.formData.businessType,
+        identity: () => {
+          const hasBasics = props.formData.companyName && props.formData.businessType;
+          const hasColors = props.formData.primaryColor && props.formData.secondaryColor;
+          const hasLogoOrSkipped = props.formData.logo || props.formData.hasNoLogo;
+          return hasBasics && hasColors && hasLogoOrSkipped;
+        },
         contact: () => props.formData.whatsapp,
         about: () => props.formData.companyBio || props.formData.foundingYear,
         services: () => servicesCount.value > 0
@@ -401,6 +409,7 @@ export default {
   .color-swatches {
     display: flex;
     gap: 0.5rem;
+    align-items: center;
   }
   
   .color-swatch {
@@ -413,6 +422,12 @@ export default {
     &.is-shimmering {
       animation: shimmer 1.5s ease-in-out infinite;
     }
+  }
+  
+  .color-placeholder {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-style: italic;
   }
 }
 

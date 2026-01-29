@@ -437,6 +437,7 @@ export default {
     
     const {
       state,
+      formData,
       currentStep,
       currentStepId,
       totalSteps,
@@ -491,7 +492,7 @@ export default {
     });
     
     const messages = computed(() => state.messages);
-    const formData = computed(() => state.formData);
+    // formData agora vem direto do service (não criar computed local)
     const isTyping = computed(() => state.isTyping);
     const isProcessing = computed(() => state.isProcessing);
     const pendingAchievement = computed(() => state.pendingAchievement);
@@ -732,17 +733,32 @@ export default {
         nextStep();
       } else if (action.type === 'update_field') {
         updateField(action.field, action.value);
+      } else if (action.type === 'trigger_upload') {
+        // Abre o input de imagem (logo)
+        const imageInput = document.querySelector('.chat-input-container input[type="file"]');
+        if (imageInput) {
+          imageInput.click();
+        }
+      } else if (action.type === 'show_color_picker') {
+        // Futuro: abrir modal de cores
+        console.log('[Action] Show color picker');
       }
     }
     
     async function handleSuggestionAccept(suggestion) {
-      console.log('[Suggestion Accept]', suggestion);
+      console.log('[Suggestion Accept] Full suggestion object:', JSON.stringify(suggestion));
+      console.log('[Suggestion Accept] field:', suggestion.field);
+      console.log('[Suggestion Accept] value:', suggestion.value);
       
       if (suggestion.field && suggestion.value) {
         // Atualizar campo no formulário
+        console.log('[Suggestion Accept] Calling updateField...');
         updateField(suggestion.field, suggestion.value);
-        console.log('[Field Updated]', suggestion.field, '=', suggestion.value);
-        console.log('[FormData after update]', formData.value);
+        console.log('[Suggestion Accept] Field Updated:', suggestion.field, '=', suggestion.value);
+        
+        // CRÍTICO: Aguardar nextTick para garantir que formData foi atualizado no estado reativo
+        await nextTick();
+        console.log('[Suggestion Accept] FormData after nextTick:', JSON.stringify(formData.value));
         
         // Enviar confirmação ao chat para continuar o fluxo
         await sendUserMessage(`Gostei! Vou usar: "${suggestion.value}"`, false);

@@ -615,6 +615,11 @@ ESTRUTURA JSON OBRIGATÓRIA:
         
         // Parse do JSON gerado pela AI
         $generatedText = $data['candidates'][0]['content']['parts'][0]['text'];
+        
+        // Limpar markdown blocks (```json ... ```) que o Gemini às vezes adiciona
+        $generatedText = preg_replace('/^```json\s*|\s*```$/s', '', trim($generatedText));
+        $generatedText = preg_replace('/^```\s*|\s*```$/s', '', trim($generatedText));
+        
         $generatedContent = json_decode($generatedText, true);
         
         if (json_last_error() !== JSON_ERROR_NONE) {

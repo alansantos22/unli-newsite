@@ -43,47 +43,109 @@
           <span class="suggestions-icon">💡</span>
           <span class="suggestions-label">Sugestão da IA:</span>
         </div>
-        <div 
-          v-for="(suggestion, idx) in message.suggestions" 
-          :key="idx"
-          class="suggestion-item"
-          :class="{ 'is-color': isColorField(suggestion.field) }"
-        >
-          <div class="suggestion-content">
-            <!-- Preview de cor se for campo de cor -->
-            <div v-if="isColorField(suggestion.field)" class="color-preview-box">
-              <div 
-                class="color-swatch" 
-                :style="{ backgroundColor: suggestion.value }"
-              ></div>
-            </div>
-            
-            <div class="suggestion-text">
-              <span class="suggestion-field">{{ formatFieldKey(suggestion.field) }}:</span>
-              <span class="suggestion-value">{{ suggestion.value }}</span>
-              <span v-if="isColorField(suggestion.field)" class="color-name">
-                {{ getColorName(suggestion.value) }}
-              </span>
-            </div>
-          </div>
-          <div class="suggestion-actions">
-            <button 
-              class="btn-accept"
-              @click="$emit('suggestion-accept', suggestion)"
-            >
-              ✓ Usar esta
-            </button>
-          </div>
-        </div>
         
-        <!-- Botão "Nenhuma opção" -->
-        <button 
-          v-if="message.suggestions.length > 0"
-          class="btn-custom-input"
-          @click="$emit('custom-input', message.suggestions[0]?.field, formatFieldKey(message.suggestions[0]?.field))"
-        >
-          ✏️ Nenhuma me agrada, quero escrever minha própria
-        </button>
+        <!-- Sugestões de Paletas de Cores (agrupadas) -->
+        <template v-if="hasColorSuggestions">
+          <div class="color-palettes">
+            <div 
+              v-for="(palette, idx) in colorPalettes" 
+              :key="idx"
+              class="color-palette-item"
+            >
+              <div class="palette-preview">
+                <div 
+                  class="color-swatch large" 
+                  :style="{ backgroundColor: palette.primary }"
+                  :title="palette.primary"
+                ></div>
+                <span class="palette-plus">+</span>
+                <div 
+                  class="color-swatch large" 
+                  :style="{ backgroundColor: palette.secondary }"
+                  :title="palette.secondary"
+                ></div>
+              </div>
+              <div class="palette-info">
+                <span class="palette-name">{{ getColorName(palette.primary) }} + {{ getColorName(palette.secondary) }}</span>
+                <span class="palette-hex">{{ palette.primary }} / {{ palette.secondary }}</span>
+              </div>
+              <button 
+                class="btn-accept"
+                @click="acceptColorPalette(palette)"
+              >
+                ✓ Usar esta paleta
+              </button>
+            </div>
+          </div>
+          
+          <!-- Color Picker Custom -->
+          <div class="custom-color-picker">
+            <span class="picker-label">🎨 Ou escolha suas próprias cores:</span>
+            <div class="picker-inputs">
+              <div class="picker-group">
+                <label>Cor Principal:</label>
+                <div class="color-input-wrapper">
+                  <input 
+                    type="color" 
+                    v-model="customPrimaryColor"
+                    class="color-input"
+                  />
+                  <span class="color-hex">{{ customPrimaryColor }}</span>
+                </div>
+              </div>
+              <div class="picker-group">
+                <label>Cor Secundária:</label>
+                <div class="color-input-wrapper">
+                  <input 
+                    type="color" 
+                    v-model="customSecondaryColor"
+                    class="color-input"
+                  />
+                  <span class="color-hex">{{ customSecondaryColor }}</span>
+                </div>
+              </div>
+              <button 
+                class="btn-apply-colors"
+                @click="applyCustomColors"
+              >
+                ✓ Usar estas cores
+              </button>
+            </div>
+          </div>
+        </template>
+        
+        <!-- Outras sugestões (não-cores) -->
+        <template v-else>
+          <div 
+            v-for="(suggestion, idx) in message.suggestions" 
+            :key="idx"
+            class="suggestion-item"
+          >
+            <div class="suggestion-content">
+              <div class="suggestion-text">
+                <span class="suggestion-field">{{ formatFieldKey(suggestion.field) }}:</span>
+                <span class="suggestion-value">{{ suggestion.value }}</span>
+              </div>
+            </div>
+            <div class="suggestion-actions">
+              <button 
+                class="btn-accept"
+                @click="$emit('suggestion-accept', suggestion)"
+              >
+                ✓ Usar esta
+              </button>
+            </div>
+          </div>
+          
+          <!-- Botão "Nenhuma opção" -->
+          <button 
+            v-if="message.suggestions.length > 0"
+            class="btn-custom-input"
+            @click="$emit('custom-input', message.suggestions[0]?.field, formatFieldKey(message.suggestions[0]?.field))"
+          >
+            ✏️ Nenhuma me agrada, quero escrever minha própria
+          </button>
+        </template>
       </div>
       
       <!-- Quick Actions -->
@@ -106,7 +168,7 @@
 </template>
 
 <script>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 
@@ -120,9 +182,21 @@ export default {
     }
   },
   
-  emits: ['action', 'suggestion-accept', 'custom-input'],
+  emits: ['action', 'suggestion-accept', 'custom-input', 'color-palette-accept'],
   
-  setup(props) {
+  setup(props, { emit }) {
+    // DEBUG: Log das sugestões quando componente é montado
+    if (props.message.suggestions && props.message.suggestions.length > 0) {
+      console.log('🔍 [ChatMessage] Sugestões recebidas:', props.message.suggestions);
+      props.message.suggestions.forEach((sug, idx) => {
+        console.log(`  [${idx}] field: "${sug.field}", value: "${sug.value}"`);
+      });
+    }
+    
+    // Refs para color picker custom
+    const customPrimaryColor = ref('#0066CC');
+    const customSecondaryColor = ref('#28A745');
+    
     const messageType = computed(() => {
       if (props.message.type === 'assistant') return 'assistant';
       if (props.message.type === 'user_audio') return 'user-audio';
@@ -141,6 +215,35 @@ export default {
     
     const hasSuggestions = computed(() => {
       return props.message.suggestions?.length > 0;
+    });
+    
+    // Verifica se as sugestões são de cores
+    const hasColorSuggestions = computed(() => {
+      if (!props.message.suggestions?.length) return false;
+      return props.message.suggestions.some(s => 
+        s.field === 'primaryColor' || s.field === 'secondaryColor'
+      );
+    });
+    
+    // Agrupa sugestões de cores em paletas (primary + secondary)
+    const colorPalettes = computed(() => {
+      if (!props.message.suggestions?.length) return [];
+      
+      const primaries = props.message.suggestions.filter(s => s.field === 'primaryColor');
+      const secondaries = props.message.suggestions.filter(s => s.field === 'secondaryColor');
+      
+      // Combina primárias com secundárias em pares
+      const palettes = [];
+      const maxPairs = Math.max(primaries.length, secondaries.length);
+      
+      for (let i = 0; i < maxPairs; i++) {
+        palettes.push({
+          primary: primaries[i]?.value || '#0066CC',
+          secondary: secondaries[i]?.value || '#28A745'
+        });
+      }
+      
+      return palettes;
     });
     
     const formattedTime = computed(() => {
@@ -204,9 +307,30 @@ export default {
         '#db2777': 'Rosa',
         '#000000': 'Preto',
         '#ffffff': 'Branco',
-        '#6b7280': 'Cinza'
+        '#6b7280': 'Cinza',
+        '#22C55E': 'Verde Vibrante'
       };
-      return colorNames[hexColor] || hexColor;
+      // Busca case-insensitive
+      const normalized = hexColor?.toUpperCase();
+      const found = Object.entries(colorNames).find(([hex]) => hex.toUpperCase() === normalized);
+      return found ? found[1] : hexColor;
+    }
+    
+    // Aceita uma paleta de cores
+    function acceptColorPalette(palette) {
+      emit('suggestion-accept', { field: 'primaryColor', value: palette.primary });
+      // Pequeno delay para processar a primeira cor
+      setTimeout(() => {
+        emit('suggestion-accept', { field: 'secondaryColor', value: palette.secondary });
+      }, 100);
+    }
+    
+    // Aplica cores customizadas do color picker
+    function applyCustomColors() {
+      emit('suggestion-accept', { field: 'primaryColor', value: customPrimaryColor.value });
+      setTimeout(() => {
+        emit('suggestion-accept', { field: 'secondaryColor', value: customSecondaryColor.value });
+      }, 100);
     }
     
     return {
@@ -215,11 +339,17 @@ export default {
       isAudio,
       formattedContent,
       hasSuggestions,
+      hasColorSuggestions,
+      colorPalettes,
       formattedTime,
       formatFieldKey,
       formatFieldValue,
       isColorField,
-      getColorName
+      getColorName,
+      customPrimaryColor,
+      customSecondaryColor,
+      acceptColorPalette,
+      applyCustomColors
     };
   }
 };
@@ -498,6 +628,179 @@ export default {
       border-color: rgba(255, 255, 255, 0.5);
       color: #fff;
       background: rgba(255, 255, 255, 0.05);
+    }
+  }
+}
+
+// ============================================
+// COLOR PALETTES
+// ============================================
+
+.color-palettes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.color-palette-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 0.75rem;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.5);
+    transform: translateX(4px);
+  }
+  
+  .palette-preview {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .palette-plus {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  
+  .color-swatch.large {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.5rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+  }
+  
+  .palette-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .palette-name {
+    font-weight: 500;
+    color: #fff;
+  }
+  
+  .palette-hex {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: monospace;
+  }
+  
+  .btn-accept {
+    padding: 0.5rem 1rem;
+    background: #22c55e;
+    color: #fff;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    
+    &:hover {
+      background: #16a34a;
+    }
+  }
+}
+
+// ============================================
+// CUSTOM COLOR PICKER
+// ============================================
+
+.custom-color-picker {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
+  
+  .picker-label {
+    display: block;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 0.75rem;
+  }
+  
+  .picker-inputs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+  }
+  
+  .picker-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    
+    label {
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.6);
+    }
+  }
+  
+  .color-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .color-input {
+    width: 48px;
+    height: 48px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    padding: 0;
+    background: transparent;
+    
+    &::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+    
+    &::-webkit-color-swatch {
+      border: none;
+      border-radius: 0.35rem;
+    }
+    
+    &::-moz-color-swatch {
+      border: none;
+      border-radius: 0.35rem;
+    }
+  }
+  
+  .color-hex {
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+  }
+  
+  .btn-apply-colors {
+    padding: 0.625rem 1.25rem;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: auto;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
     }
   }
 }
