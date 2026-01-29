@@ -8,7 +8,7 @@
  * Sincroniza dados entre chat (IA) e formulário (edição manual).
  */
 
-import { reactive, computed, readonly, watch } from 'vue';
+import { reactive, computed, readonly, watch, nextTick } from 'vue';
 import { buildOnboardingSteps } from '@/core/config/onboarding-steps.config.js';
 
 // ============================================
@@ -346,7 +346,7 @@ const pendingRequiredFields = computed(() => {
  * @param {object} initialData - Dados iniciais do formulário
  * @param {string[]} purchasedPages - Array com IDs das páginas compradas
  */
-function initSession(sessionId, initialData = {}, purchasedPages = []) {
+function initSession(sessionId, initialData = {}, purchasedPages = [], initialStepFromBackend = null) {
   const targetSessionId = sessionId || `session_${Date.now()}`;
   
   // Evitar inicialização duplicada para a mesma sessão
@@ -406,6 +406,12 @@ function initSession(sessionId, initialData = {}, purchasedPages = []) {
     }
   } else {
     console.log('[InitSession] Dados do backend carregados, ignorando localStorage');
+    
+    // Se o backend forneceu um step, usar ele (tem precedência sobre localStorage)
+    if (typeof initialStepFromBackend === 'number' && initialStepFromBackend >= 0) {
+      state.currentStepIndex = initialStepFromBackend;
+      console.log('[InitSession] Aplicando step do backend:', initialStepFromBackend);
+    }
   }
   
   // Inicializar histórico com estado atual
@@ -423,16 +429,22 @@ function initSession(sessionId, initialData = {}, purchasedPages = []) {
     // NÃO adiciona mensagem de continuação aqui - o usuário já tem o histórico
     // e pode ver o que falta no FormPreview
   } else {
-    // Primeira vez - mensagem de abertura
+    // Primeira vez OU chat foi limpo - mensagem de abertura
     // Reset messages para garantir array limpo
     state.messages = [];
     
     const hasExistingData = checkHasExistingData();
+    const currentStepData = currentStep.value;
+    
     addMessage({
       type: 'assistant',
-      content: getOpeningMessage(hasExistingData)
+      content: getOpeningMessage(hasExistingData, state.currentStepIndex, currentStepData)
     });
   }
+  
+  // O current_step já foi restaurado pelo loadDraft()
+  // NÃO calculamos automaticamente - respeitamos o step salvo
+  // O usuário decide quando avançar
   
   // Calcular XP inicial baseado nos dados existentes
   recalculateXP();
@@ -440,7 +452,7 @@ function initSession(sessionId, initialData = {}, purchasedPages = []) {
   // Marcar como inicializado
   state._isInitialized = true;
   state._initializingSessionId = null;
-  console.log('[InitSession] Sessão inicializada com sucesso:', state.sessionId);
+  console.log('[InitSession] Sessão inicializada com sucesso:', state.sessionId, 'step:', state.currentStepIndex);
 }
 
 /**
@@ -593,8 +605,29 @@ function getMissingInfo() {
 
 /**
  * Retorna a mensagem de abertura do assistente
+ * @param {boolean} hasExistingData - Se já tem dados preenchidos
+ * @param {number} currentStepIndex - Índice do step atual (0-based)
+ * @param {object} currentStepData - Dados do step atual
  */
-function getOpeningMessage(hasExistingData = false) {
+function getOpeningMessage(hasExistingData = false, currentStepIndex = 0, currentStepData = null) {
+  // Se tem dados E está em um step > 0, significa que estava no meio do processo
+  if (hasExistingData && currentStepIndex > 0 && currentStepData) {
+    const { formData } = state;
+    const parts = [];
+    
+    if (formData.companyName) parts.push(`**${formData.companyName}**`);
+    if (formData.businessType) parts.push(`ramo de **${formData.businessType}**`);
+    
+    return `Oi! 👋 Que bom ter você de volta!
+
+Vi que já temos algumas informações: ${parts.join(', ')}.
+
+Você estava em: **${currentStepData.name}** ${currentStepData.icon}
+
+**Você terminou essa parte?** Podemos avançar para o próximo passo ou quer continuar aqui?`;
+  }
+  
+  // Se tem dados mas está no step 0, pergunta se quer continuar de onde parou
   if (hasExistingData) {
     const { formData } = state;
     const parts = [];
@@ -754,13 +787,32 @@ Seus dados estão salvos e não serão perdidos! 💾`,
  * Processa mensagem com a API do Gemini
  */
 async function processWithAI(userMessage) {
+  // CRÍTICO: Aguardar nextTick para garantir que o Vue sincronizou todas as mudanças de estado
+  // Isso evita race conditions onde o formData pode estar desatualizado
+  await nextTick();
+  
+  // Criar cópia profunda do formData para evitar problemas de referência
+  const formDataSnapshot = JSON.parse(JSON.stringify(state.formData));
+  
+  // DEBUG: Log para verificar se os dados estão corretos
+  console.log('📤 [processWithAI] Enviando formData para API:', {
+    step: currentStepId.value,
+    companyName: formDataSnapshot.companyName,
+    businessType: formDataSnapshot.businessType,
+    frase: formDataSnapshot.frase,
+    primaryColor: formDataSnapshot.primaryColor,
+    secondaryColor: formDataSnapshot.secondaryColor,
+    hasLogo: !!formDataSnapshot.logo,
+    hasNoLogo: formDataSnapshot.hasNoLogo
+  });
+  
   const payload = {
     session_id: state.sessionId,
     step: currentStepId.value,
     messages: state.messages.slice(-10), // Últimas 10 mensagens para contexto
     user_message: userMessage,
-    current_form_data: state.formData,
-    voice_tone: state.formData.voiceTone || 'profissional'
+    current_form_data: formDataSnapshot,
+    voice_tone: formDataSnapshot.voiceTone || 'profissional'
   };
   
   const response = await fetch('/api/ai/conversational-onboarding.php', {
@@ -1005,18 +1057,25 @@ function dismissAchievementPopup() {
 }
 
 /**
- * Verifica se o step atual foi completado
+ * Verifica se o step atual tem campos obrigatórios preenchidos
+ * NÃO avança automaticamente - apenas desbloqueia conquistas se aplicável
+ * O avanço é controlado pelo usuário via nextStep()
  */
 function checkStepCompletion() {
   const step = currentStep.value;
-  if (!step || !step.requiredFields) return;
+  if (!step) return;
   
   // Verifica se todos os campos obrigatórios estão preenchidos
-  const allRequiredFilled = step.requiredFields.every(field => {
+  const requiredFields = step.requiredFields || [];
+  const allRequiredFilled = requiredFields.length === 0 || requiredFields.every(field => {
     const value = state.formData[field];
-    return value && (Array.isArray(value) ? value.length > 0 : true);
+    if (value === null || value === undefined || value === '') return false;
+    if (Array.isArray(value)) return value.length > 0;
+    return true;
   });
   
+  // Apenas desbloqueia conquista se houver
+  // O avanço de step é decidido pelo USUÁRIO, não automático
   if (allRequiredFilled && step.achievement) {
     unlockAchievement(step.achievement.id);
   }
@@ -1024,10 +1083,14 @@ function checkStepCompletion() {
 
 /**
  * Avança para o próximo step
+ * Chamado quando o USUÁRIO confirma que terminou o step atual
  */
 function nextStep() {
   if (state.currentStepIndex < activeSteps.value.length - 1) {
     state.currentStepIndex++;
+    
+    // Salva o step atual imediatamente
+    saveDraft();
     
     // Mensagem de transição do assistente
     const step = currentStep.value;
@@ -1047,6 +1110,7 @@ function nextStep() {
 function previousStep() {
   if (state.currentStepIndex > 0) {
     state.currentStepIndex--;
+    saveDraft();
   }
 }
 
@@ -1056,6 +1120,7 @@ function previousStep() {
 function goToStep(stepIndex) {
   if (stepIndex >= 0 && stepIndex < activeSteps.value.length) {
     state.currentStepIndex = stepIndex;
+    saveDraft();
   }
 }
 
@@ -1320,6 +1385,8 @@ async function saveDraft() {
     timestamp: Date.now()
   };
   
+  console.log(`[SaveDraft] Salvando step ${state.currentStepIndex} no localStorage para sessão ${state.sessionId}`);
+  
   // Modo demo: salvar no localStorage
   if (state.isDemoMode) {
     try {
@@ -1382,7 +1449,10 @@ function loadDraft(sessionId = null, applyToState = true) {
           
           // Restaurar step se disponível
           if (typeof data.current_step === 'number') {
+            console.log(`[LoadDraft] Restaurando step ${data.current_step} do localStorage`);
             state.currentStepIndex = data.current_step;
+          } else {
+            console.warn('[LoadDraft] current_step não encontrado no draft, mantendo step 0');
           }
         }
         

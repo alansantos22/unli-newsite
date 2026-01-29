@@ -108,11 +108,15 @@ try {
         throw new Exception('GEMINI_API_KEY não configurada no servidor.');
     }
     
-    // DEBUG: Log do formData recebido
+    // DEBUG: Log detalhado do formData recebido
     error_log("📥 [Request] Step: $currentStep | User: " . substr($userMessage, 0, 50));
     error_log("📥 [Request] FormData keys: " . json_encode(array_keys($currentFormData)));
+    error_log("📥 [Request] companyName: " . ($currentFormData['companyName'] ?? 'VAZIO'));
+    error_log("📥 [Request] businessType: " . ($currentFormData['businessType'] ?? 'VAZIO'));
     error_log("📥 [Request] Frase atual: " . ($currentFormData['frase'] ?? 'VAZIO'));
     error_log("📥 [Request] Cores: " . ($currentFormData['primaryColor'] ?? 'VAZIO') . ' / ' . ($currentFormData['secondaryColor'] ?? 'VAZIO'));
+    error_log("📥 [Request] Logo: " . (isset($currentFormData['logo']) && !empty($currentFormData['logo']) ? 'SIM (base64)' : 'NAO'));
+    error_log("📥 [Request] hasNoLogo: " . ($currentFormData['hasNoLogo'] ?? 'false'));
     
     // Processar com Gemini
     $result = processConversation(
@@ -172,6 +176,9 @@ function buildSystemPrompt(string $step, array $formData, string $voiceTone): st
     // Cores default que NÃO devem ser consideradas como preenchidas
     $defaultColors = ['#0066CC', '#28A745'];
     
+    // Campos que contêm dados binários/base64 - NÃO enviar conteúdo ao Gemini
+    $binaryFields = ['logo', 'images', 'photos', 'avatar'];
+    
     // Filtrar apenas campos do step atual (economia de tokens)
     $filledFields = [];
     $missingFields = [];
@@ -192,7 +199,14 @@ function buildSystemPrompt(string $step, array $formData, string $voiceTone): st
                 $missingFields[] = $field;
                 continue;
             }
-            $filledFields[$field] = $value;
+            
+            // Para campos binários (logo, imagens), apenas indicar que existe
+            // NÃO enviar o conteúdo base64/URL para economizar tokens
+            if (in_array($field, $binaryFields)) {
+                $filledFields[$field] = '[ENVIADO]';
+            } else {
+                $filledFields[$field] = $value;
+            }
         } else {
             $missingFields[] = $field;
         }
@@ -275,22 +289,34 @@ SUGESTOES (Copywriting Profissional):
 
 SUGESTOES DE CORES (OBRIGATORIO quando perguntar sobre cores):
 - SEMPRE envie cores como sugestoes estruturadas no array "suggestions"
+- Use PREFERENCIALMENTE as paletas Flat UI Colors (testadas em milhares de sites no mundo todo)
+- Explique que essas cores foram aprovadas por designers profissionais e garantem harmonia visual
 - Para cores, crie 3 paletas diferentes no formato:
   [
     {"field": "primaryColor", "value": "#0066CC"},
     {"field": "secondaryColor", "value": "#28A745"}
   ]
 - Cada paleta deve ter primaryColor E secondaryColor
+- PALETAS FLAT UI COLORS RECOMENDADAS (use estas preferencialmente):
+  * Profissional/Tech: #3498DB (azul sereno) + #2ECC71 (verde energia)
+  * Confianca/Saude: #1ABC9C (turquesa) + #16A085 (verde-mar)
+  * Energia/Criativo: #E74C3C (vermelho vibrante) + #C0392B (carmesim)
+  * Sofisticado/Elegante: #34495E (cinza-azulado) + #E67E22 (laranja)
+  * Moderno/Inovador: #9B59B6 (roxo) + #8E44AD (purpura)
+  * Amigavel/Acolhedor: #F39C12 (amarelo ouro) + #E67E22 (laranja)
+  * Seguranca/Juridico: #2C3E50 (azul marinho) + #3498DB (azul claro)
+  * Luxo/Premium: #8E44AD (purpura) + #2C3E50 (marinho escuro)
+- ABORDAGEM CONSULTIVA: Explique que essas cores foram testadas em sites ao redor do mundo
 - Exemplo de resposta com cores:
+  "assistant_message": "Otimo! Para transmitir profissionalismo e confianca, vou recomendar uma paleta que e sucesso em sites do mundo todo: **#3498DB** (azul sereno) como cor principal e **#2ECC71** (verde energia) como secundaria. Essas cores da paleta Flat UI foram testadas por designers e garantem harmonia visual perfeita. Que tal?",
   "suggestions": [
-    {"field": "primaryColor", "value": "#0066CC"},
-    {"field": "secondaryColor", "value": "#6F42C1"},
-    {"field": "primaryColor", "value": "#28A745"},
-    {"field": "secondaryColor", "value": "#17A2B8"},
-    {"field": "primaryColor", "value": "#FF6B35"},
-    {"field": "secondaryColor", "value": "#FFC107"}
+    {"field": "primaryColor", "value": "#3498DB"},
+    {"field": "secondaryColor", "value": "#2ECC71"},
+    {"field": "primaryColor", "value": "#1ABC9C"},
+    {"field": "secondaryColor", "value": "#16A085"},
+    {"field": "primaryColor", "value": "#34495E"},
+    {"field": "secondaryColor", "value": "#E67E22"}
   ]
-- Paletas por ramo: Saude:#28A745+#17A2B8, Tech:#0066CC+#6F42C1, Alimentos:#FF6B35+#FFC107, Beleza:#E83E8C+#6F42C1, Juridico:#212529+#0066CC, Games:#6F42C1+#22C55E, Pets:#FF6B35+#22C55E
 - Use ui_action: "show_color_picker" quando perguntar sobre cores
 
 IMPORTANTE:
@@ -333,7 +359,7 @@ Step: Identidade.
 SEQUENCIA OBRIGATORIA (depois de cada resposta do usuario, va para o proximo):
 1. Se nao tem companyName: Pergunte nome + ramo juntos
 2. Se tem companyName mas nao tem frase: Pergunte sobre frase/slogan
-3. Se tem frase mas nao tem cores: Pergunte cores (sugira baseado no ramo)
+3. Se tem frase mas nao tem cores: Pergunte cores com abordagem consultiva
 4. Se tem cores mas nao perguntou sobre logo: Ofereca opcao de enviar logo
 5. Se tudo preenchido: Avance para proximo step
 
@@ -342,12 +368,33 @@ User: Unli Games, desenvolvimento de games
 You: Entendi! **Unli Games** e o ramo e **desenvolvimento de games**. Agora me conta, qual e a frase ou slogan que representa a empresa?
 
 User: A revolucao do mundo dos games no Brasil
-You: Que frase impactante! Vou usar **Unli Games: A revolucao do mundo dos games no Brasil**. E as cores? Que tal #0066CC (azul tech) e #6F42C1 (roxo vibrante) para transmitir inovacao?
+You: Que frase impactante! Vou usar **Unli Games: A revolucao do mundo dos games no Brasil**. 
 
-IMPORTANTE: SEMPRE pergunte o PROXIMO campo na mesma mensagem da confirmacao!
+Agora vamos escolher as cores que vao transmitir a identidade visual da empresa. Como consultor de design, recomendo paletas da **Flat UI Colors** - cores testadas e aprovadas em milhares de sites profissionais ao redor do mundo.
 
-Extraia: companyName, businessType, frase, primaryColor, secondaryColor, voiceTone, logo, hasNoLogo.
-Cores sugeridas: Saude:#28A745+#17A2B8, Tech:#0066CC+#6F42C1, Alimentos:#FF6B35+#FFC107, Beleza:#E83E8C+#6F42C1, Juridico:#212529+#0066CC.
+Para games e tecnologia, sugiro:
+🎨 **Paleta 1 (Inovador)**: #9B59B6 (roxo vibrante) + #2ECC71 (verde energia)
+🎨 **Paleta 2 (Moderno)**: #3498DB (azul sereno) + #E74C3C (vermelho impacto)
+🎨 **Paleta 3 (Eletrizante)**: #E67E22 (laranja) + #8E44AD (purpura)
+
+Qual dessas paletas combina mais com a Unli Games? Ou prefere personalizar?
+
+PERGUNTA SOBRE LOGO (apos cores definidas):
+- SEMPRE inclua ui_action: "upload_logo" quando perguntar sobre logo
+- Pergunte de forma consultiva: "Voce ja tem um logo para a [EMPRESA]? Se tiver, pode enviar agora! Caso ainda nao tenha, sem problemas - podemos criar um visual moderno usando o **nome estilizado** da empresa. Muitos sites profissionais usam essa abordagem clean. Qual prefere por enquanto?"
+- NAO pergunte simplesmente "tem logo ou nao" - sempre ofereca a alternativa do nome estilizado como opcao valida e bonita
+
+IMPORTANTE: 
+- SEMPRE pergunte o PROXIMO campo na mesma mensagem da confirmacao!
+- Ao sugerir cores, use tom de consultoria profissional
+- Mencione que são paletas testadas mundialmente (Flat UI Colors)
+- Envie sempre 3 paletas como sugestões estruturadas
+- Logo: sempre mostre que nome estilizado é uma opção válida e elegante
+- NUNCA extraia o campo "logo" - o upload de logo é feito pelo frontend automaticamente
+- Apenas extraia hasNoLogo: true quando usuario disser que prefere nome estilizado/nao tem logo
+
+Extraia: companyName, businessType, frase, primaryColor, secondaryColor, voiceTone, hasNoLogo.
+Cores Flat UI: Tech/Games:#3498DB+#2ECC71 ou #9B59B6+#8E44AD, Saude:#1ABC9C+#16A085, Profissional:#34495E+#E67E22, Energia:#E74C3C+#C0392B, Premium:#8E44AD+#2C3E50, Juridico:#2C3E50+#3498DB, Acolhedor:#F39C12+#E67E22.
 Conquista: companyName+businessType+frase = identity_unlocked.
 EOT;
 
@@ -507,24 +554,34 @@ function callGeminiAPI(
     }
     
     // Processar ui_action e converter em actions para o Vue
+    // IMPORTANTE: Só adiciona actions se faz sentido no contexto atual
     $actions = null;
     if (isset($result['ui_action'])) {
         switch ($result['ui_action']) {
             case 'upload_logo':
-                $actions = [[
-                    'id' => 'upload_logo',
-                    'label' => '📁 Carregar Logo',
-                    'type' => 'trigger_upload',
-                    'variant' => 'primary'
-                ]];
+                // Só mostra botão de upload se não tem logo ainda
+                $hasLogo = !empty($formData['logo']);
+                $hasNoLogo = !empty($formData['hasNoLogo']);
+                if (!$hasLogo && !$hasNoLogo) {
+                    $actions = [[
+                        'id' => 'upload_logo',
+                        'label' => '📁 Carregar Logo',
+                        'type' => 'trigger_upload',
+                        'variant' => 'primary'
+                    ]];
+                }
                 break;
             case 'show_color_picker':
-                $actions = [[
-                    'id' => 'color_picker',
-                    'label' => '🎨 Escolher Cores',
-                    'type' => 'show_color_picker',
-                    'variant' => 'secondary'
-                ]];
+                // Só mostra botão de cores se não tem cores definidas
+                $hasColors = !empty($formData['primaryColor']) && !empty($formData['secondaryColor']);
+                if (!$hasColors) {
+                    $actions = [[
+                        'id' => 'color_picker',
+                        'label' => '🎨 Escolher Cores',
+                        'type' => 'show_color_picker',
+                        'variant' => 'secondary'
+                    ]];
+                }
                 break;
         }
     }
@@ -535,15 +592,27 @@ function callGeminiAPI(
         $nextField = $result['next_question']['field'];
         $currentStepFields = getStepFields($step);
         
+        // Função auxiliar para verificar se campo está preenchido
+        // Considera logo/hasNoLogo como um par (se um estiver preenchido, ambos contam)
+        $isFieldFilled = function($field) use ($formData) {
+            // Para logo: considera preenchido se tem logo OU se marcou hasNoLogo
+            if ($field === 'logo' || $field === 'hasNoLogo') {
+                return !empty($formData['logo']) || !empty($formData['hasNoLogo']);
+            }
+            return !empty($formData[$field]) && $formData[$field] !== '' && $formData[$field] !== null;
+        };
+        
         // Verificação 1: Campo pertence a outro step?
         if (!in_array($nextField, $currentStepFields)) {
             error_log("⚠️ [Step Validation] IA tentou perguntar '$nextField' no step '$step' (inválido!)");
             
             // Encontrar primeiro campo que falta no step atual
+            $foundReplacement = false;
             foreach ($currentStepFields as $field) {
-                if (empty($formData[$field]) || $formData[$field] === '' || $formData[$field] === null) {
+                if (!$isFieldFilled($field)) {
                     error_log("✅ [Step Validation] Corrigido para perguntar '$field' (step correto)");
                     $result['next_question']['field'] = $field;
+                    $foundReplacement = true;
                     
                     // Reescrever a mensagem para perguntar o campo correto
                     if ($field === 'primaryColor' || $field === 'secondaryColor') {
@@ -554,17 +623,24 @@ function callGeminiAPI(
                     break;
                 }
             }
+            
+            // Se não encontrou campo vazio, step está completo
+            if (!$foundReplacement) {
+                error_log("✅ [Step Validation] Nenhum campo vazio encontrado - step completo!");
+                $result['step_complete'] = true;
+                $result['next_question'] = null;
+            }
         }
         
         // Verificação 2: Está tentando perguntar um campo que JÁ FOI PREENCHIDO?
-        elseif (!empty($formData[$nextField]) && $formData[$nextField] !== '' && $formData[$nextField] !== null) {
+        elseif ($isFieldFilled($nextField)) {
             error_log("⚠️ [Step Validation] IA tentou perguntar '$nextField' que JÁ está preenchido!");
-            error_log("⚠️ [Step Validation] Valor atual de $nextField: " . json_encode($formData[$nextField]));
+            error_log("⚠️ [Step Validation] Valor atual de $nextField: " . json_encode($formData[$nextField] ?? 'N/A'));
             
             // Buscar PRÓXIMO campo que falta (na ordem do step)
             $foundNext = false;
             foreach ($currentStepFields as $field) {
-                if (empty($formData[$field]) || $formData[$field] === '' || $formData[$field] === null) {
+                if (!$isFieldFilled($field)) {
                     error_log("✅ [Step Validation] Corrigido para perguntar '$field' (próximo campo vazio)");
                     $result['next_question']['field'] = $field;
                     $foundNext = true;
@@ -594,11 +670,43 @@ function callGeminiAPI(
         }
     }
     
+    // Sanitizar extracted_fields - remover campos binários/base64 que não devem vir da IA
+    // (logo é gerenciado pelo frontend via upload direto)
+    $binaryFieldsToRemove = ['logo', 'images', 'photos', 'avatar'];
+    $extractedFields = $result['extracted_fields'] ?? [];
+    
+    foreach ($binaryFieldsToRemove as $fieldToRemove) {
+        if (isset($extractedFields[$fieldToRemove])) {
+            $value = $extractedFields[$fieldToRemove];
+            // Remover se for base64 ou URL longa (dados binários não devem vir da IA)
+            if (is_string($value) && (strpos($value, 'data:') === 0 || strlen($value) > 500)) {
+                unset($extractedFields[$fieldToRemove]);
+                error_log("🧹 [Sanitize] Removido campo binário '$fieldToRemove' dos extracted_fields");
+            }
+        }
+    }
+    
+    // Sanitizar assistant_message - remover qualquer JSON ou base64 que a IA possa ter incluído
+    $assistantMessage = $result['assistant_message'] ?? $generatedText;
+    
+    // Se a mensagem parece ser JSON puro (começa com { ou [), extrair só o texto
+    if (preg_match('/^\s*[\{\[]/', $assistantMessage)) {
+        // Tentar extrair assistant_message de dentro do JSON
+        $innerParsed = json_decode($assistantMessage, true);
+        if ($innerParsed && isset($innerParsed['assistant_message'])) {
+            $assistantMessage = $innerParsed['assistant_message'];
+            error_log("🧹 [Sanitize] Extraído assistant_message de JSON aninhado");
+        }
+    }
+    
+    // Remover qualquer ocorrência de data:image/... base64 da mensagem
+    $assistantMessage = preg_replace('/data:image\/[^;]+;base64,[a-zA-Z0-9+\/=]+/i', '[imagem recebida]', $assistantMessage);
+    
     // Garantir estrutura completa
     return [
         'success' => true,
-        'assistant_message' => $result['assistant_message'] ?? $generatedText,
-        'extracted_fields' => $result['extracted_fields'] ?? [],
+        'assistant_message' => $assistantMessage,
+        'extracted_fields' => $extractedFields,
         'suggestions' => $result['suggestions'] ?? [],
         'actions' => $actions,
         'next_question' => $result['next_question'] ?? null,
@@ -616,6 +724,45 @@ function callGeminiAPI(
 function tryLocalExtraction(string $step, string $message, array $formData): ?array {
     $message = trim($message);
     $messageLower = mb_strtolower($message);
+    
+    // =============================================
+    // DETECÇÃO: USUÁRIO DIZ QUE FINALIZOU O STEP
+    // Se o usuário diz "finalizei", "terminei", "concluí", etc.
+    // =============================================
+    if (preg_match('/(finalizei|terminei|conclu[ií]|completei|pronto|acabei|tudo (certo|pronto|ok)|j[aá] (finalizei|terminei|preenchi)).*step|etapa|identidade|marca|contato|hist[oó]ria|servi[cç]os/i', $messageLower) ||
+        preg_match('/^(finalizei|terminei|conclu[ií]|completei|pronto|acabei|j[aá] terminei|tudo certo|tudo pronto|pode avan[cç]ar|pr[oó]xim[oa])/i', $messageLower)) {
+        
+        // Verificar se step está realmente completo baseado nos campos
+        $isComplete = isStepComplete($step, $formData);
+        
+        if ($isComplete) {
+            // Step completo - avançar para próximo
+            $nextStepName = getNextStepName($step);
+            return [
+                'success' => true,
+                'assistant_message' => "Perfeito! ✅ O step de **" . ucfirst($step) . "** está completo!\n\nVamos para o próximo: **$nextStepName**. 🚀",
+                'extracted_fields' => [],
+                'suggestions' => [],
+                'achievements' => ['step_' . $step . '_complete'],
+                'step_complete' => true,
+                'skip_ai' => true
+            ];
+        } else {
+            // Step não está completo - informar o que falta
+            $missingFields = getMissingFieldsForStep($step, $formData);
+            $missingLabels = array_map('getFieldLabel', $missingFields);
+            $missingList = implode(', ', $missingLabels);
+            
+            return [
+                'success' => true,
+                'assistant_message' => "Quase lá! 👀 Ainda falta preencher: **$missingList**.\n\nQuer que eu te ajude com isso?",
+                'extracted_fields' => [],
+                'suggestions' => [],
+                'achievements' => [],
+                'skip_ai' => true
+            ];
+        }
+    }
     
     // =============================================
     // CONSCIÊNCIA DE ESTADO - O QUE O BOT PERGUNTOU?
@@ -824,4 +971,116 @@ function tryLocalExtraction(string $step, string $message, array $formData): ?ar
     
     // Não conseguiu resolver localmente
     return null;
+}
+
+/**
+ * Verifica se um step está completo baseado nos campos obrigatórios
+ */
+function isStepComplete(string $step, array $formData): bool {
+    // Campos OBRIGATÓRIOS por step (outros são opcionais)
+    $requiredFields = [
+        'identity' => ['companyName', 'businessType'],
+        'contact' => ['whatsapp'],
+        'about' => ['companyBio'],
+        'services' => ['services'],
+        'faq' => ['faqItems'],
+        'finalization' => []
+    ];
+    
+    // Para identity: logo OU hasNoLogo deve estar preenchido para considerar completo
+    // Cores também são importantes mas não bloqueiam
+    $required = $requiredFields[$step] ?? [];
+    
+    foreach ($required as $field) {
+        if (empty($formData[$field])) {
+            return false;
+        }
+    }
+    
+    // Para identity, verificar se tem logo OU hasNoLogo
+    if ($step === 'identity') {
+        $hasLogo = !empty($formData['logo']);
+        $hasNoLogo = !empty($formData['hasNoLogo']);
+        $hasColors = !empty($formData['primaryColor']) && !empty($formData['secondaryColor']);
+        
+        // Se não tem nem logo nem marcou "sem logo", não está completo
+        // MAS se tem cores definidas, é mais flexível
+        if (!$hasLogo && !$hasNoLogo && $hasColors) {
+            // Tem cores mas não definiu logo - perguntar sobre logo
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+/**
+ * Retorna campos faltantes para um step
+ */
+function getMissingFieldsForStep(string $step, array $formData): array {
+    $requiredFields = [
+        'identity' => ['companyName', 'businessType', 'primaryColor', 'secondaryColor'],
+        'contact' => ['whatsapp'],
+        'about' => ['companyBio'],
+        'services' => ['services'],
+        'faq' => ['faqItems'],
+        'finalization' => []
+    ];
+    
+    $missing = [];
+    $required = $requiredFields[$step] ?? [];
+    
+    foreach ($required as $field) {
+        if (empty($formData[$field])) {
+            $missing[] = $field;
+        }
+    }
+    
+    // Para identity, verificar logo também
+    if ($step === 'identity') {
+        $hasLogo = !empty($formData['logo']);
+        $hasNoLogo = !empty($formData['hasNoLogo']);
+        if (!$hasLogo && !$hasNoLogo) {
+            $missing[] = 'logo';
+        }
+    }
+    
+    return $missing;
+}
+
+/**
+ * Retorna label amigável para um campo
+ */
+function getFieldLabel(string $field): string {
+    $labels = [
+        'companyName' => 'Nome da empresa',
+        'businessType' => 'Ramo de atuação',
+        'frase' => 'Frase/slogan',
+        'primaryColor' => 'Cor principal',
+        'secondaryColor' => 'Cor secundária',
+        'logo' => 'Logo',
+        'voiceTone' => 'Tom de voz',
+        'whatsapp' => 'WhatsApp',
+        'companyBio' => 'História da empresa',
+        'services' => 'Serviços',
+        'faqItems' => 'Perguntas frequentes'
+    ];
+    
+    return $labels[$field] ?? $field;
+}
+
+/**
+ * Retorna nome do próximo step
+ */
+function getNextStepName(string $currentStep): string {
+    $steps = [
+        'identity' => 'Contato',
+        'contact' => 'História da Empresa',
+        'about' => 'Serviços',
+        'services' => 'FAQ',
+        'faq' => 'Finalização',
+        'finalization' => 'Revisão Final'
+    ];
+    
+    return $steps[$currentStep] ?? 'Próximo passo';
 }

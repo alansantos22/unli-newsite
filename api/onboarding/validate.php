@@ -58,6 +58,7 @@ try {
             order_details,
             onboarding_status,
             briefing_data,
+            current_step,
             created_at
         FROM " . $prefix . "orders 
         WHERE onboarding_token = ? 
@@ -119,6 +120,7 @@ try {
         'status' => $order['onboarding_status'],
         'briefing' => $briefingData,
         'orderDetails' => $orderDetails,
+        'currentStep' => isset($order['current_step']) ? intval($order['current_step']) : 0,
         'message' => $order['onboarding_status'] === 'concluido' 
             ? 'Briefing já foi concluído.' 
             : 'Token válido. Pode prosseguir.'

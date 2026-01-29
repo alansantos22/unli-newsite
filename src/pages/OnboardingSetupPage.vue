@@ -21,6 +21,7 @@
         :purchased-pages="purchasedPages"
         :initial-data="initialData"
         :session-id="sessionId"
+        :initial-step="currentStepFromBackend"
         @complete="handleConversationalComplete"
         @go-to-form="showTraditionalForm = true"
         @error="handleError"
@@ -61,7 +62,8 @@ export default {
       sessionId: '',
       orderId: null,
       showTraditionalForm: false,
-      conversationalData: {}
+      conversationalData: {},
+      currentStepFromBackend: 0
     };
   },
   
@@ -129,6 +131,12 @@ export default {
         // Carregar briefing existente se houver
         if (data.briefing) {
           this.initialData = data.briefing;
+        }
+        
+        // Carregar current_step do backend se houver
+        if (typeof data.currentStep === 'number') {
+          this.currentStepFromBackend = data.currentStep;
+          console.log('[OnboardingSetup] Step do backend:', data.currentStep);
         }
         
         this.isLoading = false;

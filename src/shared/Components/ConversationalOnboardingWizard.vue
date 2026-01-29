@@ -88,6 +88,9 @@
             @action="handleMessageAction"
             @suggestion-accept="handleSuggestionAccept"
             @custom-input="handleCustomInput"
+            @color-palette-accept="handleColorPaletteAccept"
+            @logo-upload="handleLogoUpload"
+            @no-logo="handleNoLogo"
           />
         </TransitionGroup>
         
@@ -210,13 +213,13 @@
     </section>
     
     <!-- ============================================ -->
-    <!-- FORM PREVIEW (Desktop Sidebar) -->
+    <!-- FORM PREVIEW LIVE (Desktop Sidebar - Cards Vivos) -->
     <!-- ============================================ -->
     <aside 
       v-if="!isMobile && showFormPreview && !isReviewMode" 
       class="form-preview-section"
     >
-      <FormPreview
+      <FormPreviewLive
         :form-data="formData"
         :current-step-id="currentStepId"
         :shimmering-fields="shimmeringFields"
@@ -224,6 +227,10 @@
         :validation-errors="validationErrors"
         @field-click="focusField"
         @field-edit="editFieldManually"
+        @image-upload="handleLiveCardImageUpload"
+        @image-remove="handleLiveCardImageRemove"
+        @edit-feedback="handleLiveCardEditFeedback"
+        @send-chat-message="handleLiveCardChatMessage"
       />
       
       <!-- Gamification Bar -->
@@ -400,6 +407,7 @@ import { useConversationalAI } from '@/core/services/conversational-ai.service';
 import speechToTextService from '@/core/services/speech-to-text.service';
 import ChatMessage from './ConversationalOnboarding/ChatMessage.vue';
 import FormPreview from './ConversationalOnboarding/FormPreview.vue';
+import FormPreviewLive from './ConversationalOnboarding/FormPreviewLive.vue';
 import ReviewCard from './ConversationalOnboarding/ReviewCard.vue';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
@@ -410,6 +418,7 @@ export default {
   components: {
     ChatMessage,
     FormPreview,
+    FormPreviewLive,
     ReviewCard
   },
   
@@ -425,6 +434,10 @@ export default {
     purchasedPages: {
       type: Array,
       default: () => []
+    },
+    initialStep: {
+      type: Number,
+      default: 0
     }
   },
   
@@ -768,10 +781,95 @@ export default {
       }
     }
     
+    /**
+     * Handler especial para paletas de cores
+     * Aplica ambas as cores de uma vez e envia UMA ÚNICA mensagem
+     */
+    async function handleColorPaletteAccept(palette) {
+      console.log('[Color Palette Accept]', palette);
+      
+      if (palette.primaryColor && palette.secondaryColor) {
+        // Atualizar ambos os campos de uma vez
+        updateField('primaryColor', palette.primaryColor);
+        updateField('secondaryColor', palette.secondaryColor);
+        
+        // Aguardar nextTick para garantir atualização
+        await nextTick();
+        
+        // Enviar UMA ÚNICA mensagem confirmando ambas as cores
+        await sendUserMessage(
+          `Gostei! Vou usar ${palette.primaryColor} como cor principal e ${palette.secondaryColor} como secundária.`,
+          false
+        );
+        scrollToBottom();
+      }
+    }
+    
     async function handleCustomInput(field, label) {
       // Quando o cliente quer escrever sua própria frase
       userInput.value = `Quero escrever minha própria ${label}. `;
       inputTextarea.value?.focus();
+    }
+    
+    /**
+     * Handler para upload de logo inline
+     */
+    async function handleLogoUpload(file) {
+      console.log('[Logo Upload]', file.name);
+      
+      // Criar FormData para upload
+      const formData = new FormData();
+      formData.append('logo', file);
+      formData.append('session_id', props.sessionId);
+      
+      try {
+        // Fazer upload do logo
+        const response = await fetch('/api/upload/logo.php', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success && result.url) {
+          // Atualizar campo do logo no formulário
+          updateField('logo', result.url);
+          await nextTick();
+          
+          // Confirmar no chat
+          await sendUserMessage('Enviei meu logo!', false);
+          scrollToBottom();
+        } else {
+          console.error('[Logo Upload] Erro:', result.error);
+          await sendUserMessage('Tive um problema ao enviar o logo. Posso tentar novamente?', false);
+        }
+      } catch (error) {
+        console.error('[Logo Upload] Erro de rede:', error);
+        // Fallback: salvar como base64 localmente
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          updateField('logo', e.target.result);
+          await nextTick();
+          await sendUserMessage('Enviei meu logo!', false);
+          scrollToBottom();
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+    
+    /**
+     * Handler para quando usuário opta por não ter logo
+     */
+    async function handleNoLogo() {
+      console.log('[No Logo] Usuário optou por nome estilizado');
+      
+      // Marcar que não tem logo
+      updateField('hasNoLogo', true);
+      await nextTick();
+      
+      // Confirmar no chat
+      await sendUserMessage('Por enquanto prefiro usar o nome estilizado, sem logo.', false);
+      scrollToBottom();
     }
     
     function handleImagesAdded(files) {
@@ -803,6 +901,93 @@ export default {
     function handlePublish() {
       if (!canPublish.value) return;
       emit('complete', formData.value);
+    }
+    
+    // ============================================
+    // LIVE CARDS HANDLERS (Cards Vivos)
+    // ============================================
+    
+    /**
+     * Handler para upload de imagem dos Cards Vivos
+     */
+    async function handleLiveCardImageUpload({ field, file, cardId }) {
+      console.log('[LiveCard Image Upload]', field, file.name, cardId);
+      
+      // Criar FormData para upload
+      const uploadFormData = new FormData();
+      uploadFormData.append(field, file);
+      uploadFormData.append('session_id', props.sessionId);
+      uploadFormData.append('field', field);
+      
+      try {
+        // Fazer upload da imagem
+        const response = await fetch('/api/upload/image.php', {
+          method: 'POST',
+          body: uploadFormData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success && result.url) {
+          // Atualizar campo no formulário
+          updateField(field, result.url);
+          await nextTick();
+          
+          // Feedback visual já é dado pelo LiveCard
+          console.log('[LiveCard] Imagem atualizada:', field, result.url);
+        } else {
+          console.error('[LiveCard Image Upload] Erro:', result.error);
+          alert('Erro ao enviar imagem. Tente novamente.');
+        }
+      } catch (error) {
+        console.error('[LiveCard Image Upload] Erro de rede:', error);
+        
+        // Fallback: salvar como base64 localmente
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          updateField(field, e.target.result);
+          await nextTick();
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+    
+    /**
+     * Handler para remover imagem dos Cards Vivos
+     */
+    function handleLiveCardImageRemove({ field, cardId }) {
+      console.log('[LiveCard Image Remove]', field, cardId);
+      updateField(field, null);
+    }
+    
+    /**
+     * Handler para feedback de edição dos Cards Vivos
+     */
+    function handleLiveCardEditFeedback({ field, label }) {
+      console.log('[LiveCard Edit Feedback]', field, label);
+      // Feedback já é mostrado visualmente no card
+    }
+    
+    /**
+     * Handler para mensagens do chat vindas dos Cards Vivos
+     * Usado para feedback inline (ex: "Alteração salva no campo X")
+     */
+    async function handleLiveCardChatMessage(message) {
+      console.log('[LiveCard Chat Message]', message);
+      
+      // Adicionar mensagem do sistema no chat (sem esperar resposta da IA)
+      // Esta é uma mensagem de feedback, não uma interação
+      const systemMessage = {
+        id: Date.now(),
+        type: 'assistant',
+        content: message,
+        timestamp: Date.now(),
+        isSystemFeedback: true  // Flag para estilização diferenciada
+      };
+      
+      // Adicionar diretamente ao array de mensagens via state
+      state.messages.push(systemMessage);
+      scrollToBottom();
     }
     
     function handleGoToForm() {
@@ -864,7 +1049,7 @@ export default {
           clearSession(previousSessionInfo.value.sessionId);
         }
         // Iniciar nova sessão
-        initSession(props.sessionId, props.initialData, props.purchasedPages);
+        initSession(props.sessionId, props.initialData, props.purchasedPages, props.initialStep);
       }
       
       showRestoreModal.value = false;
@@ -891,7 +1076,7 @@ export default {
         showRestoreModal.value = true;
       } else {
         // Iniciar nova sessão normalmente
-        initSession(props.sessionId, props.initialData, props.purchasedPages);
+        initSession(props.sessionId, props.initialData, props.purchasedPages, props.initialStep);
         scrollToBottom();
       }
     });
@@ -959,7 +1144,10 @@ export default {
       handleQuickAction,
       handleMessageAction,
       handleSuggestionAccept,
+      handleColorPaletteAccept,
       handleCustomInput,
+      handleLogoUpload,
+      handleNoLogo,
       handleImagesAdded,
       handleImageRemoved,
       focusField,
@@ -976,7 +1164,13 @@ export default {
       handleRestoreDecision,
       dismissAchievementPopup,
       goToStep,
-      exitReviewMode
+      exitReviewMode,
+      
+      // Live Cards (Cards Vivos) handlers
+      handleLiveCardImageUpload,
+      handleLiveCardImageRemove,
+      handleLiveCardEditFeedback,
+      handleLiveCardChatMessage
     };
   }
 };

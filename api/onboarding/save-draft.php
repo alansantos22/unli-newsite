@@ -30,15 +30,17 @@ $jsonInput = json_decode($rawInput, true);
 
 // Prioriza JSON body, fallback para $_POST
 if ($jsonInput !== null) {
-    // JSON body (session_id + data)
+    // JSON body (session_id + data + current_step)
     $token = isset($jsonInput['session_id']) ? trim($jsonInput['session_id']) : '';
     $briefingData = isset($jsonInput['data']) ? $jsonInput['data'] : null;
     $briefingJson = $briefingData ? json_encode($briefingData, JSON_UNESCAPED_UNICODE) : '';
+    $currentStep = isset($jsonInput['current_step']) ? intval($jsonInput['current_step']) : 0;
 } else {
     // Form data legado (token + briefing)
     $token = isset($_POST['token']) ? trim($_POST['token']) : '';
     $briefingJson = isset($_POST['briefing']) ? trim($_POST['briefing']) : '';
     $briefingData = json_decode($briefingJson, true);
+    $currentStep = isset($_POST['current_step']) ? intval($_POST['current_step']) : 0;
 }
 
 if (empty($token)) {
@@ -109,11 +111,12 @@ try {
         exit();
     }
     
-    // Update briefing data and status to 'preenchendo'
+    // Update briefing data, current_step and status to 'preenchendo'
     $updateStmt = $conn->prepare("
         UPDATE " . $prefix . "orders 
         SET 
             briefing_data = ?,
+            current_step = ?,
             onboarding_status = IF(onboarding_status = 'pendente', 'preenchendo', onboarding_status),
             updated_at = NOW()
         WHERE onboarding_token = ?
@@ -123,7 +126,7 @@ try {
         throw new Exception('Erro ao preparar atualização.');
     }
     
-    $updateStmt->bind_param('ss', $briefingJson, $token);
+    $updateStmt->bind_param('sis', $briefingJson, $currentStep, $token);
     
     if (!$updateStmt->execute()) {
         throw new Exception('Erro ao salvar rascunho.');

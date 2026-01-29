@@ -161,6 +161,47 @@
         </button>
       </div>
       
+      <!-- Upload de Logo Inline (quando ui_action é upload_logo ou tem action de logo) -->
+      <div v-if="hasLogoAction" class="logo-upload-section">
+        <div class="logo-upload-header">
+          <span class="logo-icon">🖼️</span>
+          <span class="logo-label">Envie seu logo aqui:</span>
+        </div>
+        <div class="logo-upload-area">
+          <label class="logo-dropzone" :class="{ 'has-file': logoPreview }">
+            <input 
+              type="file" 
+              accept="image/*" 
+              @change="handleLogoSelect"
+              class="logo-input"
+            />
+            <template v-if="!logoPreview">
+              <span class="dropzone-icon">📤</span>
+              <span class="dropzone-text">Clique ou arraste seu logo aqui</span>
+              <span class="dropzone-hint">PNG, JPG, SVG (máx. 5MB)</span>
+            </template>
+            <template v-else>
+              <img :src="logoPreview" alt="Logo preview" class="logo-preview-img" />
+              <span class="change-logo">Clique para trocar</span>
+            </template>
+          </label>
+          <div class="logo-actions" v-if="logoPreview">
+            <button class="btn-confirm-logo" @click="confirmLogo">
+              ✓ Usar este logo
+            </button>
+            <button class="btn-cancel-logo" @click="clearLogo">
+              ✕ Remover
+            </button>
+          </div>
+        </div>
+        <div class="logo-alternative">
+          <button class="btn-no-logo" @click="chooseNoLogo">
+            ✨ Usar nome estilizado (sem logo por enquanto)
+          </button>
+          <span class="no-logo-hint">Podemos criar um visual moderno apenas com o nome da empresa</span>
+        </div>
+      </div>
+      
       <!-- Timestamp -->
       <span class="message-time">{{ formattedTime }}</span>
     </div>
@@ -182,7 +223,7 @@ export default {
     }
   },
   
-  emits: ['action', 'suggestion-accept', 'custom-input', 'color-palette-accept'],
+  emits: ['action', 'suggestion-accept', 'custom-input', 'color-palette-accept', 'logo-upload', 'no-logo'],
   
   setup(props, { emit }) {
     // DEBUG: Log das sugestões quando componente é montado
@@ -196,6 +237,10 @@ export default {
     // Refs para color picker custom
     const customPrimaryColor = ref('#0066CC');
     const customSecondaryColor = ref('#28A745');
+    
+    // Refs para logo upload
+    const logoPreview = ref(null);
+    const logoFile = ref(null);
     
     const messageType = computed(() => {
       if (props.message.type === 'assistant') return 'assistant';
@@ -316,21 +361,70 @@ export default {
       return found ? found[1] : hexColor;
     }
     
-    // Aceita uma paleta de cores
+    // Aceita uma paleta de cores (emite evento único com ambas as cores)
     function acceptColorPalette(palette) {
-      emit('suggestion-accept', { field: 'primaryColor', value: palette.primary });
-      // Pequeno delay para processar a primeira cor
-      setTimeout(() => {
-        emit('suggestion-accept', { field: 'secondaryColor', value: palette.secondary });
-      }, 100);
+      emit('color-palette-accept', {
+        primaryColor: palette.primary,
+        secondaryColor: palette.secondary
+      });
     }
     
     // Aplica cores customizadas do color picker
     function applyCustomColors() {
-      emit('suggestion-accept', { field: 'primaryColor', value: customPrimaryColor.value });
-      setTimeout(() => {
-        emit('suggestion-accept', { field: 'secondaryColor', value: customSecondaryColor.value });
-      }, 100);
+      emit('color-palette-accept', {
+        primaryColor: customPrimaryColor.value,
+        secondaryColor: customSecondaryColor.value
+      });
+    }
+    
+    // Verifica se tem action de upload de logo
+    const hasLogoAction = computed(() => {
+      if (props.message.ui_action === 'upload_logo') return true;
+      if (props.message.actions?.some(a => a.id === 'upload_logo' || a.type === 'upload_logo')) return true;
+      return false;
+    });
+    
+    // Handler para seleção de logo
+    function handleLogoSelect(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      
+      // Validar tipo e tamanho
+      if (!file.type.startsWith('image/')) {
+        alert('Por favor, selecione uma imagem');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert('O arquivo é muito grande. Máximo 5MB.');
+        return;
+      }
+      
+      logoFile.value = file;
+      
+      // Criar preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        logoPreview.value = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    // Confirmar logo selecionado
+    function confirmLogo() {
+      if (logoFile.value) {
+        emit('logo-upload', logoFile.value);
+      }
+    }
+    
+    // Limpar logo selecionado
+    function clearLogo() {
+      logoPreview.value = null;
+      logoFile.value = null;
+    }
+    
+    // Escolher não ter logo (usar nome estilizado)
+    function chooseNoLogo() {
+      emit('no-logo');
     }
     
     return {
@@ -349,7 +443,13 @@ export default {
       customPrimaryColor,
       customSecondaryColor,
       acceptColorPalette,
-      applyCustomColors
+      applyCustomColors,
+      hasLogoAction,
+      logoPreview,
+      handleLogoSelect,
+      confirmLogo,
+      clearLogo,
+      chooseNoLogo
     };
   }
 };
@@ -850,5 +950,163 @@ export default {
   margin-top: 0.5rem;
   font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.4);
+}
+
+// ============================================
+// LOGO UPLOAD SECTION
+// ============================================
+
+.logo-upload-section {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logo-upload-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  
+  .logo-icon {
+    font-size: 1.25rem;
+  }
+  
+  .logo-label {
+    font-weight: 500;
+    color: #fff;
+  }
+}
+
+.logo-upload-area {
+  margin-bottom: 1rem;
+}
+
+.logo-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(99, 102, 241, 0.1);
+  border: 2px dashed rgba(99, 102, 241, 0.4);
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 120px;
+  
+  &:hover {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.6);
+  }
+  
+  &.has-file {
+    border-style: solid;
+    border-color: #22c55e;
+    background: rgba(34, 197, 94, 0.1);
+  }
+  
+  .logo-input {
+    display: none;
+  }
+  
+  .dropzone-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .dropzone-text {
+    font-size: 0.9rem;
+    color: #fff;
+    margin-bottom: 0.25rem;
+  }
+  
+  .dropzone-hint {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  
+  .logo-preview-img {
+    max-width: 150px;
+    max-height: 80px;
+    object-fit: contain;
+    border-radius: 0.5rem;
+  }
+  
+  .change-logo {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 0.5rem;
+  }
+}
+
+.logo-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  
+  .btn-confirm-logo {
+    flex: 1;
+    padding: 0.6rem 1rem;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    border: none;
+    border-radius: 0.5rem;
+    color: #fff;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+    }
+  }
+  
+  .btn-cancel-logo {
+    padding: 0.6rem 1rem;
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    border-radius: 0.5rem;
+    color: #ef4444;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover {
+      background: rgba(239, 68, 68, 0.3);
+    }
+  }
+}
+
+.logo-alternative {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  
+  .btn-no-logo {
+    padding: 0.6rem 1.25rem;
+    background: rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(139, 92, 246, 0.4);
+    border-radius: 0.5rem;
+    color: #a78bfa;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover {
+      background: rgba(139, 92, 246, 0.3);
+      border-color: rgba(139, 92, 246, 0.6);
+    }
+  }
+  
+  .no-logo-hint {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 0.5rem;
+    text-align: center;
+  }
 }
 </style>
