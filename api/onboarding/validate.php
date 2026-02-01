@@ -14,6 +14,165 @@ header('Content-Type: application/json');
 // Carregar configuração do banco de dados
 require_once __DIR__ . '/../lib/database.php';
 
+// ============================================
+// DEFINIÇÃO DOS CAMPOS DO ONBOARDING
+// (Espelhado do frontend para consistência)
+// ============================================
+
+$ONBOARDING_FIELDS = [
+    'identity' => [
+        ['id' => 'companyName', 'required' => true],
+        ['id' => 'businessType', 'required' => true],
+        ['id' => 'frase', 'required' => false],
+        ['id' => 'primaryColor', 'required' => false],
+        ['id' => 'secondaryColor', 'required' => false],
+        ['id' => 'voiceTone', 'required' => false],
+        ['id' => 'logo', 'required' => false],
+        ['id' => 'hasNoLogo', 'required' => false]
+    ],
+    'contact' => [
+        ['id' => 'whatsapp', 'required' => true],
+        ['id' => 'additionalPhones', 'required' => false],
+        ['id' => 'email', 'required' => false],
+        ['id' => 'instagram', 'required' => false],
+        ['id' => 'facebook', 'required' => false],
+        ['id' => 'linkedin', 'required' => false],
+        ['id' => 'youtube', 'required' => false],
+        ['id' => 'tiktok', 'required' => false],
+        ['id' => 'hasPhysicalLocation', 'required' => false],
+        ['id' => 'addressCep', 'required' => false],
+        ['id' => 'addressStreet', 'required' => false],
+        ['id' => 'addressNumber', 'required' => false],
+        ['id' => 'addressComplement', 'required' => false],
+        ['id' => 'addressNeighborhood', 'required' => false],
+        ['id' => 'addressCity', 'required' => false],
+        ['id' => 'addressState', 'required' => false],
+        ['id' => 'businessHours', 'required' => false]
+    ],
+    'about' => [
+        ['id' => 'aboutSectionTitle', 'required' => false],
+        ['id' => 'companyBio', 'required' => false],
+        ['id' => 'foundingYear', 'required' => false],
+        ['id' => 'founders', 'required' => false],
+        ['id' => 'aboutImage', 'required' => false],
+        ['id' => 'companyHighlights', 'required' => false],
+        ['id' => 'showMissionVision', 'required' => false],
+        ['id' => 'mission', 'required' => false],
+        ['id' => 'vision', 'required' => false],
+        ['id' => 'values', 'required' => false]
+    ],
+    'services' => [
+        ['id' => 'servicesSectionTitle', 'required' => false],
+        ['id' => 'servicesIntro', 'required' => false],
+        ['id' => 'services', 'required' => false],
+        ['id' => 'hasGuarantee', 'required' => false],
+        ['id' => 'guaranteeDetails', 'required' => false]
+    ],
+    'faq' => [
+        ['id' => 'faqItems', 'required' => false]
+    ],
+    'finalization' => [
+        ['id' => 'additionalNotes', 'required' => false],
+        ['id' => 'urgency', 'required' => false],
+        ['id' => 'inspirationUrls', 'required' => false]
+    ]
+];
+
+/**
+ * Verifica se um valor é considerado "preenchido"
+ */
+function isFieldFilled($value) {
+    if ($value === null || $value === '') return false;
+    if (is_array($value) && count($value) === 0) return false;
+    if (is_bool($value)) return true; // Booleans são sempre considerados preenchidos
+    return true;
+}
+
+/**
+ * Gera o checklist de campos preenchidos baseado no briefing
+ */
+function generateFieldChecklist($briefingData) {
+    global $ONBOARDING_FIELDS;
+    
+    $checklist = [];
+    
+    foreach ($ONBOARDING_FIELDS as $stepId => $fields) {
+        $stepChecklist = [];
+        
+        foreach ($fields as $field) {
+            $fieldId = $field['id'];
+            $value = $briefingData[$fieldId] ?? null;
+            $isFilled = isFieldFilled($value);
+            
+            // Mapear para os status do frontend
+            // empty, answered, skipped, confirmed
+            $status = 'empty';
+            if ($isFilled) {
+                $status = 'answered';
+            }
+            
+            $stepChecklist[$fieldId] = [
+                'status' => $status,
+                'required' => $field['required'],
+                'hasValue' => $isFilled
+            ];
+        }
+        
+        $checklist[$stepId] = $stepChecklist;
+    }
+    
+    return $checklist;
+}
+
+/**
+ * Calcula estatísticas de progresso
+ */
+function calculateProgressStats($fieldChecklist) {
+    $totalFields = 0;
+    $filledFields = 0;
+    $requiredTotal = 0;
+    $requiredFilled = 0;
+    $stepProgress = [];
+    
+    foreach ($fieldChecklist as $stepId => $fields) {
+        $stepTotal = 0;
+        $stepFilled = 0;
+        
+        foreach ($fields as $fieldId => $fieldData) {
+            $totalFields++;
+            $stepTotal++;
+            
+            if ($fieldData['hasValue']) {
+                $filledFields++;
+                $stepFilled++;
+            }
+            
+            if ($fieldData['required']) {
+                $requiredTotal++;
+                if ($fieldData['hasValue']) {
+                    $requiredFilled++;
+                }
+            }
+        }
+        
+        $stepProgress[$stepId] = [
+            'total' => $stepTotal,
+            'filled' => $stepFilled,
+            'percent' => $stepTotal > 0 ? round(($stepFilled / $stepTotal) * 100) : 0
+        ];
+    }
+    
+    return [
+        'totalFields' => $totalFields,
+        'filledFields' => $filledFields,
+        'overallPercent' => $totalFields > 0 ? round(($filledFields / $totalFields) * 100) : 0,
+        'requiredTotal' => $requiredTotal,
+        'requiredFilled' => $requiredFilled,
+        'requiredComplete' => $requiredTotal === $requiredFilled,
+        'stepProgress' => $stepProgress
+    ];
+}
+
 // Only allow GET requests
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     http_response_code(405);
@@ -111,6 +270,13 @@ try {
         $orderDetails = json_decode($order['order_details'], true);
     }
     
+    // ============================================
+    // GERAR CHECKLIST DE CAMPOS PREENCHIDOS
+    // ============================================
+    
+    $fieldChecklist = generateFieldChecklist($briefingData);
+    $progressStats = calculateProgressStats($fieldChecklist);
+    
     // Return success response
     echo json_encode([
         'success' => true,
@@ -121,6 +287,8 @@ try {
         'briefing' => $briefingData,
         'orderDetails' => $orderDetails,
         'currentStep' => isset($order['current_step']) ? intval($order['current_step']) : 0,
+        'fieldChecklist' => $fieldChecklist,
+        'progressStats' => $progressStats,
         'message' => $order['onboarding_status'] === 'concluido' 
             ? 'Briefing já foi concluído.' 
             : 'Token válido. Pode prosseguir.'

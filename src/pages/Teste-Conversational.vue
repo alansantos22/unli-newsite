@@ -12,11 +12,11 @@
 
     <!-- Conteúdo principal -->
     <main class="test-content">
-      <ConversationalOnboardingWizard 
+      <SmartOnboarding 
         v-if="showAssistant"
         :initial-data="initialData"
+        session-id="test-session"
         @complete="onComplete"
-        @save-draft="onSaveDraft"
       />
       
       <!-- Botão de iniciar -->
@@ -27,8 +27,8 @@
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
           </div>
-          <h1>Assistente Conversacional</h1>
-          <p>Crie seu site conversando com a Jules, nossa assistente de IA.</p>
+          <h1>Assistente Unli</h1>
+          <p>Crie seu site conversando com o Assistente Unli, seu consultor especializado.</p>
           
           <div class="features">
             <div class="feature">
@@ -60,12 +60,12 @@
 
 <script>
 import { ref } from 'vue'
-import ConversationalOnboardingWizard from '@/shared/Components/ConversationalOnboardingWizard.vue'
+import { SmartOnboarding } from '@/shared/Components/SmartOnboarding'
 
 export default {
   name: 'TesteConversational',
   components: {
-    ConversationalOnboardingWizard
+    SmartOnboarding
   },
   setup() {
     const showAssistant = ref(false)

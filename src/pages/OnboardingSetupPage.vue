@@ -16,14 +16,14 @@
     
     <!-- Wizard (só renderiza após carregar dados) -->
     <template v-else>
-      <ConversationalOnboardingWizard
+      <SmartOnboarding
         v-if="!showTraditionalForm"
-        :purchased-pages="purchasedPages"
         :initial-data="initialData"
         :session-id="sessionId"
-        :initial-step="currentStepFromBackend"
+        :field-checklist="fieldChecklist"
+        :purchased-pages="purchasedPages"
+        :order-id="orderId"
         @complete="handleConversationalComplete"
-        @go-to-form="showTraditionalForm = true"
         @error="handleError"
       />
       
@@ -43,14 +43,14 @@
 
 <script>
 import DynamicOnboardingWizard from '@/shared/Components/DynamicOnboardingWizard.vue';
-import ConversationalOnboardingWizard from '@/shared/Components/ConversationalOnboardingWizard.vue';
+import { SmartOnboarding } from '@/shared/Components/SmartOnboarding';
 
 export default {
   name: 'OnboardingSetupPage',
   
   components: {
     DynamicOnboardingWizard,
-    ConversationalOnboardingWizard
+    SmartOnboarding
   },
   
   data() {
@@ -63,11 +63,15 @@ export default {
       orderId: null,
       showTraditionalForm: false,
       conversationalData: {},
-      currentStepFromBackend: 0
+      currentStepFromBackend: 0,
+      fieldChecklist: {},      // Novo: checklist de campos preenchidos
+      progressStats: null      // Novo: estatísticas de progresso
     };
   },
   
   async created() {
+    console.log('[OnboardingSetupPage] Iniciando...');
+    console.log('[OnboardingSetupPage] Token:', this.$route.query.token);
     await this.validateToken();
   },
   
@@ -131,6 +135,19 @@ export default {
         // Carregar briefing existente se houver
         if (data.briefing) {
           this.initialData = data.briefing;
+          console.log('[OnboardingSetup] Briefing carregado:', data.briefing);
+        }
+        
+        // Carregar checklist de campos do backend
+        if (data.fieldChecklist) {
+          this.fieldChecklist = data.fieldChecklist;
+          console.log('[OnboardingSetup] Field checklist:', data.fieldChecklist);
+        }
+        
+        // Carregar estatísticas de progresso
+        if (data.progressStats) {
+          this.progressStats = data.progressStats;
+          console.log('[OnboardingSetup] Progress stats:', data.progressStats);
         }
         
         // Carregar current_step do backend se houver
@@ -150,10 +167,12 @@ export default {
     
     loadDemoMode() {
       // Modo demo para desenvolvimento/teste
+      console.log('[OnboardingSetupPage] Carregando modo demo');
       this.purchasedPages = ['sobre_nos', 'servicos', 'faq'];
       this.initialData = {};
       this.sessionId = 'demo-' + Date.now();
       this.isLoading = false;
+      console.log('[OnboardingSetupPage] Demo pronto. SessionId:', this.sessionId);
     },
     
     retryValidation() {

@@ -23,269 +23,283 @@ $input = json_decode(file_get_contents('php://input'), true);
 $businessType = $input['business_type'] ?? '';
 $companyName = $input['company_name'] ?? '';
 
-// Paletas pré-definidas por ramo
+// ============================================
+// FLAT UI COLORS - Cores validadas pelo mercado
+// ============================================
+// Turquoise: #1ABC9C | Green Sea: #16A085
+// Emerald: #2ECC71 | Nephritis: #27AE60
+// Peter River: #3498DB | Belize Hole: #2980B9
+// Amethyst: #9B59B6 | Wisteria: #8E44AD
+// Wet Asphalt: #34495E | Midnight Blue: #2C3E50
+// Sun Flower: #F1C40F | Orange: #F39C12
+// Carrot: #E67E22 | Pumpkin: #D35400
+// Alizarin: #E74C3C | Pomegranate: #C0392B
+// Clouds: #ECF0F1 | Silver: #BDC3C7
+// Concrete: #95A5A6 | Asbestos: #7F8C8D
+
+// Paletas pré-definidas por ramo (usando APENAS Flat UI Colors)
 $palettes = [
     'alimentacao' => [
         [
-            'primary' => '#FF6B35',
-            'secondary' => '#FFC107',
+            'primary' => '#E67E22', // Carrot
+            'secondary' => '#F1C40F', // Sun Flower
             'name' => 'Apetitoso',
-            'reason' => 'Cores quentes estimulam o apetite e passam energia'
+            'reason' => 'Cores quentes abrem o apetite e passam energia - perfeitas para alimentação'
         ],
         [
-            'primary' => '#E63946',
-            'secondary' => '#F4A261',
+            'primary' => '#E74C3C', // Alizarin
+            'secondary' => '#F39C12', // Orange
             'name' => 'Sabor Intenso',
-            'reason' => 'Vermelho e laranja são clássicos da gastronomia'
+            'reason' => 'Vermelho e laranja são os clássicos da gastronomia mundial'
         ],
         [
-            'primary' => '#2D6A4F',
-            'secondary' => '#95D5B2',
+            'primary' => '#27AE60', // Nephritis
+            'secondary' => '#2ECC71', // Emerald
             'name' => 'Natural & Saudável',
-            'reason' => 'Ideal para alimentação saudável ou orgânica'
+            'reason' => 'Tons de verde ideais para alimentação saudável ou orgânica'
         ]
     ],
     'saude' => [
         [
-            'primary' => '#28A745',
-            'secondary' => '#17A2B8',
+            'primary' => '#1ABC9C', // Turquoise
+            'secondary' => '#3498DB', // Peter River
             'name' => 'Saúde & Cuidado',
-            'reason' => 'Verde transmite saúde, azul transmite confiança'
+            'reason' => 'Turquesa transmite cuidado, azul passa confiança'
         ],
         [
-            'primary' => '#0077B6',
-            'secondary' => '#90E0EF',
+            'primary' => '#3498DB', // Peter River
+            'secondary' => '#2980B9', // Belize Hole
             'name' => 'Clínico Moderno',
-            'reason' => 'Azul é a cor mais usada em saúde, passa credibilidade'
+            'reason' => 'Azul é a cor mais usada em saúde - passa credibilidade'
         ],
         [
-            'primary' => '#48CAE4',
-            'secondary' => '#CAF0F8',
-            'name' => 'Refrescante',
-            'reason' => 'Tons claros transmitem limpeza e tranquilidade'
+            'primary' => '#2ECC71', // Emerald
+            'secondary' => '#1ABC9C', // Turquoise
+            'name' => 'Bem-estar',
+            'reason' => 'Verde e turquesa transmitem saúde e tranquilidade'
         ]
     ],
     'beleza' => [
         [
-            'primary' => '#E83E8C',
-            'secondary' => '#6F42C1',
+            'primary' => '#9B59B6', // Amethyst
+            'secondary' => '#E74C3C', // Alizarin
             'name' => 'Glamour',
-            'reason' => 'Rosa e roxo são sofisticados e femininos'
+            'reason' => 'Roxo e vermelho são sofisticados e expressivos'
         ],
         [
-            'primary' => '#D4A373',
-            'secondary' => '#FAEDCD',
-            'name' => 'Nude Elegante',
-            'reason' => 'Tons neutros passam sofisticação e clean beauty'
+            'primary' => '#8E44AD', // Wisteria
+            'secondary' => '#9B59B6', // Amethyst
+            'name' => 'Elegante',
+            'reason' => 'Tons de roxo passam sofisticação e feminilidade'
         ],
         [
-            'primary' => '#212529',
-            'secondary' => '#F8F9FA',
+            'primary' => '#2C3E50', // Midnight Blue
+            'secondary' => '#ECF0F1', // Clouds
             'name' => 'Minimalista Chic',
             'reason' => 'Preto e branco para uma estética premium'
         ]
     ],
     'tecnologia' => [
         [
-            'primary' => '#0066CC',
-            'secondary' => '#6F42C1',
+            'primary' => '#3498DB', // Peter River
+            'secondary' => '#2C3E50', // Midnight Blue
             'name' => 'Tech Moderno',
-            'reason' => 'Azul transmite confiança, roxo inovação'
+            'reason' => 'Azul transmite confiança, escuro passa profissionalismo'
         ],
         [
-            'primary' => '#00D9FF',
-            'secondary' => '#7B2CBF',
-            'name' => 'Futurista',
-            'reason' => 'Cores vibrantes e tecnológicas'
+            'primary' => '#9B59B6', // Amethyst
+            'secondary' => '#3498DB', // Peter River
+            'name' => 'Inovação',
+            'reason' => 'Roxo é inovação, azul é tecnologia confiável'
         ],
         [
-            'primary' => '#212529',
-            'secondary' => '#00FF88',
+            'primary' => '#2C3E50', // Midnight Blue
+            'secondary' => '#1ABC9C', // Turquoise
             'name' => 'Developer',
-            'reason' => 'Inspirado em terminais e código'
+            'reason' => 'Inspirado em terminais modernos'
         ]
     ],
     'educacao' => [
         [
-            'primary' => '#3A86FF',
-            'secondary' => '#8338EC',
+            'primary' => '#3498DB', // Peter River
+            'secondary' => '#9B59B6', // Amethyst
             'name' => 'Conhecimento',
             'reason' => 'Azul estimula concentração, roxo criatividade'
         ],
         [
-            'primary' => '#FF6B6B',
-            'secondary' => '#4ECDC4',
+            'primary' => '#E74C3C', // Alizarin
+            'secondary' => '#1ABC9C', // Turquoise
             'name' => 'Divertido',
             'reason' => 'Cores vibrantes para cursos mais descontraídos'
         ],
         [
-            'primary' => '#1D3557',
-            'secondary' => '#457B9D',
+            'primary' => '#2C3E50', // Midnight Blue
+            'secondary' => '#3498DB', // Peter River
             'name' => 'Acadêmico',
             'reason' => 'Tons sóbrios para instituições tradicionais'
         ]
     ],
     'juridico' => [
         [
-            'primary' => '#212529',
-            'secondary' => '#0066CC',
+            'primary' => '#2C3E50', // Midnight Blue
+            'secondary' => '#3498DB', // Peter River
             'name' => 'Sóbrio & Sério',
-            'reason' => 'Preto passa seriedade, azul confiança'
+            'reason' => 'Tons escuros passam seriedade, azul confiança'
         ],
         [
-            'primary' => '#1D3557',
-            'secondary' => '#A8DADC',
+            'primary' => '#34495E', // Wet Asphalt
+            'secondary' => '#95A5A6', // Concrete
             'name' => 'Clássico Moderno',
             'reason' => 'Equilíbrio entre tradição e modernidade'
         ],
         [
-            'primary' => '#2C3E50',
-            'secondary' => '#BDC3C7',
+            'primary' => '#2C3E50', // Midnight Blue
+            'secondary' => '#BDC3C7', // Silver
             'name' => 'Executivo',
             'reason' => 'Elegância corporativa tradicional'
         ]
     ],
     'construcao' => [
         [
-            'primary' => '#FF6B35',
-            'secondary' => '#212529',
+            'primary' => '#E67E22', // Carrot
+            'secondary' => '#34495E', // Wet Asphalt
             'name' => 'Construção Forte',
-            'reason' => 'Laranja passa energia, preto solidez'
+            'reason' => 'Laranja passa energia e movimento, cinza escuro solidez'
         ],
         [
-            'primary' => '#FFC107',
-            'secondary' => '#343A40',
+            'primary' => '#F1C40F', // Sun Flower
+            'secondary' => '#2C3E50', // Midnight Blue
             'name' => 'Obra em Ação',
-            'reason' => 'Amarelo é cor de segurança e atenção'
+            'reason' => 'Amarelo é cor de segurança e chama atenção'
         ],
         [
-            'primary' => '#0077B6',
-            'secondary' => '#ADB5BD',
+            'primary' => '#3498DB', // Peter River
+            'secondary' => '#95A5A6', // Concrete
             'name' => 'Construtora Moderna',
             'reason' => 'Azul profissional para grandes projetos'
         ]
     ],
     'moda' => [
         [
-            'primary' => '#212529',
-            'secondary' => '#F8F9FA',
+            'primary' => '#2C3E50', // Midnight Blue
+            'secondary' => '#ECF0F1', // Clouds
             'name' => 'Minimalista',
             'reason' => 'Clássico da moda: elegância atemporal'
         ],
         [
-            'primary' => '#E83E8C',
-            'secondary' => '#FFC0CB',
-            'name' => 'Feminino',
-            'reason' => 'Tons de rosa para moda feminina'
+            'primary' => '#9B59B6', // Amethyst
+            'secondary' => '#E74C3C', // Alizarin
+            'name' => 'Elegante & Expressivo',
+            'reason' => 'Roxo e vermelho passam sofisticação'
         ],
         [
-            'primary' => '#8B4513',
-            'secondary' => '#DEB887',
-            'name' => 'Terroso',
-            'reason' => 'Ideal para moda sustentável ou artesanal'
+            'primary' => '#34495E', // Wet Asphalt
+            'secondary' => '#BDC3C7', // Silver
+            'name' => 'Sofisticado',
+            'reason' => 'Tons neutros para estética premium'
         ]
     ],
     'pets' => [
         [
-            'primary' => '#FF6B35',
-            'secondary' => '#4ECDC4',
+            'primary' => '#E67E22', // Carrot
+            'secondary' => '#1ABC9C', // Turquoise
             'name' => 'Alegre & Divertido',
             'reason' => 'Cores vibrantes que passam energia e diversão'
         ],
         [
-            'primary' => '#28A745',
-            'secondary' => '#90E0EF',
+            'primary' => '#2ECC71', // Emerald
+            'secondary' => '#3498DB', // Peter River
             'name' => 'Pet Natural',
             'reason' => 'Verde para clínicas ou produtos naturais'
         ],
         [
-            'primary' => '#6F42C1',
-            'secondary' => '#FFC107',
+            'primary' => '#9B59B6', // Amethyst
+            'secondary' => '#F1C40F', // Sun Flower
             'name' => 'Pet Premium',
             'reason' => 'Sofisticado para petshops de alto padrão'
         ]
     ],
     'eventos' => [
         [
-            'primary' => '#6F42C1',
-            'secondary' => '#FFC107',
+            'primary' => '#9B59B6', // Amethyst
+            'secondary' => '#F1C40F', // Sun Flower
             'name' => 'Celebração',
-            'reason' => 'Roxo é festivo, dourado é comemorativo'
+            'reason' => 'Roxo é festivo, amarelo é comemorativo e alegre'
         ],
         [
-            'primary' => '#E83E8C',
-            'secondary' => '#00D9FF',
+            'primary' => '#E74C3C', // Alizarin
+            'secondary' => '#3498DB', // Peter River
             'name' => 'Festa Vibrante',
-            'reason' => 'Cores eletrizantes para festas animadas'
+            'reason' => 'Cores fortes e vibrantes para festas animadas'
         ],
         [
-            'primary' => '#212529',
-            'secondary' => '#D4AF37',
+            'primary' => '#2C3E50', // Midnight Blue
+            'secondary' => '#F39C12', // Orange
             'name' => 'Elegante',
-            'reason' => 'Preto e dourado para eventos sofisticados'
+            'reason' => 'Escuro com dourado para eventos sofisticados'
         ]
     ],
     'imoveis' => [
         [
-            'primary' => '#0066CC',
-            'secondary' => '#28A745',
+            'primary' => '#3498DB', // Peter River
+            'secondary' => '#2ECC71', // Emerald
             'name' => 'Confiança',
-            'reason' => 'Azul passa segurança, verde crescimento'
+            'reason' => 'Azul passa segurança, verde crescimento e prosperidade'
         ],
         [
-            'primary' => '#212529',
-            'secondary' => '#D4AF37',
+            'primary' => '#2C3E50', // Midnight Blue
+            'secondary' => '#F39C12', // Orange
             'name' => 'Alto Padrão',
-            'reason' => 'Para imóveis de luxo'
+            'reason' => 'Para imóveis de luxo - elegante e premium'
         ],
         [
-            'primary' => '#1D3557',
-            'secondary' => '#A8DADC',
+            'primary' => '#34495E', // Wet Asphalt
+            'secondary' => '#3498DB', // Peter River
             'name' => 'Imobiliária Tradicional',
             'reason' => 'Cores sóbrias que passam credibilidade'
         ]
     ],
     'automotivo' => [
         [
-            'primary' => '#DC3545',
-            'secondary' => '#212529',
+            'primary' => '#E74C3C', // Alizarin
+            'secondary' => '#2C3E50', // Midnight Blue
             'name' => 'Potência',
-            'reason' => 'Vermelho é velocidade, preto é poder'
+            'reason' => 'Vermelho é velocidade, escuro é poder'
         ],
         [
-            'primary' => '#0066CC',
-            'secondary' => '#6C757D',
+            'primary' => '#3498DB', // Peter River
+            'secondary' => '#7F8C8D', // Asbestos
             'name' => 'Oficina Profissional',
             'reason' => 'Azul passa confiança técnica'
         ],
         [
-            'primary' => '#FFC107',
-            'secondary' => '#343A40',
+            'primary' => '#F1C40F', // Sun Flower
+            'secondary' => '#34495E', // Wet Asphalt
             'name' => 'Auto Center',
-            'reason' => 'Amarelo chama atenção na estrada'
+            'reason' => 'Amarelo chama atenção e passa energia'
         ]
     ]
 ];
 
-// Default palette
+// Default palette (Flat UI Colors)
 $defaultPalettes = [
     [
-        'primary' => '#0066CC',
-        'secondary' => '#28A745',
+        'primary' => '#3498DB', // Peter River
+        'secondary' => '#2ECC71', // Emerald
         'name' => 'Profissional',
-        'reason' => 'Combinação clássica e versátil'
+        'reason' => 'Combinação clássica de confiança e crescimento'
     ],
     [
-        'primary' => '#6366F1',
-        'secondary' => '#8B5CF6',
+        'primary' => '#9B59B6', // Amethyst
+        'secondary' => '#3498DB', // Peter River
         'name' => 'Moderno',
-        'reason' => 'Gradiente roxo muito popular em 2024-2026'
+        'reason' => 'Roxo traz inovação, azul equilibra com confiança'
     ],
     [
-        'primary' => '#212529',
-        'secondary' => '#0066CC',
+        'primary' => '#2C3E50', // Midnight Blue
+        'secondary' => '#1ABC9C', // Turquoise
         'name' => 'Corporativo',
-        'reason' => 'Elegante e profissional'
+        'reason' => 'Elegante e profissional - funciona para qualquer ramo'
     ]
 ];
 
