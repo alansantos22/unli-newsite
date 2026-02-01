@@ -55,7 +55,7 @@
             <span class="avatar-status"></span>
           </div>
           <div class="assistant-info">
-            <h3 class="assistant-name">Jules</h3>
+            <h3 class="assistant-name">Assistente Unli</h3>
             <span class="assistant-status">{{ isTyping ? 'digitando...' : 'Online' }}</span>
           </div>
         </div>
@@ -221,7 +221,9 @@
     >
       <FormPreviewLive
         :form-data="formData"
+        :order-details="orderDetailsForProgress"
         :current-step-id="currentStepId"
+        :answered-fields="answeredFields"
         :shimmering-fields="shimmeringFields"
         :recently-filled-fields="recentlyFilledFields"
         :validation-errors="validationErrors"
@@ -451,6 +453,7 @@ export default {
     const {
       state,
       formData,
+      answeredFields,
       currentStep,
       currentStepId,
       totalSteps,
@@ -547,6 +550,38 @@ export default {
     const lastAssistantMessage = computed(() => {
       const assistantMsgs = messages.value.filter(m => m.type === 'assistant');
       return assistantMsgs.length ? assistantMsgs[assistantMsgs.length - 1].content : '';
+    });
+    
+    // Order details para cálculo preciso de progresso
+    const orderDetailsForProgress = computed(() => {
+      // Converte purchasedPages array em objeto pages
+      const pages = {};
+      
+      if (props.purchasedPages && props.purchasedPages.length > 0) {
+        // Se recebemos array de páginas (ex: ['about', 'services', 'faq'])
+        props.purchasedPages.forEach(page => {
+          pages[page] = 1;
+        });
+      } else {
+        // Default: todas as páginas básicas ativas
+        pages.about = 1;
+        pages.services = 1;
+        pages.portfolio = 1;
+        pages.faq = 1;
+        pages.contact = 1;
+        pages.blog = 0;
+        pages.showcase = 0;
+      }
+      
+      return {
+        selection: {
+          pages,
+          content: {
+            video_basic: false,
+            pdf: false
+          }
+        }
+      };
     });
     
     // Limite dinâmico de caracteres baseado no step/contexto
@@ -755,6 +790,10 @@ export default {
       } else if (action.type === 'show_color_picker') {
         // Futuro: abrir modal de cores
         console.log('[Action] Show color picker');
+      } else if (action.type === 'finish_onboarding') {
+        // Usuário quer finalizar o onboarding
+        console.log('🚀 [Action] Finish Onboarding');
+        emit('complete', formData.value);
       }
     }
     
@@ -1112,6 +1151,7 @@ export default {
       isMobile,
       messages,
       formData,
+      answeredFields,
       isTyping,
       isProcessing,
       pendingAchievement,
@@ -1133,6 +1173,7 @@ export default {
       speechSupported,
       quickActions,
       lastAssistantMessage,
+      orderDetailsForProgress,
       maxChars,
       shouldShowImageUpload,
       allowMultipleImages,

@@ -37,7 +37,7 @@ export const ONBOARDING_STEPS_BASE = [
     icon: '📞',
     description: 'WhatsApp, redes e endereço',
     requiredFields: ['whatsapp'],
-    optionalFields: ['instagram', 'facebook', 'linkedin', 'hasPhysicalLocation', 'address', 'businessHours'],
+    optionalFields: ['email', 'additionalPhones', 'socialNetworks', 'hasPhysicalLocation', 'addressCep', 'addressStreet', 'addressNumber', 'addressNeighborhood', 'addressCity', 'addressState', 'businessHours'],
     xpReward: 10,
     achievement: {
       id: 'connection_established',
@@ -46,12 +46,26 @@ export const ONBOARDING_STEPS_BASE = [
     }
   },
   {
+    id: 'leads',
+    name: 'Configuração de Leads',
+    icon: '📨',
+    description: 'Formulário de contato e captação',
+    requiredFields: ['leadEmail'],
+    optionalFields: ['leadEmailCC', 'formFields', 'whatsappFloatingEnabled', 'whatsappPosition', 'whatsappGreeting', 'showMap', 'enableCaptcha', 'autoReply', 'autoReplyMessage'],
+    xpReward: 10,
+    achievement: {
+      id: 'leads_configured',
+      name: 'Leads Configurados',
+      icon: '📨'
+    }
+  },
+  {
     id: 'about',
-    name: 'História da Empresa',
+    name: 'Sobre a Empresa',
     icon: '🏢',
     description: 'Quem vocês são e como começaram',
     requiredFields: [],
-    optionalFields: ['companyBio', 'foundingYear', 'founders', 'aboutImage', 'companyHighlights', 'mission', 'vision', 'values'],
+    optionalFields: ['companyBio', 'foundingYear', 'founders', 'aboutImage', 'companyHighlights', 'showMissionVision', 'mission', 'vision', 'values'],
     xpReward: 20,
     achievement: {
       id: 'story_mastered',
@@ -71,6 +85,20 @@ export const ONBOARDING_STEPS_BASE = [
       id: 'services_catalog',
       name: 'Catálogo de Serviços',
       icon: '⚙️'
+    }
+  },
+  {
+    id: 'portfolio',
+    name: 'Portfólio',
+    icon: '🖼️',
+    description: 'Trabalhos realizados e cases',
+    requiredFields: [],
+    optionalFields: ['portfolioIntro', 'projects', 'bigClients', 'metrics'],
+    xpReward: 15,
+    achievement: {
+      id: 'portfolio_showcase',
+      name: 'Portfólio Completo',
+      icon: '🖼️'
     }
   },
   {
@@ -100,15 +128,104 @@ export const ONBOARDING_STEPS_BASE = [
 ];
 
 // ============================================
+// STEPS OPCIONAIS (aparecem baseado em purchasedPages)
+// ============================================
+
+export const OPTIONAL_STEPS = {
+  testimonials: {
+    id: 'testimonials',
+    name: 'Depoimentos',
+    icon: '⭐',
+    description: 'O que seus clientes dizem',
+    requiredFields: [],
+    optionalFields: ['testimonialsIntro', 'testimonials', 'averageRating', 'totalReviews'],
+    xpReward: 10,
+    achievement: {
+      id: 'social_proof',
+      name: 'Prova Social',
+      icon: '⭐'
+    },
+    pageKey: 'testimonials' // chave do purchasedPages
+  },
+  blog: {
+    id: 'blog',
+    name: 'Blog / Notícias',
+    icon: '📝',
+    description: 'Conteúdo para atrair visitantes',
+    requiredFields: [],
+    optionalFields: ['blogPurpose', 'mainTopics', 'targetKeywords', 'postFrequency'],
+    xpReward: 10,
+    achievement: {
+      id: 'content_strategy',
+      name: 'Estratégia de Conteúdo',
+      icon: '📝'
+    },
+    pageKey: 'blog'
+  },
+  showcase: {
+    id: 'showcase',
+    name: 'Vitrine de Produtos',
+    icon: '🛍️',
+    description: 'Seus produtos em destaque',
+    requiredFields: [],
+    optionalFields: ['storeIntro', 'products', 'shippingInfo'],
+    xpReward: 15,
+    achievement: {
+      id: 'catalog_ready',
+      name: 'Catálogo Pronto',
+      icon: '🛍️'
+    },
+    pageKey: 'showcase'
+  },
+  video: {
+    id: 'video',
+    name: 'Vídeos',
+    icon: '🎬',
+    description: 'Vídeos do site',
+    requiredFields: [],
+    optionalFields: ['videoIntro', 'videos', 'youtubeVideos'],
+    xpReward: 10,
+    achievement: {
+      id: 'multimedia_ready',
+      name: 'Multimídia Pronta',
+      icon: '🎬'
+    },
+    pageKey: 'video_basic' // ou video_pro
+  },
+  documents: {
+    id: 'documents',
+    name: 'Documentos PDF',
+    icon: '📄',
+    description: 'Catálogos e materiais para download',
+    requiredFields: [],
+    optionalFields: ['documentPurpose', 'documents', 'downloadPageTitle', 'downloadPageIntro'],
+    xpReward: 10,
+    achievement: {
+      id: 'materials_ready',
+      name: 'Materiais Prontos',
+      icon: '📄'
+    },
+    pageKey: 'pdf'
+  }
+};
+
+// ============================================
 // SISTEMA DE CONQUISTAS
 // ============================================
 
 export const ACHIEVEMENTS = {
   identity_unlocked: { id: 'identity_unlocked', name: 'Identidade Desbloqueada', icon: '🎨', xp: 15 },
   connection_established: { id: 'connection_established', name: 'Conexão Estabelecida', icon: '📞', xp: 10 },
+  leads_configured: { id: 'leads_configured', name: 'Leads Configurados', icon: '📨', xp: 10 },
   story_mastered: { id: 'story_mastered', name: 'História Masterizada', icon: '📖', xp: 20 },
   services_catalog: { id: 'services_catalog', name: 'Catálogo de Serviços', icon: '⚙️', xp: 15 },
+  portfolio_showcase: { id: 'portfolio_showcase', name: 'Portfólio Completo', icon: '🖼️', xp: 15 },
   faq_strategic: { id: 'faq_strategic', name: 'FAQ Estratégico', icon: '🎯', xp: 10 },
+  social_proof: { id: 'social_proof', name: 'Prova Social', icon: '⭐', xp: 10 },
+  content_strategy: { id: 'content_strategy', name: 'Estratégia de Conteúdo', icon: '📝', xp: 10 },
+  catalog_ready: { id: 'catalog_ready', name: 'Catálogo Pronto', icon: '🛍️', xp: 15 },
+  multimedia_ready: { id: 'multimedia_ready', name: 'Multimídia Pronta', icon: '🎬', xp: 10 },
+  materials_ready: { id: 'materials_ready', name: 'Materiais Prontos', icon: '📄', xp: 10 },
   profile_complete: { id: 'profile_complete', name: 'Perfil Completo', icon: '💎', xp: 30 },
   launch_ready: { id: 'launch_ready', name: 'Pronto pro Lançamento', icon: '🚀', xp: 50 }
 };
@@ -150,9 +267,10 @@ const state = reactive({
     
     // Contact
     whatsapp: '',
+    email: '',  // E-mail institucional do site
     additionalPhones: [],
     socialNetworks: [],
-    hasPhysicalLocation: false,
+    hasPhysicalLocation: null,  // null = não perguntado, false = não tem, true = tem
     addressCep: '',
     addressStreet: '',
     addressNumber: '',
@@ -198,6 +316,45 @@ const state = reactive({
     },
     whatsappFloatingEnabled: true,
     whatsappPosition: 'bottom-right',
+    whatsappGreeting: '',
+    showMap: true,
+    enableCaptcha: true,
+    autoReply: false,
+    autoReplyMessage: '',
+    
+    // Portfolio
+    portfolioIntro: '',
+    projects: [],
+    bigClients: [],
+    metrics: [],
+    
+    // Testimonials (opcional - baseado em purchasedPages)
+    testimonialsIntro: '',
+    testimonials: [],
+    averageRating: '',
+    totalReviews: '',
+    
+    // Blog (opcional - baseado em purchasedPages)
+    blogPurpose: '',
+    mainTopics: [],
+    targetKeywords: [],
+    postFrequency: '',
+    
+    // Showcase/Vitrine (opcional - baseado em purchasedPages)
+    storeIntro: '',
+    products: [],
+    shippingInfo: '',
+    
+    // Video (opcional - baseado em purchasedPages)
+    videoIntro: '',
+    videos: [],
+    youtubeVideos: [],
+    
+    // Documents/PDF (opcional - baseado em purchasedPages)
+    documentPurpose: [],
+    documents: [],
+    downloadPageTitle: 'Downloads',
+    downloadPageIntro: '',
     
     // Finalization
     additionalNotes: '',
@@ -205,6 +362,10 @@ const state = reactive({
     inspirationUrls: [],
     inspirationImages: []
   },
+  
+  // Campos que o usuário JÁ RESPONDEU (independente do valor)
+  // Isso permite diferenciar "não perguntado" de "respondeu vazio/false"
+  answeredFields: [],
   
   // Histórico de mensagens do chat
   messages: [],
@@ -246,6 +407,9 @@ const state = reactive({
   // Páginas compradas pelo cliente (para steps dinâmicos)
   purchasedPages: [],
   
+  // Avisos de formatação já mostrados (evita duplicação)
+  shownFormatWarnings: new Set(),
+  
   // Flag para evitar inicialização duplicada
   _isInitialized: false,
   _initializingSessionId: null
@@ -264,7 +428,13 @@ const activeSteps = computed(() => {
   return ONBOARDING_STEPS_BASE;
 });
 
-const currentStep = computed(() => activeSteps.value[state.currentStepIndex]);
+const currentStep = computed(() => {
+  const steps = activeSteps.value;
+  const maxIndex = steps.length - 1;
+  // Garante que o índice esteja dentro do range válido
+  const safeIndex = Math.min(Math.max(0, state.currentStepIndex), maxIndex);
+  return steps[safeIndex] || steps[0];
+});
 
 const currentStepId = computed(() => currentStep.value?.id || 'identity');
 
@@ -366,6 +536,12 @@ function initSession(sessionId, initialData = {}, purchasedPages = [], initialSt
   // Resetar contador de falhas da IA
   state.aiFailureCount = 0;
   
+  // Limpar avisos de formatação já mostrados (nova sessão = novos avisos)
+  state.shownFormatWarnings.clear();
+  
+  // Resetar campos respondidos (será populado com dados do backend/localStorage)
+  state.answeredFields = [];
+  
   // Definir páginas compradas (para steps dinâmicos)
   state.purchasedPages = purchasedPages || [];
   
@@ -375,7 +551,17 @@ function initSession(sessionId, initialData = {}, purchasedPages = [], initialSt
   // PRIMEIRO: Aplicar dados do backend (initialData tem precedência máxima)
   if (initialData && typeof initialData === 'object' && Object.keys(initialData).length > 0) {
     console.log('[InitSession] Carregando dados do backend:', Object.keys(initialData).filter(k => initialData[k]).length, 'campos');
+    
+    // Verificar se o backend retornou answered_fields salvos anteriormente
+    if (Array.isArray(initialData._answered_fields)) {
+      state.answeredFields = [...initialData._answered_fields];
+      console.log('[InitSession] Restaurando answered_fields do backend:', state.answeredFields.length, 'campos');
+    }
+    
     Object.keys(initialData).forEach(key => {
+      // Ignorar campo interno de metadados
+      if (key === '_answered_fields') return;
+      
       if (key in state.formData) {
         // Ignorar cores default - tratá-las como null
         if ((key === 'primaryColor' || key === 'secondaryColor') && 
@@ -384,9 +570,30 @@ function initSession(sessionId, initialData = {}, purchasedPages = [], initialSt
           state.formData[key] = null;
         } else {
           state.formData[key] = initialData[key];
+          
+          // IMPORTANTE: Marcar campos com valor como "já respondidos"
+          // (apenas se não foram já carregados do _answered_fields)
+          // Isso evita que a IA pergunte novamente sobre dados que já existem
+          const val = initialData[key];
+          
+          // Verifica se o campo tem um valor significativo
+          // CORREÇÃO: Booleanos (true ou false) SÃO valores válidos - ambos contam como "respondido"
+          // A diferença é entre "false" (resposta) e "null/undefined" (não perguntado)
+          const isBoolean = typeof val === 'boolean';
+          const hasValue = isBoolean || (
+            val !== null && 
+            val !== '' && 
+            val !== undefined && 
+            !(Array.isArray(val) && val.length === 0)
+          );
+          
+          if (hasValue && !state.answeredFields.includes(key)) {
+            state.answeredFields.push(key);
+          }
         }
       }
     });
+    console.log('[InitSession] answeredFields total:', state.answeredFields.length, 'campos');
   }
   
   // DEPOIS: Se não tiver dados significativos do backend, tentar localStorage
@@ -422,24 +629,27 @@ function initSession(sessionId, initialData = {}, purchasedPages = [], initialSt
   const savedChat = loadSavedChat(state.sessionId);
   
   if (savedChat && savedChat.messages && savedChat.messages.length > 0) {
-    // Restaurar mensagens salvas - NÃO adicionar nova mensagem
-    // para evitar duplicação a cada F5
+    // Restaurar mensagens salvas
     state.messages = savedChat.messages;
     console.log('[InitSession] Chat restaurado com', savedChat.messages.length, 'mensagens');
-    // NÃO adiciona mensagem de continuação aqui - o usuário já tem o histórico
-    // e pode ver o que falta no FormPreview
+    
+    // 🔄 MELHORIA: Re-gerar a primeira mensagem do assistente com IA
+    // Isso corrige mensagens antigas que podem ter informações desatualizadas
+    // (ex: listando "WhatsApp" como pendente quando já foi preenchido)
+    if (state.messages.length > 0 && state.messages[0].type === 'assistant') {
+      console.log('[InitSession] Re-gerando primeira mensagem com IA...');
+      // Remove a primeira mensagem antiga
+      state.messages.shift();
+      // Solicita nova mensagem da IA (será inserida no início)
+      requestInitialMessage();
+    }
   } else {
-    // Primeira vez OU chat foi limpo - mensagem de abertura
+    // Primeira vez OU chat foi limpo - solicitar mensagem inicial da IA
     // Reset messages para garantir array limpo
     state.messages = [];
     
-    const hasExistingData = checkHasExistingData();
-    const currentStepData = currentStep.value;
-    
-    addMessage({
-      type: 'assistant',
-      content: getOpeningMessage(hasExistingData, state.currentStepIndex, currentStepData)
-    });
+    // 🚀 Chamar IA para gerar mensagem inicial inteligente
+    requestInitialMessage();
   }
   
   // O current_step já foi restaurado pelo loadDraft()
@@ -563,6 +773,16 @@ function restoreSession(sessionData) {
     // Tentar carregar draft
     loadDraft();
     
+    // 🔄 MELHORIA: Re-gerar a primeira mensagem do assistente com IA
+    // Isso corrige mensagens antigas que podem ter informações desatualizadas
+    if (state.messages.length > 0 && state.messages[0].type === 'assistant') {
+      console.log('[RestoreSession] Re-gerando primeira mensagem com IA...');
+      // Remove a primeira mensagem antiga
+      state.messages.shift();
+      // Solicita nova mensagem da IA (será inserida no início)
+      requestInitialMessage();
+    }
+    
     // Marcar como inicializado
     state._isInitialized = true;
     console.log('[RestoreSession] Sessão restaurada:', state.sessionId);
@@ -585,6 +805,7 @@ function checkHasExistingData() {
 /**
  * Retorna informações que ainda faltam preencher
  */
+// eslint-disable-next-line no-unused-vars
 function getMissingInfo() {
   const { formData } = state;
   const missing = [];
@@ -604,27 +825,112 @@ function getMissingInfo() {
 }
 
 /**
- * Retorna a mensagem de abertura do assistente
+ * Retorna o primeiro campo pendente (não preenchido) do step atual
+ * Isso permite uma mensagem de boas-vindas mais precisa
+ */
+function getNextPendingFieldForCurrentStep() {
+  const { formData } = state;
+  const stepData = currentStep.value;
+  
+  if (!stepData) return null;
+  
+  // Mapeia campos para nomes amigáveis
+  const fieldLabels = {
+    // Identity
+    companyName: 'nome da empresa',
+    businessType: 'ramo de atuação',
+    frase: 'frase de efeito',
+    primaryColor: 'cor principal',
+    secondaryColor: 'cor secundária',
+    voiceTone: 'tom de voz',
+    logo: 'logo',
+    // Contact
+    whatsapp: 'WhatsApp',
+    email: 'e-mail',
+    additionalPhones: 'telefones adicionais',
+    socialNetworks: 'redes sociais',
+    hasPhysicalLocation: 'se tem endereço físico',
+    addressCep: 'CEP',
+    addressStreet: 'rua',
+    addressNumber: 'número',
+    addressNeighborhood: 'bairro',
+    addressCity: 'cidade',
+    addressState: 'estado',
+    businessHours: 'horário de funcionamento',
+    // Leads
+    leadEmail: 'e-mail para receber leads',
+    leadEmailCC: 'e-mail com cópia',
+    formFields: 'campos do formulário',
+    whatsappFloatingEnabled: 'botão flutuante do WhatsApp',
+    // About
+    companyBio: 'história da empresa',
+    foundingYear: 'ano de fundação',
+    founders: 'fundadores',
+    // Services
+    services: 'serviços oferecidos',
+    servicesIntro: 'descrição dos serviços',
+    // Portfolio
+    projects: 'projetos realizados',
+    portfolioIntro: 'descrição do portfólio',
+    // FAQ
+    faqItems: 'perguntas frequentes'
+  };
+  
+  // Verifica primeiro os campos obrigatórios, depois os opcionais
+  const allFields = [...(stepData.requiredFields || []), ...(stepData.optionalFields || [])];
+  
+  for (const field of allFields) {
+    const value = formData[field];
+    const isEmpty = value === undefined || value === null || value === '' || 
+                   (Array.isArray(value) && value.length === 0);
+    
+    if (isEmpty && fieldLabels[field]) {
+      return fieldLabels[field];
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Retorna a mensagem de abertura do assistente (LEGACY)
+ * @deprecated Substituída por requestInitialMessage() que usa IA
+ * Mantida como referência para getFallbackOpeningMessage()
  * @param {boolean} hasExistingData - Se já tem dados preenchidos
  * @param {number} currentStepIndex - Índice do step atual (0-based)
  * @param {object} currentStepData - Dados do step atual
  */
+// eslint-disable-next-line no-unused-vars
 function getOpeningMessage(hasExistingData = false, currentStepIndex = 0, currentStepData = null) {
   // Se tem dados E está em um step > 0, significa que estava no meio do processo
-  if (hasExistingData && currentStepIndex > 0 && currentStepData) {
+  if (hasExistingData && currentStepIndex > 0 && currentStepData && currentStepData.name) {
     const { formData } = state;
     const parts = [];
     
     if (formData.companyName) parts.push(`**${formData.companyName}**`);
     if (formData.businessType) parts.push(`ramo de **${formData.businessType}**`);
     
+    // Verifica o próximo campo pendente do step atual
+    const nextPending = getNextPendingFieldForCurrentStep();
+    
+    if (nextPending) {
+      return `Oi! 👋 Que bom ter você de volta!
+
+Vi que já temos algumas informações: ${parts.join(', ')}.
+
+Enquanto a gente conversa, o formulário ao lado vai sendo atualizado automaticamente. ✨
+
+**Vamos continuar?** O próximo passo é definir: **${nextPending}**.`;
+    }
+    
+    // Step atual está completo
     return `Oi! 👋 Que bom ter você de volta!
 
 Vi que já temos algumas informações: ${parts.join(', ')}.
 
 Você estava em: **${currentStepData.name}** ${currentStepData.icon}
 
-**Você terminou essa parte?** Podemos avançar para o próximo passo ou quer continuar aqui?`;
+**Essa parte parece completa!** Podemos avançar para o próximo passo?`;
   }
   
   // Se tem dados mas está no step 0, pergunta se quer continuar de onde parou
@@ -635,8 +941,9 @@ Você estava em: **${currentStepData.name}** ${currentStepData.icon}
     if (formData.companyName) parts.push(`**${formData.companyName}**`);
     if (formData.businessType) parts.push(`ramo de **${formData.businessType}**`);
     
-    const missing = getMissingInfo();
-    const missingText = missing ? missing.slice(0, 3).join(', ') : 'alguns detalhes';
+    // Usa o próximo campo pendente do step atual em vez de lista genérica
+    const nextPending = getNextPendingFieldForCurrentStep();
+    const pendingText = nextPending || 'revisar os detalhes';
     
     return `Oi! 👋 Que bom ter você de volta!
 
@@ -644,7 +951,7 @@ Vi que já temos algumas informações: ${parts.join(', ')}.
 
 Enquanto a gente conversa, o formulário ao lado vai sendo atualizado automaticamente. ✨
 
-**Vamos continuar?** Ainda precisamos de: ${missingText}.`;
+**Vamos continuar?** O próximo passo é definir: **${pendingText}**.`;
   }
   
   return `Oi! 👋 Eu sou o **Unli**, seu assistente de criação de sites.
@@ -708,6 +1015,15 @@ async function sendUserMessage(content, isAudio = false) {
     // Chama API de extração
     const response = await processWithAI(content);
     
+    // DEBUG: Log da resposta completa
+    console.log('📥 [sendUserMessage] Resposta da API:', {
+      success: response.success,
+      hasNewStep: !!response.new_step,
+      newStep: response.new_step,
+      stepComplete: response.step_complete,
+      extractedFields: Object.keys(response.extracted_fields || {})
+    });
+    
     if (response.success) {
       // Atualiza campos extraídos
       if (response.extracted_fields) {
@@ -724,6 +1040,30 @@ async function sendUserMessage(content, isAudio = false) {
         console.log('🔍 [Service] Sugestões da API:', response.suggestions);
       }
       
+      // =============================================
+      // TRANSIÇÃO DE STEP (controlada pelo PHP)
+      // Se a API retornou new_step, significa que o step anterior
+      // foi completado e devemos avançar automaticamente
+      // =============================================
+      if (response.new_step) {
+        // Usar activeSteps dinâmico em vez de array fixa
+        const stepsOrder = activeSteps.value.map(s => s.id);
+        const newStepIndex = stepsOrder.indexOf(response.new_step);
+        
+        console.log(`🔄 [Step Transition] Steps disponíveis: ${stepsOrder.join(', ')}`);
+        console.log(`🔄 [Step Transition] Novo step requisitado: ${response.new_step} (índice: ${newStepIndex})`);
+        console.log(`🔄 [Step Transition] Step atual: ${stepsOrder[state.currentStepIndex]} (índice: ${state.currentStepIndex})`);
+        
+        if (newStepIndex !== -1 && newStepIndex !== state.currentStepIndex) {
+          console.log(`✅ [Step Transition] Avançando de ${stepsOrder[state.currentStepIndex]} para ${response.new_step}`);
+          state.currentStepIndex = newStepIndex;
+          // Salva imediatamente
+          saveDraft();
+        } else if (newStepIndex === -1) {
+          console.warn(`⚠️ [Step Transition] Step '${response.new_step}' não encontrado nos steps ativos!`);
+        }
+      }
+      
       // Adiciona resposta do assistente
       addMessage({
         type: 'assistant',
@@ -732,8 +1072,17 @@ async function sendUserMessage(content, isAudio = false) {
         actions: response.actions || null
       });
       
-      // Verifica se step foi completado
+      // Verifica se step foi completado (para conquistas)
       checkStepCompletion();
+      
+      // =============================================
+      // AÇÃO DE FINALIZAÇÃO TOTAL
+      // Se a API retornou action finish_onboarding, tratar
+      // =============================================
+      if (response.actions && response.actions.some(a => a.type === 'finish_onboarding')) {
+        console.log('🚀 [Finish] Pronto para finalizar onboarding');
+        // O componente Vue vai tratar essa action
+      }
     } else {
       addMessage({
         type: 'assistant',
@@ -784,6 +1133,107 @@ Seus dados estão salvos e não serão perdidos! 💾`,
 }
 
 /**
+ * 🚀 Solicita mensagem inicial inteligente da IA
+ * Envia ação 'start' para o backend, que usa o Prompt Blindado
+ * para gerar uma saudação contextualizada baseada nos dados já preenchidos
+ */
+async function requestInitialMessage() {
+  console.log('[requestInitialMessage] Solicitando mensagem inicial inteligente da IA...');
+  
+  // Ativa estado de typing enquanto espera a IA
+  state.isTyping = true;
+  
+  try {
+    // Aguardar nextTick para garantir que o Vue sincronizou
+    await nextTick();
+    
+    // Criar cópia profunda do formData
+    const formDataSnapshot = JSON.parse(JSON.stringify(state.formData));
+    
+    console.log('[requestInitialMessage] Dados atuais:', {
+      step: currentStepId.value,
+      companyName: formDataSnapshot.companyName,
+      whatsapp: formDataSnapshot.whatsapp,
+      email: formDataSnapshot.email,
+      hasData: Object.keys(formDataSnapshot).filter(k => formDataSnapshot[k]).length
+    });
+    
+    const payload = {
+      session_id: state.sessionId,
+      step: currentStepId.value,
+      messages: [], // Sem histórico - é a primeira mensagem
+      user_message: '', // Vazio - backend vai usar a action
+      current_form_data: formDataSnapshot,
+      voice_tone: formDataSnapshot.voiceTone || 'profissional',
+      purchased_pages: state.purchasedPages || [],
+      action: 'start' // 🔑 Gatilho para mensagem inicial
+    };
+    
+    const response = await fetch('/api/ai/conversational-onboarding.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const result = await response.json();
+    
+    // Backend retorna assistant_message, não reply
+    const aiMessage = result.reply || result.assistant_message;
+    
+    if (result.success && aiMessage) {
+      // Adicionar mensagem da IA
+      addMessage({
+        type: 'assistant',
+        content: aiMessage
+      });
+      console.log('[requestInitialMessage] ✅ Mensagem inicial recebida da IA');
+    } else {
+      // Fallback caso a IA falhe - usar mensagem genérica
+      console.warn('[requestInitialMessage] ⚠️ Falha na IA, usando fallback', result);
+      addMessage({
+        type: 'assistant',
+        content: getFallbackOpeningMessage()
+      });
+    }
+  } catch (error) {
+    console.error('[requestInitialMessage] ❌ Erro:', error);
+    // Fallback em caso de erro de rede
+    addMessage({
+      type: 'assistant',
+      content: getFallbackOpeningMessage()
+    });
+  } finally {
+    state.isTyping = false;
+  }
+}
+
+/**
+ * Mensagem de fallback caso a IA não responda
+ * Usada apenas em caso de erro de rede ou falha da API
+ */
+function getFallbackOpeningMessage() {
+  const hasData = checkHasExistingData();
+  
+  if (hasData && state.formData.companyName) {
+    return `Oi! 👋 Que bom ter você de volta!
+
+Vi que estamos trabalhando no site da **${state.formData.companyName}**.
+
+Vamos continuar de onde paramos?`;
+  }
+  
+  return `Oi! 👋 Eu sou o **Assistente Unli**, especialista em criação de sites.
+
+Vou te ajudar a montar um site incrível! Enquanto conversamos, o formulário ao lado vai sendo preenchido automaticamente. ✨
+
+**Vamos começar?** Me conta sobre o seu negócio!`;
+}
+
+/**
  * Processa mensagem com a API do Gemini
  */
 async function processWithAI(userMessage) {
@@ -812,7 +1262,9 @@ async function processWithAI(userMessage) {
     messages: state.messages.slice(-10), // Últimas 10 mensagens para contexto
     user_message: userMessage,
     current_form_data: formDataSnapshot,
-    voice_tone: formDataSnapshot.voiceTone || 'profissional'
+    answered_fields: [...state.answeredFields], // Campos que o usuário já respondeu (mesmo se vazio/false)
+    voice_tone: formDataSnapshot.voiceTone || 'profissional',
+    purchased_pages: state.purchasedPages || [] // Páginas compradas para steps dinâmicos
   };
   
   const response = await fetch('/api/ai/conversational-onboarding.php', {
@@ -829,10 +1281,141 @@ async function processWithAI(userMessage) {
 }
 
 /**
+ * Normaliza o campo socialNetworks para o formato esperado (array de objetos)
+ * O Gemini às vezes retorna em formatos diferentes (string, array de strings, etc)
+ */
+function normalizeSocialNetworks(value) {
+  // Se já está no formato correto (array de objetos com type e url)
+  if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object' && value[0].type) {
+    return value;
+  }
+  
+  // Se é null/undefined/vazio, retorna array vazio
+  if (!value || (Array.isArray(value) && value.length === 0)) {
+    return [];
+  }
+  
+  const result = [];
+  
+  // Função auxiliar para detectar tipo de rede pelo conteúdo
+  const detectNetworkType = (str) => {
+    const lower = str.toLowerCase();
+    if (lower.includes('instagram') || lower.includes('instagram.com')) return 'instagram';
+    if (lower.includes('linkedin') || lower.includes('linkedin.com')) return 'linkedin';
+    if (lower.includes('twitter') || lower.includes('twitter.com') || lower.includes('x.com')) return 'twitter';
+    if (lower.includes('facebook') || lower.includes('fb.com')) return 'facebook';
+    if (lower.includes('youtube') || lower.includes('youtube.com')) return 'youtube';
+    if (lower.includes('tiktok') || lower.includes('tiktok.com')) return 'tiktok';
+    // Se começa com @, assume Instagram (padrão no Brasil)
+    if (str.startsWith('@')) return 'instagram';
+    return null;
+  };
+  
+  // Se é uma string simples
+  if (typeof value === 'string') {
+    const type = detectNetworkType(value);
+    if (type) {
+      result.push({ type, url: value });
+    }
+  }
+  
+  // Se é um array de strings
+  if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'string') {
+    value.forEach(str => {
+      const type = detectNetworkType(str);
+      if (type) {
+        result.push({ type, url: str });
+      }
+    });
+  }
+  
+  // Se é um array de objetos mas sem o campo 'type' (ex: {url: "@user"})
+  if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object' && !value[0].type) {
+    value.forEach(obj => {
+      const url = obj.url || obj.link || obj.username || '';
+      const type = obj.network || obj.platform || detectNetworkType(url);
+      if (type && url) {
+        result.push({ type, url });
+      }
+    });
+  }
+  
+  console.log('[normalizeSocialNetworks] Input:', value, '→ Output:', result);
+  return result;
+}
+
+/**
+ * Busca endereço pelo CEP via ViaCEP API
+ */
+async function fetchAddressByCep(cep) {
+  const cleanCep = cep.replace(/\D/g, '');
+  
+  if (cleanCep.length !== 8) {
+    console.log('[ViaCEP] CEP inválido:', cep);
+    return null;
+  }
+  
+  try {
+    console.log('[ViaCEP] Buscando CEP:', cleanCep);
+    const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+    const data = await response.json();
+    
+    if (data.erro) {
+      console.log('[ViaCEP] CEP não encontrado:', cleanCep);
+      return null;
+    }
+    
+    console.log('[ViaCEP] Endereço encontrado:', data);
+    return {
+      addressStreet: data.logradouro || '',
+      addressNeighborhood: data.bairro || '',
+      addressCity: data.localidade || '',
+      addressState: data.uf || ''
+    };
+  } catch (error) {
+    console.error('[ViaCEP] Erro ao buscar:', error);
+    return null;
+  }
+}
+
+/**
  * Atualiza campos com animação de shimmer e check
  */
 async function updateFieldsWithAnimation(fields) {
   const fieldKeys = Object.keys(fields);
+  
+  // Normaliza socialNetworks se existir
+  if (fields.socialNetworks !== undefined) {
+    fields.socialNetworks = normalizeSocialNetworks(fields.socialNetworks);
+  }
+  
+  // Sanitiza campos de email - extrai apenas o primeiro email válido
+  // Evita duplicações como "email@a.comemail@a.com"
+  const emailFields = ['email', 'leadEmail', 'leadEmailCC'];
+  emailFields.forEach(field => {
+    if (fields[field] && typeof fields[field] === 'string') {
+      const emailMatch = fields[field].match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+      if (emailMatch) {
+        console.log(`🧹 [Sanitize] Email sanitizado: "${fields[field]}" -> "${emailMatch[1]}"`);
+        fields[field] = emailMatch[1];
+      }
+    }
+  });
+  
+  // Se recebeu CEP, buscar dados do endereço via ViaCEP
+  if (fields.addressCep || fields.cep) {
+    const cep = fields.addressCep || fields.cep;
+    const addressData = await fetchAddressByCep(cep);
+    if (addressData) {
+      // Mesclar dados do ViaCEP com os campos
+      Object.assign(fields, addressData);
+      // Garantir que o CEP está no campo correto
+      fields.addressCep = cep;
+      delete fields.cep;
+      // Adicionar os novos campos à lista de shimmer
+      fieldKeys.push(...Object.keys(addressData).filter(k => !fieldKeys.includes(k)));
+    }
+  }
   
   // Ativa shimmer em todos os campos
   state.shimmeringFields = [...fieldKeys];
@@ -844,6 +1427,12 @@ async function updateFieldsWithAnimation(fields) {
   for (const [key, value] of Object.entries(fields)) {
     if (key in state.formData) {
       state.formData[key] = value;
+      
+      // IMPORTANTE: Marca o campo como "respondido" para evitar re-perguntar
+      // Isso é crucial para campos que podem ter valor vazio/false (ex: hasPhysicalLocation, socialNetworks)
+      if (!state.answeredFields.includes(key)) {
+        state.answeredFields.push(key);
+      }
       
       // Remove do shimmer, adiciona ao recently filled
       state.shimmeringFields = state.shimmeringFields.filter(f => f !== key);
@@ -868,6 +1457,7 @@ async function updateFieldsWithAnimation(fields) {
 /**
  * Valida formatos de campos específicos e adiciona aviso gentil
  * NÃO bloqueia, apenas avisa
+ * Evita mostrar o mesmo aviso mais de uma vez por sessão
  */
 function validateFormats(fields) {
   const warnings = [];
@@ -912,18 +1502,25 @@ function validateFormats(fields) {
     const pattern = patterns[validationType];
     const cleanValue = value.trim();
     
-    // Se não passar na validação, adiciona aviso
-    if (cleanValue && !pattern.test(cleanValue)) {
+    // Criar chave única para este aviso (campo + valor)
+    const warningKey = `${fieldId}:${cleanValue}`;
+    
+    // Se não passar na validação E ainda não mostramos esse aviso
+    if (cleanValue && !pattern.test(cleanValue) && !state.shownFormatWarnings.has(warningKey)) {
       warnings.push({
         field: fieldId,
         value: cleanValue,
-        expectedFormat: expectedFormats[validationType] || expectedFormats[fieldId]
+        expectedFormat: expectedFormats[validationType] || expectedFormats[fieldId],
+        warningKey: warningKey
       });
     }
   });
   
-  // Se tiver avisos, adiciona mensagem informativa (não bloqueante)
+  // Se tiver avisos novos (não duplicados), adiciona mensagem informativa
   if (warnings.length > 0) {
+    // Marcar estes avisos como já mostrados
+    warnings.forEach(w => state.shownFormatWarnings.add(w.warningKey));
+    
     const warningMessages = warnings.map(w => 
       `• **${getFieldLabel(w.field)}**: formato esperado: \`${w.expectedFormat}\``
     ).join('\n');
@@ -963,6 +1560,13 @@ function updateField(fieldId, value) {
   
   state.formData[fieldId] = value;
   console.log('[updateField] Updated formData:', fieldId, '→', state.formData[fieldId]);
+  
+  // IMPORTANTE: Marca o campo como "respondido" para evitar re-perguntar
+  // Isso é crucial para campos que podem ter valor vazio/false (ex: hasPhysicalLocation, socialNetworks)
+  if (!state.answeredFields.includes(fieldId)) {
+    state.answeredFields.push(fieldId);
+    console.log('[updateField] Added to answeredFields:', fieldId);
+  }
   
   // Limpa erro de validação se existir
   if (state.validationErrors[fieldId]) {
@@ -1377,15 +1981,23 @@ async function suggestColors() {
 async function saveDraft() {
   if (!state.sessionId) return;
   
+  // Incluir answered_fields dentro do data para que seja persistido no backend
+  const dataWithMeta = {
+    ...state.formData,
+    _answered_fields: [...state.answeredFields] // Prefixo _ para não conflitar com campos do formulário
+  };
+  
   const draftData = {
     session_id: state.sessionId,
     current_step: state.currentStepIndex,
-    data: state.formData,
+    data: dataWithMeta,
+    answered_fields: [...state.answeredFields], // Mantém no nível raiz para localStorage
     is_draft: true,
     timestamp: Date.now()
   };
   
   console.log(`[SaveDraft] Salvando step ${state.currentStepIndex} no localStorage para sessão ${state.sessionId}`);
+  console.log(`[SaveDraft] answeredFields: ${state.answeredFields.length} campos`);
   
   // Modo demo: salvar no localStorage
   if (state.isDemoMode) {
@@ -1447,10 +2059,19 @@ function loadDraft(sessionId = null, applyToState = true) {
             }
           });
           
-          // Restaurar step se disponível
+          // Restaurar answeredFields se disponível
+          if (Array.isArray(data.answered_fields)) {
+            state.answeredFields = [...data.answered_fields];
+            console.log(`[LoadDraft] Restaurando ${data.answered_fields.length} campos respondidos`);
+          }
+          
+          // Restaurar step se disponível E dentro do range válido
           if (typeof data.current_step === 'number') {
-            console.log(`[LoadDraft] Restaurando step ${data.current_step} do localStorage`);
-            state.currentStepIndex = data.current_step;
+            // Garantir que o step está dentro do range de steps ativos
+            const maxStep = activeSteps.value.length - 1;
+            const validStep = Math.min(data.current_step, maxStep);
+            console.log(`[LoadDraft] Restaurando step ${validStep} do localStorage (original: ${data.current_step}, max: ${maxStep})`);
+            state.currentStepIndex = validStep >= 0 ? validStep : 0;
           } else {
             console.warn('[LoadDraft] current_step não encontrado no draft, mantendo step 0');
           }
@@ -1530,12 +2151,18 @@ export function useConversationalAI() {
   // Computed para formData direto (sem readonly wrapper)
   const formData = computed(() => state.formData);
   
+  // Computed para campos respondidos (para debug/UI)
+  const answeredFields = computed(() => state.answeredFields);
+  
   return {
     // Estado (readonly para prevenir mutações diretas)
     state: readonly(state),
     
     // FormData reativo direto (para componentes que precisam atualizar)
     formData,
+    
+    // Campos respondidos pelo usuário (para debug/verificação)
+    answeredFields,
     
     // Computed
     currentStep,

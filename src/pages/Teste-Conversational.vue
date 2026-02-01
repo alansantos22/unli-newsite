@@ -28,7 +28,7 @@
             </svg>
           </div>
           <h1>Assistente Conversacional</h1>
-          <p>Crie seu site conversando com a Jules, nossa assistente de IA.</p>
+          <p>Crie seu site conversando com o Assistente Unli, nossa assistente de IA.</p>
           
           <div class="features">
             <div class="feature">

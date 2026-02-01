@@ -100,6 +100,7 @@
               :value="getFieldValue(field.id)"
               :is-shimmering="shimmeringFields.includes(field.id)"
               :is-recently-filled="recentlyFilledFields.includes(field.id)"
+              :is-answered="answeredFields.includes(field.id)"
               :error="getFieldError(field.id)"
               @edit="handleFieldEdit"
               @focus="handleFieldFocus"
@@ -243,6 +244,12 @@ export default {
     imageFieldLabel: {
       type: String,
       default: 'uma imagem'
+    },
+    
+    // Campos já respondidos pelo usuário (para indicador visual)
+    answeredFields: {
+      type: Array,
+      default: () => []
     }
   },
   
@@ -289,7 +296,10 @@ export default {
     });
     
     // Helper para verificar se um valor está preenchido
+    // IMPORTANTE: Booleanos (true ou false) SÃO considerados preenchidos
     const hasValue = (value) => {
+      // Booleanos são sempre considerados preenchidos (true ou false)
+      if (typeof value === 'boolean') return true;
       if (value === null || value === undefined) return false;
       if (typeof value === 'string') return value.trim().length > 0;
       if (Array.isArray(value)) return value.length > 0;
