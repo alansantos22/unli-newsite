@@ -14,42 +14,27 @@
       <button @click="retryValidation" class="retry-btn">Tentar Novamente</button>
     </div>
     
-    <!-- Wizard (só renderiza após carregar dados) -->
-    <template v-else>
-      <SmartOnboarding
-        v-if="!showTraditionalForm"
-        :initial-data="initialData"
-        :session-id="sessionId"
-        :field-checklist="fieldChecklist"
-        :purchased-pages="purchasedPages"
-        :order-id="orderId"
-        @complete="handleConversationalComplete"
-        @error="handleError"
-      />
-      
-      <!-- Traditional Form (after conversation) -->
-      <DynamicOnboardingWizard
-        v-else
-        :purchased-pages="purchasedPages"
-        :initial-data="conversationalData"
-        :session-id="sessionId"
-        @complete="handleComplete"
-        @back-to-conversation="showTraditionalForm = false"
-        @error="handleError"
-      />
-    </template>
+    <!-- SmartOnboarding -->
+    <SmartOnboarding
+      v-else
+      :initial-data="initialData"
+      :session-id="sessionId"
+      :field-checklist="fieldChecklist"
+      :purchased-pages="purchasedPages"
+      :order-id="orderId"
+      @complete="handleComplete"
+      @error="handleError"
+    />
   </div>
 </template>
 
 <script>
-import DynamicOnboardingWizard from '@/shared/Components/DynamicOnboardingWizard.vue';
 import { SmartOnboarding } from '@/shared/Components/SmartOnboarding';
 
 export default {
   name: 'OnboardingSetupPage',
   
   components: {
-    DynamicOnboardingWizard,
     SmartOnboarding
   },
   
@@ -61,11 +46,8 @@ export default {
       initialData: {},
       sessionId: '',
       orderId: null,
-      showTraditionalForm: false,
-      conversationalData: {},
-      currentStepFromBackend: 0,
-      fieldChecklist: {},      // Novo: checklist de campos preenchidos
-      progressStats: null      // Novo: estatísticas de progresso
+      fieldChecklist: {},
+      progressStats: null
     };
   },
   
@@ -177,32 +159,6 @@ export default {
     
     retryValidation() {
       this.validateToken();
-    },
-    
-    handleConversationalComplete(data) {
-      console.log('[OnboardingSetup] Conversa concluída:', data);
-      
-      // Salvar dados da conversa para passar ao formulário tradicional
-      this.conversationalData = {
-        ...this.initialData,
-        ...data
-      };
-      
-      // Perguntar se quer revisar no formulário ou finalizar direto
-      const wantToReview = confirm(
-        '🎉 Conversa finalizada!\n\n' +
-        'Suas informações foram coletadas com sucesso.\n\n' +
-        '✅ Clique em "OK" para revisar no formulário tradicional\n' +
-        '❌ Clique em "Cancelar" para finalizar direto'
-      );
-      
-      if (wantToReview) {
-        // Ir para o formulário tradicional para revisão
-        this.showTraditionalForm = true;
-      } else {
-        // Finalizar direto
-        this.handleComplete(this.conversationalData);
-      }
     },
     
     handleComplete(data) {

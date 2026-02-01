@@ -210,15 +210,6 @@ Coloque os arquivos em `/public/sounds/`:
 - `send.mp3` - Ao enviar mensagem
 - `click.mp3` - Ao clicar em sugestão
 
-## Migração do Sistema Antigo
-
-1. O novo sistema está em `SmartOnboarding/`
-2. O antigo permanece em `ConversationalOnboardingWizard.vue`
-3. Para migrar:
-   - Substituir import do componente
-   - Adaptar props (são similares)
-   - O novo sistema é retrocompatível com dados salvos
-
 ## Próximos Passos
 
 - [ ] Adicionar sons reais
@@ -230,4 +221,4 @@ Coloque os arquivos em `/public/sounds/`:
 
 ## Autores
 
-Sistema reconstruído do zero para resolver problemas de UX e arquitetura.
+Sistema construído do zero com arquitetura limpa e gamificação.
