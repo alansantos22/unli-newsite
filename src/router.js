@@ -35,11 +35,6 @@ export default [
         component: () => import("./pages/ConfiguradorPage/ConfiguradorPage.vue")
     },
     {
-        path: "/setup",
-        name: "OnboardingSetup",
-        component: () => import("./pages/OnboardingSetupPage.vue")
-    },
-    {
         path: "/pagamento/validar",
         name: "PaymentValidation", 
         component: () => import("./pages/PaymentValidation.vue")
@@ -48,10 +43,5 @@ export default [
         path: "/sucesso",
         name: "PaymentSuccess",
         component: () => import("./pages/PaymentSuccess.vue")
-    },
-    {
-        path: "/teste-conversational",
-        name: "TesteConversational",
-        component: () => import("./pages/Teste-Conversational.vue")
     }
 ]
