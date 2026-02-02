@@ -92,7 +92,10 @@ const state = reactive({
   pendingStepSummary: null,
   
   // Flags para evitar repetição
-  askedOptionalFields: {} // { fieldId: true } - campos que já foram perguntados
+  askedOptionalFields: {}, // { fieldId: true } - campos que já foram perguntados
+  
+  // Flag para evitar inicialização duplicada do chat
+  chatStarted: false
 });
 
 // ============================================
@@ -263,12 +266,22 @@ function initSession(sessionId, initialData = {}, fieldChecklist = null) {
     // Restaurar sessão anterior
     Object.assign(state.formData, savedSession.formData);
     Object.assign(state.fieldStatus, savedSession.fieldStatus);
-    state.messages = savedSession.messages || [];
+    
+    // Carregar mensagens e remover duplicatas (fix para bug de mensagens duplicadas)
+    const savedMessages = savedSession.messages || [];
+    state.messages = deduplicateMessages(savedMessages);
+    
     state.xp = savedSession.xp || 0;
     state.achievements = savedSession.achievements || [];
     state.currentStepIndex = savedSession.currentStepIndex || 0;
     state.isStepConfirmed = savedSession.isStepConfirmed || {};
     state.askedOptionalFields = savedSession.askedOptionalFields || {};
+    state.chatStarted = savedSession.chatStarted || false;
+    
+    // Se já tem mensagens, o chat já foi iniciado
+    if (state.messages.length > 0) {
+      state.chatStarted = true;
+    }
   } else {
     // Nova sessão
     resetState();
@@ -323,6 +336,7 @@ function resetState() {
   state.recentlyFilledFields = [];
   state.editingField = null;
   state.pendingStepSummary = null;
+  state.chatStarted = false;
 }
 
 /**
@@ -550,6 +564,21 @@ function setProcessing(isProcessing) {
 }
 
 /**
+ * Marca que o chat foi iniciado
+ */
+function setChatStarted(value) {
+  state.chatStarted = value;
+  saveToStorage();
+}
+
+/**
+ * Verifica se o chat já foi iniciado
+ */
+function isChatStarted() {
+  return state.chatStarted || state.messages.length > 0;
+}
+
+/**
  * Gera resumo do step atual
  */
 function generateStepSummary() {
@@ -593,6 +622,45 @@ function generateStepSummary() {
 
 function generateSessionId() {
   return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+/**
+ * Remove mensagens duplicadas (mesmo conteúdo + mesmo tipo em sequência)
+ * Fix para bug de mensagens repetidas no carregamento
+ */
+function deduplicateMessages(messages) {
+  if (!messages || messages.length === 0) return [];
+  
+  const seen = new Set();
+  const deduplicated = [];
+  
+  for (const msg of messages) {
+    // Criar uma chave única baseada no conteúdo e tipo
+    // Considera duplicada se mesmo conteúdo + mesmo tipo
+    const contentKey = `${msg.type}:${(msg.content || '').substring(0, 100)}`;
+    
+    // Verificar se é uma mensagem de boas-vindas duplicada (mais agressivo)
+    const isWelcome = msg.content && (
+      msg.content.includes('Parece que você já tem algumas informações preenchidas') ||
+      msg.content.includes('Sou o Assistente Unli') ||
+      msg.content.includes('Vamos começar com')
+    );
+    
+    if (isWelcome && seen.has(contentKey)) {
+      console.log('[Dedup] Removendo mensagem duplicada:', msg.content?.substring(0, 50));
+      continue;
+    }
+    
+    seen.add(contentKey);
+    deduplicated.push(msg);
+  }
+  
+  // Log se houve remoção
+  if (deduplicated.length < messages.length) {
+    console.log(`[Dedup] Removidas ${messages.length - deduplicated.length} mensagens duplicadas`);
+  }
+  
+  return deduplicated;
 }
 
 function findFieldById(fieldId) {
@@ -671,6 +739,7 @@ function saveToStorage() {
     currentStepIndex: state.currentStepIndex,
     isStepConfirmed: state.isStepConfirmed,
     askedOptionalFields: state.askedOptionalFields,
+    chatStarted: state.chatStarted,
     savedAt: Date.now()
   };
   
@@ -739,6 +808,8 @@ export function useOnboardingState() {
     addMessage,
     setTyping,
     setProcessing,
+    setChatStarted,
+    isChatStarted,
     generateStepSummary,
     saveToStorage,
     clearStorage,

@@ -14,7 +14,7 @@
  */
 
 import { useOnboardingState } from './useOnboardingState.js';
-import { ONBOARDING_STEPS, WELCOME_MESSAGES } from '../types/onboarding.types.js';
+import { ONBOARDING_STEPS } from '../types/onboarding.types.js';
 
 // ============================================
 // CONFIGURAÇÃO
@@ -155,6 +155,9 @@ function formatValue(value, type) {
 // COMPOSABLE PRINCIPAL
 // ============================================
 
+// Flag para evitar processamento duplicado
+let isProcessingRequest = false;
+
 export function useGeminiBrain() {
   const {
     state,
@@ -166,6 +169,8 @@ export function useGeminiBrain() {
     addMessage,
     setTyping,
     setProcessing,
+    setChatStarted,
+    isChatStarted,
     generateStepSummary,
     confirmCurrentStep,
     nextStep
@@ -173,10 +178,18 @@ export function useGeminiBrain() {
   
   /**
    * Processa mensagem do usuário através do Gemini
+   * Com proteção contra chamadas duplicadas
    */
   async function processUserMessage(userMessage, images = []) {
     if (!userMessage.trim() && images.length === 0) return null;
     
+    // Proteção contra processamento duplo
+    if (isProcessingRequest || state.isProcessing) {
+      console.log('[GeminiBrain] Já está processando, ignorando chamada duplicada');
+      return null;
+    }
+    
+    isProcessingRequest = true;
     setProcessing(true);
     setTyping(true);
     
@@ -188,11 +201,50 @@ export function useGeminiBrain() {
     });
     
     try {
-      // Preparar contexto para o Gemini
+      // Tipos de campo que são arquivos (NÃO enviar para IA)
+      const fileFieldTypes = ['image', 'file', 'video', 'audio', 'pdf'];
+      
+      // Filtrar formData para enviar apenas campos da step atual (sem arquivos binários)
+      const currentStepFields = currentStep.value?.fields || [];
+      const filteredFormData = {};
+      
+      // Sempre incluir nome e ramo (contexto básico)
+      if (state.formData.companyName) filteredFormData.companyName = state.formData.companyName;
+      if (state.formData.businessType) filteredFormData.businessType = state.formData.businessType;
+      
+      // Incluir apenas campos da step atual, excluindo arquivos
+      for (const field of currentStepFields) {
+        const fieldId = field.id;
+        const fieldType = field.type;
+        const value = state.formData[fieldId];
+        
+        // Pular campos de arquivo
+        if (fileFieldTypes.includes(fieldType)) {
+          // Para arquivos, apenas indicar se existe ou não
+          if (value) filteredFormData[fieldId] = '[arquivo enviado]';
+          continue;
+        }
+        
+        // Pular valores que são base64 ou URLs de arquivo
+        if (typeof value === 'string' && (
+          value.startsWith('data:') || 
+          /\.(jpg|jpeg|png|gif|webp|svg|mp4|mp3|pdf)$/i.test(value)
+        )) {
+          filteredFormData[fieldId] = '[arquivo enviado]';
+          continue;
+        }
+        
+        // Incluir valor normal
+        if (value !== undefined && value !== null && value !== '') {
+          filteredFormData[fieldId] = value;
+        }
+      }
+      
+      // Preparar contexto para o Gemini (SEM ARQUIVOS!)
       const context = {
         currentStep: currentStep.value,
         currentField: nextFieldToAsk.value,
-        formData: { ...state.formData },
+        formData: filteredFormData,
         fieldStatus: { ...state.fieldStatus },
         companyName: state.formData.companyName,
         businessType: state.formData.businessType
@@ -204,7 +256,7 @@ export function useGeminiBrain() {
         content: m.content
       }));
       
-      // Chamar API
+      // Chamar API (SEM IMAGENS!)
       const response = await fetch(API_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -212,18 +264,36 @@ export function useGeminiBrain() {
           session_id: state.sessionId,
           user_message: userMessage,
           context: context,
-          messages: recentMessages,
-          images: images.map(img => img.url || img.base64)
+          messages: recentMessages
+          // NÃO enviamos images! Economia de tokens.
         })
       });
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      // Capturar response body SEMPRE (mesmo em erro)
+      const responseText = await response.text();
+      console.log('[GeminiBrain] Response text (processUserMessage):', responseText.substring(0, 500));
+      
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('[GeminiBrain] Erro ao parsear response:', parseError);
+        console.error('[GeminiBrain] Response status:', response.status);
+        console.error('[GeminiBrain] Response text completo:', responseText);
+        console.error('[GeminiBrain] Response headers:', [...response.headers.entries()]);
+        throw new Error(`HTTP ${response.status} - Resposta inválida do servidor. Ver console para detalhes.`);
       }
       
-      const result = await response.json();
+      if (!response.ok) {
+        console.error('[GeminiBrain] Erro HTTP', response.status);
+        console.error('[GeminiBrain] Response body:', result);
+        const errorMsg = result.error || result.message || `HTTP ${response.status}`;
+        const errorData = result.data || {};
+        throw new Error(`${errorMsg} (${errorData.file || 'unknown'}:${errorData.line || '?'})`);
+      }
       
       if (!result.success) {
+        console.error('[GeminiBrain] API retornou success=false:', result);
         throw new Error(result.error || 'Erro desconhecido');
       }
       
@@ -247,11 +317,13 @@ export function useGeminiBrain() {
     } finally {
       setTyping(false);
       setProcessing(false);
+      isProcessingRequest = false; // Liberar para próxima requisição
     }
   }
   
   /**
    * Processa a resposta do Gemini
+   * Com delay de digitação para parecer mais humano
    */
   async function handleGeminiResponse(data) {
     // 1. Atualizar campos extraídos
@@ -275,7 +347,16 @@ export function useGeminiBrain() {
       markFieldAsAsked(data.next_field);
     }
     
-    // 4. Adicionar mensagem do assistente
+    // 4. Calcular delay de digitação para parecer humano
+    const messageLength = (data.message || '').length;
+    const thinkingTime = 400 + Math.random() * 300; // 400-700ms para "pensar"
+    const typingSpeed = 15 + Math.random() * 10; // 15-25ms por caractere
+    const typingTime = Math.min(messageLength * typingSpeed, 2000); // Max 2s
+    
+    // 5. Aguardar o delay antes de mostrar a mensagem
+    await new Promise(resolve => setTimeout(resolve, thinkingTime + typingTime));
+    
+    // 6. Adicionar mensagem do assistente
     addMessage({
       type: 'assistant',
       content: data.message,
@@ -286,7 +367,7 @@ export function useGeminiBrain() {
       confidence: data.confidence
     });
     
-    // 5. Se step está completo, preparar resumo
+    // 7. Se step está completo, preparar resumo
     if (data.step_summary_ready) {
       await showStepSummary();
     }
@@ -345,28 +426,20 @@ export function useGeminiBrain() {
   
   /**
    * Pergunta o próximo campo pendente
+   * Agora chama o Gemini para criar uma mensagem personalizada!
    */
-  function askNextField() {
+  async function askNextField() {
     const field = nextFieldToAsk.value;
     if (!field) return;
     
-    const step = currentStep.value;
-    const companyName = state.formData.companyName || 'sua empresa';
-    
-    // Buscar mensagem personalizada
-    let message = WELCOME_MESSAGES[step.id]?.[field.id] || `Qual é o ${field.label}?`;
-    
-    // Substituir placeholders
-    message = message.replace(/\{\{companyName\}\}/g, companyName);
-    message = message.replace(/\{\{email\}\}/g, state.formData.email || '');
-    
-    addMessage({
-      type: 'assistant',
-      content: message,
-      fieldTarget: field.id
-    });
-    
     markFieldAsAsked(field.id);
+    
+    // CHAMA O GEMINI para criar uma introdução personalizada
+    await generateStepGuidance({
+      context: 'next_field',
+      fieldId: field.id,
+      fieldLabel: field.label
+    });
   }
   
   /**
@@ -409,33 +482,177 @@ export function useGeminiBrain() {
   }
   
   /**
-   * Inicia o chat com mensagem de boas-vindas contextualizada
+   * NOVO: Gera orientação do Gemini para qualquer contexto
+   * O Gemini decide o que falar baseado no momento!
+   * IMPORTANTE: Nunca enviamos arquivos/imagens!
    */
-  function startChat() {
-    // Verificar qual é o primeiro campo pendente
-    const field = nextFieldToAsk.value;
+  async function generateStepGuidance({ context, newStepName, fieldId, fieldLabel } = {}) {
+    if (isProcessingRequest || state.isProcessing) {
+      console.log('[GeminiBrain] Já processando, ignorando chamada duplicada');
+      return null;
+    }
     
-    if (!field) {
-      // Todos os campos já foram preenchidos?
+    isProcessingRequest = true;
+    setProcessing(true);
+    setTyping(true);
+    
+    try {
+      const step = currentStep.value;
+      const field = nextFieldToAsk.value;
+      
+      // Tipos de campo que são arquivos (NÃO enviar para IA)
+      const fileFieldTypes = ['image', 'file', 'video', 'audio', 'pdf'];
+      
+      // Filtrar formData para enviar apenas campos da step atual (sem arquivos)
+      const currentStepFields = step?.fields || [];
+      const filteredFormData = {};
+      
+      // Sempre incluir contexto básico
+      if (state.formData.companyName) filteredFormData.companyName = state.formData.companyName;
+      if (state.formData.businessType) filteredFormData.businessType = state.formData.businessType;
+      
+      // Incluir apenas campos da step atual, excluindo arquivos
+      for (const f of currentStepFields) {
+        const fId = f.id;
+        const fType = f.type;
+        const value = state.formData[fId];
+        
+        if (fileFieldTypes.includes(fType)) {
+          if (value) filteredFormData[fId] = '[arquivo enviado]';
+          continue;
+        }
+        
+        if (typeof value === 'string' && (
+          value.startsWith('data:') || 
+          /\.(jpg|jpeg|png|gif|webp|svg|mp4|mp3|pdf)$/i.test(value)
+        )) {
+          filteredFormData[fId] = '[arquivo enviado]';
+          continue;
+        }
+        
+        if (value !== undefined && value !== null && value !== '') {
+          filteredFormData[fId] = value;
+        }
+      }
+      
+      // Montar contexto rico para o Gemini (SEM ARQUIVOS!)
+      const aiContext = {
+        currentStep: step,
+        currentField: field,
+        formData: filteredFormData,
+        fieldStatus: { ...state.fieldStatus },
+        companyName: state.formData.companyName,
+        businessType: state.formData.businessType,
+        triggerContext: context || 'step_start',
+        triggerDetails: {
+          newStepName,
+          fieldId,
+          fieldLabel,
+          hour: new Date().getHours()
+        }
+      };
+      
+      // Histórico recente
+      const recentMessages = state.messages.slice(-10).map(m => ({
+        role: m.type === 'user' ? 'user' : 'assistant',
+        content: m.content
+      }));
+      
+      // Chamar API (SEM IMAGENS!)
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: state.sessionId,
+          user_message: '__STEP_START__',
+          context: aiContext,
+          messages: recentMessages
+          // NÃO enviamos images! Economia de tokens.
+        })
+      });
+      
+      // Capturar response body SEMPRE (mesmo em erro)
+      const responseText = await response.text();
+      console.log('[GeminiBrain] Response text (generateStepGuidance):', responseText.substring(0, 1000));
+      
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('[GeminiBrain] Erro ao parsear response:', parseError);
+        console.error('[GeminiBrain] Response status:', response.status);
+        console.error('[GeminiBrain] Response text completo:', responseText);
+        console.error('[GeminiBrain] Response headers:', [...response.headers.entries()]);
+        throw new Error(`HTTP ${response.status} - Resposta inválida do servidor. Ver console para detalhes.`);
+      }
+      
+      if (!response.ok) {
+        console.error('[GeminiBrain] Erro HTTP', response.status);
+        console.error('[GeminiBrain] Response body:', result);
+        const errorMsg = result.error || result.message || `HTTP ${response.status}`;
+        const errorData = result.data || {};
+        throw new Error(`${errorMsg} (${errorData.file || 'unknown'}:${errorData.line || '?'})`);
+      }
+      
+      if (!result.success) {
+        console.error('[GeminiBrain] API retornou success=false:', result);
+        throw new Error(result.error || 'Erro desconhecido');
+      }
+      
+      // Processar resposta do Gemini
+      await handleGeminiResponse(result.data);
+      
+      return result.data;
+      
+    } catch (error) {
+      console.error('[GeminiBrain] Erro ao gerar orientação:', error);
+      
+      // Fallback: mensagem genérica mas ainda melhor que template
       addMessage({
         type: 'assistant',
-        content: 'Olá! 👋 Parece que você já tem algumas informações preenchidas. Quer revisar ou continuar de onde parou?'
+        content: 'E aí! Bora continuar? Me conta mais sobre seu projeto! 🚀',
+        isError: false
       });
+      
+      return null;
+      
+    } finally {
+      setTyping(false);
+      setProcessing(false);
+      isProcessingRequest = false;
+    }
+  }
+  
+  /**
+   * Inicia o chat chamando o GEMINI desde o primeiro momento
+   * Nada de mensagens prontas - o Gemini é o consultor!
+   */
+  async function startChat() {
+    // Proteção contra inicialização duplicada
+    if (isChatStarted()) {
+      console.log('[GeminiBrain] Chat já iniciado, ignorando startChat duplicado');
       return;
     }
     
-    // Mensagem de boas-vindas baseada no campo atual
+    // Marcar chat como iniciado ANTES de tudo
+    setChatStarted(true);
+    
+    const field = nextFieldToAsk.value;
     const step = currentStep.value;
-    const welcomeMessage = WELCOME_MESSAGES[step.id]?.[field.id] || 
-      `Olá! 👋 Sou o Assistente Unli, seu consultor de criação de sites. Vamos começar com ${field.label}?`;
     
-    addMessage({
-      type: 'assistant',
-      content: welcomeMessage,
-      fieldTarget: field.id
+    console.log('[GeminiBrain] Iniciando chat com Gemini!');
+    console.log('[GeminiBrain] Etapa:', step?.name);
+    console.log('[GeminiBrain] Próximo campo:', field?.id);
+    
+    if (field) {
+      markFieldAsAsked(field.id);
+    }
+    
+    // O PULO DO GATO: Chama o Gemini para ele criar o "Oi" personalizado!
+    await generateStepGuidance({
+      context: 'chat_start',
+      newStepName: step?.name || 'Identidade da Marca'
     });
-    
-    markFieldAsAsked(field.id);
   }
   
   return {
@@ -445,7 +662,8 @@ export function useGeminiBrain() {
     acceptSuggestion,
     acceptColorPalette,
     startChat,
-    showStepSummary
+    showStepSummary,
+    generateStepGuidance // Exportar para uso no watch de step
   };
 }
 

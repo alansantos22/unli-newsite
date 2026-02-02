@@ -173,41 +173,19 @@ export const ACHIEVEMENTS = {
 };
 
 // ============================================
-// MENSAGENS DE BOAS VINDAS POR CONTEXTO
+// NOTA: WELCOME_MESSAGES FOI REMOVIDO!
 // ============================================
-
-export const WELCOME_MESSAGES = {
-  identity: {
-    companyName: "Olá! 👋 Sou o Assistente Unli, seu consultor de criação de sites. Vou te guiar em cada etapa como se fosse uma consultoria de verdade. Vamos começar: **qual o nome da sua empresa?**",
-    businessType: "Excelente! **{{companyName}}** é um nome marcante! Em qual ramo vocês atuam? Isso me ajuda a sugerir cores e estilos que funcionam melhor para o seu público.",
-    siteObjective: "Perfeito! Agora me conta um pouco mais sobre o que a {{companyName}} precisa: vocês querem apenas **ser encontrados online** (site básico), **mostrar trabalho e fechar contratos** (portfólio e FAQ), ou ter um **ecossistema completo** com blog e vitrine de produtos? Baseado no que você me contar, vou recomendar o melhor formato!",
-    frase: "Toda grande marca tem uma frase que fica na memória. Para a {{companyName}}, você já tem um slogan? Se não tiver, posso sugerir algumas opções baseadas no seu ramo - frases curtas e impactantes funcionam muito melhor.",
-    primaryColor: "As cores do site influenciam como as pessoas percebem sua marca. Para {{companyName}}, qual cor você sente que representa melhor o que vocês fazem? Posso sugerir paletas testadas no mercado se preferir!",
-    logo: "E a logo? Se a {{companyName}} já tiver, pode enviar. Se ainda não tiver, não se preocupe - muitas empresas de sucesso começam com o nome bem estilizado e funciona super bem!"
-  },
-  contact: {
-    whatsapp: "Agora vamos facilitar o contato dos clientes! Qual é o **WhatsApp principal** onde as pessoas vão te chamar?",
-    email: "Qual e-mail os clientes devem usar? Dica: e-mails profissionais como contato@empresa.com passam mais credibilidade.",
-    instagram: "A {{companyName}} tem Instagram? As redes sociais são importantes - sites com links para redes passam mais confiança. Pode ser @usuario ou o link completo.",
-    addressCep: "A {{companyName}} atende em endereço físico ou só online? Se tiver local, me passa o CEP que eu preencho tudo automaticamente!"
-  },
-  about: {
-    companyBio: "Agora vem uma parte importante: contar a história da {{companyName}}! Clientes adoram saber quem está por trás do negócio. Me conta um pouco sobre como começou e o que torna vocês especiais.",
-    foundingYear: "Em que ano a {{companyName}} nasceu? Empresas com história passam mais credibilidade.",
-    mission: "Qual é a missão da {{companyName}}? O que vocês querem alcançar para seus clientes?"
-  },
-  services: {
-    services: "Vamos mostrar o que a {{companyName}} faz de melhor! Me conta quais são os principais serviços ou produtos que vocês oferecem. Detalhar isso bem ajuda o cliente a entender exatamente como você pode ajudá-lo.",
-    servicesIntro: "Quer adicionar uma frase de abertura para a seção de serviços? Algo que explique em uma linha o que vocês fazem - isso ajuda o visitante a entender rapidamente."
-  },
-  faq: {
-    faqItems: "Perguntas frequentes são ouro! Elas respondem dúvidas antes mesmo do cliente perguntar, o que passa segurança. Quais são as perguntas que você mais recebe? Posso sugerir algumas comuns do seu ramo também."
-  },
-  finalization: {
-    additionalNotes: "Estamos na reta final! 🎉 Tem algo especial que você gostaria no site? Algum pedido ou observação importante?",
-    urgency: "Por último: qual a urgência? Isso me ajuda a priorizar seu projeto corretamente."
-  }
-};
+// 
+// O Gemini agora é o ÚNICO cérebro que controla a conversa.
+// Nada de frases prontas ou templates.
+// A IA cria mensagens personalizadas em tempo real baseadas no:
+// - Nome da empresa (quando disponível)
+// - Etapa atual
+// - Campos pendentes
+// - Horário do dia
+// 
+// Isso garante uma experiência de CONSULTOR REAL, não de robô.
+// ============================================
 
 // ============================================
 // SONS DO SISTEMA

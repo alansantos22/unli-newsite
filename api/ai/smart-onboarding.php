@@ -10,12 +10,75 @@
  * POST /api/ai/smart-onboarding.php
  */
 
+// PRIMEIRO: Garantir que headers básicos são enviados IMEDIATAMENTE
+header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+// DEBUG: Teste rápido para ver se chegamos aqui
+// Se você receber esse response, o PHP está funcionando
+// Remover depois de testar
+if (isset($_GET['test'])) {
+    echo json_encode(['success' => true, 'message' => 'PHP funcionando!']);
+    exit;
+}
+
+// Handle preflight
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
+// DEFINIR FUNÇÕES UTILITÁRIAS PRIMEIRO (antes de qualquer uso!)
+function jsonResponse($success, $error = null, $data = null) {
+    $response = ['success' => $success];
+    
+    if ($error) {
+        $response['error'] = $error;
+    }
+    
+    if ($data) {
+        $response['data'] = $data;
+    }
+    
+    echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    exit;
+}
+
+// Error handler global para capturar TUDO
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    error_log("[Smart Onboarding PHP ERROR] {$errstr} in {$errfile}:{$errline}");
+    throw new ErrorException($errstr, 0, $errno, $errfile, $errline);
+});
+
+register_shutdown_function(function() {
+    $error = error_get_last();
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        error_log("[Smart Onboarding FATAL ERROR] {$error['message']} in {$error['file']}:{$error['line']}");
+        // Headers já foram enviados no início
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Erro fatal no servidor: ' . $error['message'],
+            'data' => [
+                'type' => 'FATAL',
+                'file' => basename($error['file']),
+                'line' => $error['line']
+            ]
+        ]);
+    }
+});
+
 // Proteção para carregar config segura
 define('SECURE_CONFIG_ACCESS', true);
 
-// Headers e CORS
+error_log('[Smart Onboarding] ========== NOVA REQUISIÇÃO ==========');
+error_log('[Smart Onboarding] Method: ' . ($_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN'));
+error_log('[Smart Onboarding] URI: ' . ($_SERVER['REQUEST_URI'] ?? 'UNKNOWN'));
+
+// Carregar CORS lib (pode adicionar headers extras mas os básicos já foram)
 require_once __DIR__ . '/../lib/cors.php';
-header('Content-Type: application/json; charset=utf-8');
 
 // Carregar dependências
 require_once __DIR__ . '/../config.secure.php';
@@ -49,11 +112,16 @@ if ($_SESSION[$rateKey]['count'] > 30) { // 30 mensagens por minuto
 }
 
 // Obter input
-$input = json_decode(file_get_contents('php://input'), true);
+$rawInput = file_get_contents('php://input');
+error_log('[Smart Onboarding] Raw input received: ' . substr($rawInput, 0, 500));
+
+$input = json_decode($rawInput, true);
 
 if (!$input) {
+    $jsonError = json_last_error_msg();
+    error_log('[Smart Onboarding ERROR] JSON decode failed: ' . $jsonError);
     http_response_code(400);
-    jsonResponse(false, 'JSON inválido no body da requisição.');
+    jsonResponse(false, 'JSON inválido no body da requisição. Erro: ' . $jsonError);
 }
 
 // Validar campos
@@ -63,14 +131,23 @@ $context = $input['context'] ?? [];
 $messages = $input['messages'] ?? [];
 $images = $input['images'] ?? [];
 
-if (empty(trim($userMessage))) {
+if (empty(trim($userMessage)) && $userMessage !== '__STEP_START__') {
+    error_log('[Smart Onboarding ERROR] Mensagem vazia. Input: ' . json_encode($input));
     http_response_code(400);
     jsonResponse(false, 'Mensagem do usuário é obrigatória.');
 }
 
+error_log('[Smart Onboarding] Processing message. IsStepStart: ' . ($userMessage === '__STEP_START__' ? 'YES' : 'NO'));
+
 // Sanitizar
 $userMessage = strip_tags($userMessage);
 $userMessage = mb_substr($userMessage, 0, 2000);
+
+// Detectar se é início de etapa (sinal especial do frontend)
+$isStepStart = ($userMessage === '__STEP_START__');
+if ($isStepStart) {
+    $userMessage = ''; // Limpar para o Gemini saber que deve puxar o assunto
+}
 
 try {
     // Obter API Key do Gemini
@@ -80,8 +157,21 @@ try {
         throw new Exception('GEMINI_API_KEY não configurada no servidor.');
     }
     
+    // Adicionar contexto do trigger ao context
+    $context['triggerContext'] = $isStepStart ? 'step_start' : 'user_message';
+    $context['triggerDetails'] = $context['triggerDetails'] ?? ['hour' => (int)date('H')];
+    
+    // Se é início de etapa, usar mensagem especial
+    $messageToSend = $isStepStart 
+        ? '[INÍCIO DE ETAPA - Não há mensagem do usuário. Você deve puxar o assunto e fazer a primeira pergunta.]'
+        : $userMessage;
+    
+    error_log('[Smart Onboarding] Calling processWithGemini. Message: ' . substr($messageToSend, 0, 100));
+    
     // Processar com Gemini
-    $result = processWithGemini($geminiApiKey, $userMessage, $context, $messages, $images);
+    $result = processWithGemini($geminiApiKey, $messageToSend, $context, $messages, $images);
+    
+    error_log('[Smart Onboarding] processWithGemini completed successfully');
     
     // Salvar no banco se tiver session_id
     if ($sessionId) {
@@ -91,9 +181,14 @@ try {
     jsonResponse(true, null, $result);
     
 } catch (Exception $e) {
-    error_log('[Smart Onboarding ERROR] ' . $e->getMessage());
+    error_log('[Smart Onboarding ERROR] Exception caught: ' . $e->getMessage());
+    error_log('[Smart Onboarding ERROR] Stack trace: ' . $e->getTraceAsString());
     http_response_code(500);
-    jsonResponse(false, 'Erro interno: ' . $e->getMessage());
+    jsonResponse(false, 'Erro interno: ' . $e->getMessage(), [
+        'error_type' => get_class($e),
+        'file' => basename($e->getFile()),
+        'line' => $e->getLine()
+    ]);
 }
 
 // =============================================
@@ -104,283 +199,251 @@ try {
  * Processa mensagem com o Gemini
  */
 function processWithGemini($apiKey, $userMessage, $context, $previousMessages, $images) {
-    $systemPrompt = buildSystemPrompt($context);
-    $conversationHistory = buildConversationHistory($previousMessages);
+    error_log('[processWithGemini] Starting. User message: ' . substr($userMessage, 0, 100));
+    error_log('[processWithGemini] Context step: ' . ($context['currentStep']['id'] ?? 'none'));
+    error_log('[processWithGemini] Previous messages count: ' . count($previousMessages));
     
-    return callGeminiAPI($apiKey, $systemPrompt, $conversationHistory, $userMessage, $images);
+    $systemPrompt = buildSystemPrompt($context);
+    error_log('[processWithGemini] System prompt built. Length: ' . strlen($systemPrompt));
+    
+    $conversationHistory = buildConversationHistory($previousMessages);
+    error_log('[processWithGemini] Conversation history built. Entries: ' . count($conversationHistory));
+    
+    $result = callGeminiAPI($apiKey, $systemPrompt, $conversationHistory, $userMessage, $images);
+    error_log('[processWithGemini] Gemini API returned successfully');
+    
+    return $result;
 }
 
 /**
  * Constrói o prompt de sistema para o Gemini
+ * VERSÃO 3.0 - O CONSULTOR TOTAL (Sem Scripts Prontos!)
+ * 
+ * O Gemini controla 100% da conversa, desde o "Oi".
+ * Nada de frases genéricas ou templates.
  */
 function buildSystemPrompt($context) {
     $currentStep = $context['currentStep'] ?? null;
     $currentField = $context['currentField'] ?? null;
     $formData = $context['formData'] ?? [];
     $fieldStatus = $context['fieldStatus'] ?? [];
-    $companyName = $context['companyName'] ?? '';
-    $businessType = $context['businessType'] ?? '';
+    $triggerContext = $context['triggerContext'] ?? 'user_message';
+    $triggerDetails = $context['triggerDetails'] ?? [];
     
-    // Formatar campos do step
+    // Nome da empresa (tratado para nunca mostrar "undefined")
+    $companyName = !empty($formData['companyName']) ? $formData['companyName'] : '';
+    $companyLabel = $companyName ?: 'seu novo negócio';
+    $businessType = $formData['businessType'] ?? '';
+    
+    // Tipos de campo que são arquivos (não enviar para IA)
+    $fileFieldTypes = ['image', 'file', 'video', 'audio', 'pdf'];
+    
+    // Formatar campos do step (APENAS campos de texto, nunca arquivos)
     $stepFields = [];
     if ($currentStep && isset($currentStep['fields'])) {
         foreach ($currentStep['fields'] as $field) {
+            $fieldType = $field['type'] ?? 'text';
+            $isFileField = in_array($fieldType, $fileFieldTypes);
+            
             $stepFields[] = [
                 'id' => $field['id'],
                 'label' => $field['label'],
-                'type' => $field['type'],
+                'type' => $fieldType,
                 'required' => $field['required'] ?? false,
                 'status' => $fieldStatus[$field['id']] ?? 'empty',
-                'currentValue' => formatValueForPrompt($formData[$field['id']] ?? null, $field['type'])
+                // Para campos de arquivo, apenas indicar se foi enviado ou não
+                'currentValue' => $isFileField 
+                    ? (!empty($formData[$field['id']]) ? '[arquivo enviado]' : 'vazio')
+                    : formatValueForPrompt($formData[$field['id']] ?? null, $fieldType)
             ];
         }
     }
     
-    // Separar campos preenchidos e pendentes
-    $filledFields = array_filter($stepFields, fn($f) => $f['status'] === 'answered' || $f['status'] === 'confirmed');
-    $pendingFields = array_filter($stepFields, fn($f) => $f['status'] === 'empty');
+    // Separar campos pendentes
+    $pendingFields = array_values(array_filter($stepFields, fn($f) => $f['status'] === 'empty'));
+    $filledFields = array_values(array_filter($stepFields, fn($f) => $f['status'] === 'answered' || $f['status'] === 'confirmed'));
     
     $stepId = $currentStep['id'] ?? 'identity';
     $stepName = $currentStep['name'] ?? 'Identidade da Marca';
-    $currentFieldId = $currentField['id'] ?? 'companyName';
+    
+    // Determinar hora do dia para saudação
+    $hour = (int)($triggerDetails['hour'] ?? date('H'));
+    $greeting = $hour < 12 ? 'Bom dia' : ($hour < 18 ? 'Boa tarde' : 'Boa noite');
+    
+    // Lista de campos pendentes como string
+    $pendingFieldsJson = json_encode(array_map(fn($f) => $f['id'], $pendingFields), JSON_UNESCAPED_UNICODE);
+    $pendingFieldsLabels = implode(', ', array_map(fn($f) => $f['label'], array_slice($pendingFields, 0, 3)));
+    
+    // Primeiro campo pendente
+    $firstPendingField = $pendingFields[0] ?? null;
+    $firstPendingLabel = $firstPendingField['label'] ?? 'próximo dado';
+    $firstPendingId = $firstPendingField['id'] ?? '';
+    
+    // =============================================
+    // O PROMPT DO CONSULTOR TOTAL
+    // =============================================
     
     $prompt = <<<PROMPT
-Você é o **Assistente Unli**, um consultor especializado em criação de sites. Você guia o usuário como em uma consultoria de verdade, explicando decisões de forma simples sem usar termos técnicos. Seja amigável, acolhedor e profissional. Use emojis com moderação.
-
-## SUA PERSONALIDADE
-- Você é um consultor, não apenas um assistente
-- Explique o "porquê" das coisas quando apropriado (ex: "Cores quentes como laranja transmitem energia e são ótimas para alimentação")
-- Dê dicas práticas baseadas em experiência de mercado
-- Valorize o que o usuário compartilha
-- Nunca use jargões técnicos como "UX", "UI", "conversão" - fale de forma simples
-- **IMPORTANTE**: Quando der sugestões, SEMPRE explique o raciocínio por trás delas. O cliente precisa entender POR QUE você está sugerindo aquilo.
+ATUE COMO: 'O Consultor Criativo da Unli'.
+Você é um especialista Sênior em Branding conversando pelo WhatsApp com um cliente que acabou de comprar um site.
+Sua meta é coletar informações para o briefing, mas de forma que o cliente se sinta num brainstorming empolgante.
 
 ## CONTEXTO ATUAL
-- **Step**: {$stepId} ({$stepName})
-- **Empresa**: {$companyName}
-- **Ramo**: {$businessType}
-- **Campo sendo perguntado**: {$currentFieldId}
+- Etapa do formulário: '{$stepName}' ({$stepId})
+- Nome da Empresa: '{$companyLabel}'
+- Ramo: '{$businessType}'
+- Horário: {$hour}h ({$greeting})
+- Campos pendentes: {$pendingFieldsJson}
+- Próximo campo: '{$firstPendingId}' ({$firstPendingLabel})
+- Tipo de trigger: '{$triggerContext}'
 
-## CAMPOS DO STEP ({$stepId})
+## REGRAS DE OURO (LEIA COM MUITA ATENÇÃO!)
+
+### 1. ZERO MENSAGENS ROBÓTICAS
+❌ PROIBIDO USAR:
+- "Olá, sou seu assistente..."
+- "Vamos preencher o formulário..."
+- "Por favor, insira os dados..."
+- "Analisando as informações..."
+- "Com base nos dados fornecidos..."
+- "Vejo que você preencheu..."
+
+✅ EXEMPLOS PERMITIDOS:
+- "E aí! Bora dar uma cara pro {$companyLabel}?"
+- "Agora a parte divertida: as cores!"
+- "Me conta, qual o nome da empresa?"
+
+### 2. SE O USUÁRIO NÃO FALOU NADA (INÍCIO DE ETAPA)
+Quando não há mensagem do usuário (é início de chat ou mudança de etapa), você DEVE:
+1. Puxar o assunto de forma engajadora
+2. Olhar para o primeiro campo pendente ('{$firstPendingLabel}')
+3. Fazer uma introdução curta sobre esse tópico
+
+EXEMPLOS BONS (para início):
+- Se for o nome da empresa: "{$greeting}! Bora começar pelo mais importante: qual vai ser o nome da marca?"
+- Se forem cores: "A identidade visual muda tudo! Você já imaginou quais cores vão representar {$companyLabel}?"
+- Se for WhatsApp: "Agora vamos deixar fácil pros clientes te acharem! Qual o WhatsApp de atendimento?"
+
+### 3. PERSONALIZAÇÃO EXTREMA
+- Use '{$companyLabel}' nas frases naturalmente
+- Se a empresa já tem nome, use: "Pensando na {$companyLabel}, que tal..."
+- Se não tem nome ainda, use: "Pensando no seu negócio..." ou "na sua marca..."
+- NUNCA mostre 'undefined', '{undefined}' ou variáveis vazias
+
+### 4. NÃO SEJA UM INQUÉRITO
+❌ RUIM: "Qual é o seu ramo de atuação?"
+✅ BOM: "Me conta, {$companyLabel} atua em qual mercado? Assim calibro as sugestões!"
+
+❌ RUIM: "Insira o WhatsApp:"
+✅ BOM: "Qual o zap pra galera entrar em contato?"
+
+### 5. REAÇÃO ANTES DE PERGUNTAR
+Quando o usuário responder algo, faça um breve comentário positivo ANTES da próxima pergunta:
+- Nome dado → "TechNova? Nome futurista, curti! 🚀 Agora me conta..."
+- Ramo dado → "Cafeteria? Que delícia de mercado! 😋 E as cores..."
+- Cor escolhida → "Azul transmite confiança, ótima escolha! Agora..."
+
+### 6. SER BREVE
+- Máximo 2-3 frases por mensagem
+- Use emojis com moderação (1-2 por mensagem)
+- Nada de textão
+
+### 7. QUANDO USUÁRIO DISSER "NÃO SEI" OU "NÃO TENHO"
+- Campos obrigatórios → Sugira algo e pergunte se concorda
+- Campos opcionais → "Tranquilo, podemos pular por enquanto!"
+- Nunca insista ou faça o usuário se sentir mal
+
 PROMPT;
 
-    $prompt .= "\n```json\n" . json_encode($stepFields, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n```\n";
-    
-    $prompt .= "\n## CAMPOS JÁ PREENCHIDOS\n";
-    if (count($filledFields) > 0) {
-        foreach ($filledFields as $f) {
-            $prompt .= "- {$f['label']}: {$f['currentValue']}\n";
-        }
-    } else {
-        $prompt .= "Nenhum\n";
-    }
-    
-    $prompt .= "\n## CAMPOS PENDENTES (ainda vazios)\n";
-    if (count($pendingFields) > 0) {
-        foreach ($pendingFields as $f) {
-            $req = $f['required'] ? 'OBRIGATÓRIO' : 'opcional';
-            $prompt .= "- {$f['id']} ({$f['label']}) [{$req}]\n";
-        }
-    } else {
-        $prompt .= "Nenhum - step completo!\n";
-    }
-    
-    $prompt .= <<<'INSTRUCTIONS'
+    // Adicionar contexto de sugestões por ramo
+    $prompt .= <<<'SUGGESTIONS'
 
-## SUAS RESPONSABILIDADES
-1. **Extrair dados** da mensagem do usuário e mapear para os campos corretos
-2. **Confirmar** o que você entendeu de forma amigável
-3. **Perguntar** o próximo campo pendente (se houver)
-4. **Sugerir** opções quando apropriado (cores, frases, etc.)
-5. **Detectar** quando usuário diz que não tem/não quer algo
+## SUGESTÕES CRIATIVAS POR RAMO (use quando apropriado)
 
-## REGRAS IMPORTANTES
-- NUNCA invente dados que o usuário não forneceu
-- NUNCA pule campos obrigatórios
-- NUNCA pergunte algo que já foi respondido (verifique o status)
-- Se usuário disser "não tenho", "não sei", "pular" → marque como skipped
-- Se não conseguir extrair nada útil, peça esclarecimento educadamente
-- Redes sociais: aceite @usuario OU URLs completas, normalize para @usuario
-- Telefones: extraia apenas números, aceite formatos brasileiros
-- Cores: aceite nomes ("azul") ou hex ("#0066CC"), converta nomes para hex
-- Anos: aceite apenas 1900-2026
-- CEP: quando receber CEP, indique que o frontend deve buscar os dados
+### Slogans:
+- Tecnologia: "Inovação sem limites", "O futuro começa aqui"
+- Alimentação: "Sabor que marca", "Feito com amor"
+- Beleza: "Sua beleza, nossa arte", "Transformação começa aqui"
+- Saúde: "Cuidando de você", "Seu bem-estar é prioridade"
+- Jurídico: "Seu direito, nossa missão", "Justiça com excelência"
+- Educação: "Conhecimento que transforma", "Aprender é crescer"
 
-## MAPEAMENTO DE CORES (FLAT UI COLORS)
-Use APENAS estas cores validadas pelo mercado de design:
+### Paletas de Cores (sempre ofereça 2-3 opções):
+- Alimentação: Laranja #E67E22 + Amarelo #F1C40F (cores que abrem apetite)
+- Saúde: Turquesa #1ABC9C + Azul #3498DB (transmite cuidado)
+- Tecnologia: Azul #3498DB + Cinza escuro #2C3E50 (moderno e confiável)
+- Jurídico: Preto #2C3E50 + Dourado #D4AF37 (seriedade e prestígio)
+- Beleza: Roxo #9B59B6 + Rosa #E91E63 (sofisticação feminina)
 
-### Cores Quentes
-- vermelho → #E74C3C (Alizarin)
-- laranja → #E67E22 (Carrot)
-- amarelo → #F1C40F (Sun Flower)
-- abóbora → #D35400 (Pumpkin)
-- romã → #C0392B (Pomegranate)
+SUGGESTIONS;
 
-### Cores Frias
-- azul → #3498DB (Peter River)
-- azul escuro → #2980B9 (Belize Hole)
-- turquesa → #1ABC9C (Turquoise)
-- verde mar → #16A085 (Green Sea)
-- verde → #2ECC71 (Emerald)
-- verde escuro → #27AE60 (Nephritis)
+    $prompt .= <<<'EXTRACTION'
 
-### Cores Neutras
-- roxo → #9B59B6 (Amethyst)
-- roxo escuro → #8E44AD (Wisteria)
-- cinza escuro → #34495E (Wet Asphalt)
-- preto → #2C3E50 (Midnight Blue)
-- branco → #ECF0F1 (Clouds)
-- prata → #BDC3C7 (Silver)
-- cinza → #95A5A6 (Concrete)
+## EXTRAÇÃO INTELIGENTE
+- "Sou advogado" → businessType: "juridico"
+- "meu zap é 11 99999-1234" → whatsapp: "11999991234"
+- "cor azul" → primaryColor: "#3498DB"
+- "@empresa no insta" → instagram: "@empresa"
+- "não tenho logo" → hasNoLogo: true
+
+EXTRACTION;
+
+    $prompt .= <<<'JSONFORMAT'
 
 ## FORMATO DE RESPOSTA (JSON OBRIGATÓRIO)
-```json
+Retorne ESTRITAMENTE este JSON (sem markdown, sem ```json):
 {
-  "message": "Sua resposta amigável aqui (com confirmação + próxima pergunta + EXPLICAÇÃO do porquê das sugestões)",
+  "message": "Sua fala de consultor aqui. Seja humano e termine com pergunta se houver campos pendentes.",
   "extracted": {
-    "fieldId": "valor extraído"
+    "FIELD_ID": "VALOR_LIMPO"
   },
-  "skipped": ["fieldId1", "fieldId2"],
+  "skipped": ["fieldId1"],
   "next_field": "proximoCampoId",
   "suggestions": [
-    {"field": "frase", "value": "Sugestão 1", "label": "Impactante", "reason": "Explique AQUI por que essa frase funciona bem"}
+    {"field": "frase", "value": "Sugestão aqui", "label": "Estilo", "reason": "Por que funciona"}
   ],
   "color_palettes": [
-    {"primary": "#3498DB", "secondary": "#2ECC71", "name": "Profissional", "reason": "Explique AQUI por que essa combinação é boa"}
+    {"primary": "#3498DB", "secondary": "#2ECC71", "name": "Profissional", "reason": "Por que combina"}
   ],
   "step_summary_ready": false,
-  "confidence": 0.95
+  "confidence": 0.95,
+  "next_step_hint": "O que você está perguntando/fazendo agora"
 }
-```
 
-## EXPLICAÇÃO DOS CAMPOS DE RESPOSTA
-- **message**: Sua resposta em texto (confirme o que entendeu + próxima pergunta + EXPLIQUE o raciocínio das sugestões)
-- **extracted**: Objeto com fieldId → valor extraído da mensagem
-- **skipped**: Array de fieldIds que usuário indicou não ter/não querer
-- **next_field**: ID do próximo campo a perguntar (null se step completo)
-- **suggestions**: Para campos criativos (frase, bio), sugira 2-3 opções. CADA sugestão DEVE ter um "reason" explicando por que funciona
-- **color_palettes**: Quando perguntar sobre cores, sugira 3 paletas. CADA paleta DEVE ter um "reason" explicando por que é boa para o negócio
-- **step_summary_ready**: true se TODOS os campos do step foram tratados
-- **confidence**: 0-1, sua confiança na extração
-
-## COMO DAR SUGESTÕES (MUITO IMPORTANTE!)
-Quando você sugerir algo (cores, frases, texto, etc.), SEMPRE inclua na mensagem E no JSON o raciocínio:
-
-**❌ RUIM - Sem explicação:**
-"Aqui estão 3 opções de frase para você escolher"
-
-**✅ BOM - Com explicação:**
-"Vou sugerir 3 opções pensando no seu público. A primeira é mais direta e funciona bem para quem precisa decidir rápido. A segunda é mais emocional e cria conexão. A terceira foca em resultado, ideal para serviços."
-
-### Exemplo de suggestions com reason:
-```json
-"suggestions": [
-  {
-    "field": "frase",
-    "value": "Café que aquece seu dia",
-    "label": "Emocional",
-    "reason": "Cria uma conexão afetiva - pessoas associam café a momentos especiais"
-  },
-  {
-    "field": "frase", 
-    "value": "Qualidade em cada xícara",
-    "label": "Profissional",
-    "reason": "Foca no produto e transmite confiança na entrega"
-  }
-]
-```
-
-## PALETAS FLAT UI COLORS (Cores validadas pelo mercado)
-Quando sugerir cores, use EXCLUSIVAMENTE estas combinações testadas:
-
-### Por Sensação
-- **Confiança & Profissionalismo**: #3498DB (Peter River) + #2C3E50 (Midnight Blue)
-- **Energia & Dinamismo**: #E74C3C (Alizarin) + #E67E22 (Carrot)
-- **Natureza & Saúde**: #2ECC71 (Emerald) + #27AE60 (Nephritis)
-- **Inovação & Tecnologia**: #9B59B6 (Amethyst) + #3498DB (Peter River)
-- **Elegância & Sofisticação**: #34495E (Wet Asphalt) + #ECF0F1 (Clouds)
-- **Acolhimento & Calma**: #1ABC9C (Turquoise) + #16A085 (Green Sea)
-
-### Por Ramo (sugerir baseado no businessType)
-- Alimentação: #E67E22 (Carrot) + #F1C40F (Sun Flower) - cores que abrem o apetite
-- Saúde: #1ABC9C (Turquoise) + #3498DB (Peter River) - transmitem cuidado e confiança
-- Beleza: #9B59B6 (Amethyst) + #E74C3C (Alizarin) - sofisticação e feminilidade
-- Tecnologia: #3498DB (Peter River) + #2C3E50 (Midnight Blue) - moderno e confiável
-- Jurídico: #2C3E50 (Midnight Blue) + #34495E (Wet Asphalt) - seriedade e credibilidade
-- Educação: #3498DB (Peter River) + #2ECC71 (Emerald) - aprendizado e crescimento
-- Construção: #E67E22 (Carrot) + #34495E (Wet Asphalt) - força e profissionalismo
-
-## EXEMPLOS DE EXTRAÇÃO
-User: "Minha empresa é Café Aurora, trabalhamos com cafeteria"
-→ extracted: { "companyName": "Café Aurora", "businessType": "alimentacao" }
-
-User: "meu zap é 11 99988-7766"
-→ extracted: { "whatsapp": "11999887766" }
-
-User: "não tenho endereço físico, só trabalho online"
-→ skipped: ["hasPhysicalLocation", "addressCep", "addressStreet", ...]
-→ extracted: { "hasPhysicalLocation": false }
-
-User: "@cafeaurora no instagram"
-→ extracted: { "instagram": "@cafeaurora" }
-
-User: "quero azul e laranja"
-→ extracted: { "primaryColor": "#3498DB", "secondaryColor": "#E67E22" }
-
-## CAMPO: siteObjective (Objetivo do Site)
-Este é um campo MUITO IMPORTANTE que define qual pacote/template será usado.
-
-### As 3 Opções
-1. **essential** (🏢 Essencial) - Para quem presta serviços e precisa ser encontrado online
-2. **authority** (🚀 Autoridade) - Para quem quer mostrar portfólio/trabalhos e fechar mais contratos
-3. **enterprise** (💎 Ecossistema Digital) - Para quem quer blog, catálogo de produtos, atrair tráfego
-
-### Como Identificar (extraia de acordo com o que o usuário disser)
-
-**→ essential:**
-- "preciso de um site simples", "cartão de visita digital"
-- "quero ser encontrado no Google", "preciso de presença online"
-- "site institucional básico", "só preciso mostrar meus serviços"
-- Prestadores de serviço que querem ser localizados
-
-**→ authority:**
-- "quero mostrar meu portfólio", "exibir meus trabalhos"
-- "preciso fechar mais contratos", "mostrar cases de sucesso"
-- "site para profissional liberal", "quero me posicionar como autoridade"
-- Fotógrafos, designers, advogados, consultores, arquitetos
-
-**→ enterprise:**
-- "quero vender online", "preciso de catálogo de produtos"
-- "quero um blog", "produzir conteúdo", "atrair tráfego"
-- "loja virtual", "e-commerce", "vender produtos"
-- Lojas, e-commerces, produtores de conteúdo
-
-### Exemplo de Extração
-User: "preciso de um site para mostrar meu portfólio de arquitetura e fechar mais projetos"
-→ extracted: { "siteObjective": "authority" }
-
-User: "quero um site com blog e catálogo dos meus produtos artesanais"
-→ extracted: { "siteObjective": "enterprise" }
-
-User: "só preciso de um site básico para os clientes me encontrarem"
-→ extracted: { "siteObjective": "essential" }
-
-INSTRUCTIONS;
+JSONFORMAT;
 
     return $prompt;
 }
 
 /**
  * Formata valor para o prompt
+ * IMPORTANTE: NUNCA enviar imagens, vídeos ou arquivos binários!
  */
 function formatValueForPrompt($value, $type) {
+    // Tipos de arquivo que NUNCA devem ser enviados
+    $fileTypes = ['image', 'file', 'video', 'audio', 'pdf'];
+    if (in_array($type, $fileTypes)) {
+        return '[arquivo enviado]';
+    }
+    
     if ($value === null || $value === '') return 'vazio';
-    if ($type === 'image') return '[imagem enviada]';
-    if (is_array($value)) return '[' . count($value) . ' itens]';
     if ($type === 'boolean') return $value ? 'sim' : 'não';
+    if (is_array($value)) return '[' . count($value) . ' itens]';
+    
+    // Detectar base64 ou URLs de arquivo (mesmo que type não seja 'image')
+    if (is_string($value)) {
+        if (strpos($value, 'data:image') === 0) return '[imagem enviada]';
+        if (strpos($value, 'data:video') === 0) return '[vídeo enviado]';
+        if (strpos($value, 'data:audio') === 0) return '[áudio enviado]';
+        if (strpos($value, 'data:application') === 0) return '[arquivo enviado]';
+        // URLs de upload
+        if (preg_match('/\.(jpg|jpeg|png|gif|webp|svg|mp4|mp3|pdf)$/i', $value)) {
+            return '[arquivo enviado]';
+        }
+    }
     
     $str = (string)$value;
-    return mb_strlen($str) > 50 ? mb_substr($str, 0, 47) . '...' : $str;
+    return mb_strlen($str) > 100 ? mb_substr($str, 0, 97) . '...' : $str;
 }
 
 /**
@@ -409,32 +472,26 @@ function buildConversationHistory($messages) {
 
 /**
  * Chama a API do Gemini
+ * IMPORTANTE: NUNCA enviamos imagens/arquivos - apenas texto!
  */
 function callGeminiAPI($apiKey, $systemPrompt, $conversationHistory, $userMessage, $images = []) {
+    error_log('[callGeminiAPI] Starting Gemini API call');
+    
     $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}";
     
-    // Adicionar mensagem atual
+    // Adicionar mensagem atual (APENAS TEXTO, nunca imagens!)
     $userParts = [['text' => $userMessage]];
     
-    // Adicionar imagens se houver
-    foreach ($images as $image) {
-        if (strpos($image, 'data:image') === 0) {
-            // Base64
-            $parts = explode(',', $image);
-            $mimeType = str_replace(['data:', ';base64'], '', $parts[0]);
-            $userParts[] = [
-                'inlineData' => [
-                    'mimeType' => $mimeType,
-                    'data' => $parts[1]
-                ]
-            ];
-        }
-    }
+    // NÃO ENVIAMOS IMAGENS PARA O GEMINI!
+    // Isso economiza tokens e dinheiro.
+    // O Gemini não precisa ver as imagens, apenas saber que foram enviadas.
     
     $conversationHistory[] = [
         'role' => 'user',
         'parts' => $userParts
     ];
+    
+    error_log('[callGeminiAPI] Conversation history entries: ' . count($conversationHistory));
     
     $payload = [
         'contents' => $conversationHistory,
@@ -464,35 +521,57 @@ function callGeminiAPI($apiKey, $systemPrompt, $conversationHistory, $userMessag
         CURLOPT_CONNECTTIMEOUT => 10
     ]);
     
+    error_log('[callGeminiAPI] Sending request to Gemini...');
+    
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $error = curl_error($ch);
     curl_close($ch);
     
+    error_log('[callGeminiAPI] Response received. HTTP Code: ' . $httpCode);
+    
     if ($error) {
-        throw new Exception("Erro de conexão: {$error}");
+        error_log('[callGeminiAPI ERROR] CURL Error: ' . $error);
+        throw new Exception("Erro de conexão com Gemini: {$error}");
     }
     
     if ($httpCode !== 200) {
-        error_log("[Gemini API Error] HTTP {$httpCode}: {$response}");
-        throw new Exception("Erro na API do Gemini (HTTP {$httpCode})");
+        error_log('[callGeminiAPI ERROR] HTTP ' . $httpCode . ': ' . substr($response, 0, 500));
+        throw new Exception("Erro na API do Gemini (HTTP {$httpCode}). Detalhes: " . substr($response, 0, 200));
     }
     
+    error_log('[callGeminiAPI] Response OK. Length: ' . strlen($response));
+    
     $data = json_decode($response, true);
+    
+    if (!$data) {
+        error_log('[callGeminiAPI ERROR] Failed to decode Gemini response JSON: ' . json_last_error_msg());
+        error_log('[callGeminiAPI ERROR] Raw response: ' . substr($response, 0, 500));
+        throw new Exception('Resposta inválida do Gemini (JSON decode failed)');
+    }
+    
+    error_log('[callGeminiAPI] Gemini response decoded successfully');
     
     // Extrair resposta
     $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
     
     if (!$text) {
+        error_log('[callGeminiAPI ERROR] No text in Gemini response. Data: ' . json_encode($data));
         throw new Exception("Resposta vazia do Gemini");
     }
+    
+    error_log('[callGeminiAPI] Extracted text from Gemini. Length: ' . strlen($text));
+    error_log('[callGeminiAPI] Gemini text preview: ' . substr($text, 0, 200));
     
     // Parse JSON da resposta
     $parsed = json_decode($text, true);
     
     if (!$parsed) {
+        $jsonError = json_last_error_msg();
+        error_log('[callGeminiAPI ERROR] Failed to parse Gemini text as JSON: ' . $jsonError);
+        error_log('[callGeminiAPI ERROR] Gemini text: ' . $text);
+        
         // Se não conseguiu parsear, retornar mensagem básica
-        error_log("[Gemini] Resposta não-JSON: " . $text);
         return [
             'message' => $text,
             'extracted' => [],
@@ -504,6 +583,8 @@ function callGeminiAPI($apiKey, $systemPrompt, $conversationHistory, $userMessag
             'confidence' => 0.5
         ];
     }
+    
+    error_log('[callGeminiAPI] Gemini response parsed successfully as JSON');
     
     // Garantir estrutura completa
     return [
@@ -559,20 +640,4 @@ function saveToDatabase($sessionId, $userMessage, $result, $context) {
     }
 }
 
-/**
- * Resposta JSON padronizada
- */
-function jsonResponse($success, $error = null, $data = null) {
-    $response = ['success' => $success];
-    
-    if ($error) {
-        $response['error'] = $error;
-    }
-    
-    if ($data) {
-        $response['data'] = $data;
-    }
-    
-    echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-    exit;
-}
+// jsonResponse já foi definida no início do arquivo

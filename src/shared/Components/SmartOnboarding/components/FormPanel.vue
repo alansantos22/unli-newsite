@@ -599,7 +599,6 @@ $error: #E17055;
   flex: 1;
   overflow-y: auto;
   padding: 1rem 1.25rem;
-  max-height: 580px;
   
   &::-webkit-scrollbar {
     width: 4px;

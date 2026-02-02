@@ -269,6 +269,7 @@ export default {
       updateField,
       dismissAchievementPopup,
       goToStep,
+      isChatStarted,
       ONBOARDING_STEPS
     } = useOnboardingState();
     
@@ -289,6 +290,9 @@ export default {
     const userInput = ref('');
     const showFormPanel = ref(true);
     const showMobileSheet = ref(false);
+    
+    // Proteção contra inicialização duplicada
+    const hasInitialized = ref(false);
     
     // ============================================
     // COMPUTED
@@ -442,6 +446,13 @@ export default {
     // ============================================
     
     onMounted(() => {
+      // Proteção contra chamadas duplicadas
+      if (hasInitialized.value) {
+        console.log('[SmartOnboarding] Já inicializado, ignorando...');
+        return;
+      }
+      hasInitialized.value = true;
+      
       console.log('[SmartOnboarding] Componente montado!');
       console.log('[SmartOnboarding] SessionId:', props.sessionId);
       console.log('[SmartOnboarding] InitialData:', props.initialData);
@@ -455,8 +466,14 @@ export default {
       // Inicializar sessão com dados do backend
       initSession(props.sessionId, props.initialData, props.fieldChecklist);
       
-      // Iniciar chat com mensagem de boas-vindas
+      // Iniciar chat com mensagem de boas-vindas (com pequeno delay para evitar race condition)
       nextTick(() => {
+        // Double-check usando função global que verifica flag + mensagens
+        if (isChatStarted()) {
+          console.log('[SmartOnboarding] Chat já iniciado (isChatStarted=true), não reiniciando.');
+          scrollToBottom();
+          return;
+        }
         console.log('[SmartOnboarding] Iniciando chat...');
         startChat();
         scrollToBottom();

@@ -29,12 +29,12 @@ export {
 } from './composables/useHelpers.js';
 
 // Types e constantes
+// NOTA: WELCOME_MESSAGES foi removido - Gemini controla 100% da conversa!
 export { 
   ONBOARDING_STEPS,
   FIELD_STATUS,
   SITE_LEVELS,
   ACHIEVEMENTS,
-  WELCOME_MESSAGES,
   getStepById,
   getFieldById,
   getLevelByXP,
