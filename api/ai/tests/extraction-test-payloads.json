@@ -1,0 +1,113 @@
+{
+  "description": "Payload de teste para validar o endpoint extract-brand-data.php",
+  "usage": "Envie este JSON via POST para /api/ai/extract-brand-data.php",
+  "test_scenarios": [
+    {
+      "name": "Conversa Completa - Estúdio de Design",
+      "chat_history": [
+        {
+          "role": "assistant",
+          "content": "Olá! Estou aqui para ajudar a estruturar a estratégia da sua marca. Para começarmos, me conta um pouco sobre o seu negócio como se estivesse me apresentando ele num café. O que vocês fazem e quem vocês atendem?"
+        },
+        {
+          "role": "user",
+          "content": "Somos a Pixel Studio, um estúdio de design focado em branding e identidade visual. Atendemos principalmente startups de tecnologia e empresas que estão em fase de rebranding."
+        },
+        {
+          "role": "assistant",
+          "content": "Que legal, Pixel Studio! Branding para startups é um mercado bem dinâmico. E vocês ajudam desde a criação do zero ou pegam mais projetos de redesign? E como foi que o estúdio nasceu?"
+        },
+        {
+          "role": "user",
+          "content": "Fazemos os dois, mas a gente gosta mais de criar do zero porque dá pra colocar nossa visão desde o começo. O estúdio nasceu em 2019, eu e minha sócia trabalhávamos numa agência grande e vimos que muitas startups não tinham acesso a um branding de qualidade porque as agências cobravam muito caro. Então decidimos abrir algo mais acessível mas sem perder a qualidade."
+        },
+        {
+          "role": "assistant",
+          "content": "Entendi, então vocês democratizaram o acesso ao branding de qualidade. Isso é uma missão forte! E nesses 6 anos de estrada, o que vocês diriam que passa mais confiança para um cliente novo? Têm algum case famoso ou certificação que destacam?"
+        },
+        {
+          "role": "user",
+          "content": "Olha, a gente já fez o branding de umas 3 startups que depois foram aceleradas pela Y Combinator, isso sempre impressiona. Também ganhamos o prêmio de Melhor Identidade Visual no Design Awards Brasil em 2023. E temos certificação da Adobe como Creative Cloud Experts."
+        },
+        {
+          "role": "assistant",
+          "content": "Impressionante! Startups na YC é um selo forte demais. Para fechar com chave de ouro: vocês têm alguma metodologia própria, um jeito único de trabalhar ou algo especial no processo que diferencia vocês do resto do mercado?"
+        },
+        {
+          "role": "user",
+          "content": "Sim! A gente desenvolveu um processo chamado 'Brand Sprint' que é inspirado no Design Sprint do Google, mas focado em identidade visual. Em 5 dias intensivos a gente entrega uma marca completa. Isso permite que startups tenham um branding profissional mesmo com budget apertado porque otimizamos muito o tempo. Nosso lema interno é 'Qualidade em velocidade startup'."
+        },
+        {
+          "role": "assistant",
+          "content": "Perfeito! Com essas informações eu já consigo montar um perfil completo da Pixel Studio. Vou compilar tudo e te mostrar o resultado. Obrigado pela conversa!"
+        }
+      ]
+    },
+    {
+      "name": "Conversa Curta - E-commerce de Moda",
+      "chat_history": [
+        {
+          "role": "assistant",
+          "content": "Olá! Me conta um pouco sobre o seu negócio. O que vocês fazem?"
+        },
+        {
+          "role": "user",
+          "content": "Vendemos roupas plus size online, focado em moda casual e trabalho."
+        },
+        {
+          "role": "assistant",
+          "content": "Legal! E como surgiu a ideia de trabalhar com moda plus size?"
+        },
+        {
+          "role": "user",
+          "content": "Minha mãe sempre sofreu pra achar roupas bonitas no tamanho dela. Vi uma oportunidade de mercado e também uma causa que acredito."
+        },
+        {
+          "role": "assistant",
+          "content": "Entendi, então há uma motivação pessoal forte aí. Vou compilar essas informações!"
+        }
+      ]
+    },
+    {
+      "name": "Conversa Técnica - Consultoria de TI",
+      "chat_history": [
+        {
+          "role": "assistant",
+          "content": "Olá! Para começarmos, me conta: o que a sua empresa faz e quem vocês atendem?"
+        },
+        {
+          "role": "user",
+          "content": "Somos a TechSecure, consultoria especializada em segurança cibernética para empresas de médio e grande porte. Fazemos pentest, auditoria de segurança e implementação de SOC."
+        },
+        {
+          "role": "assistant",
+          "content": "Segurança cibernética é crítico hoje em dia. E como a TechSecure começou? O que motivou vocês a entrarem nesse mercado?"
+        },
+        {
+          "role": "user",
+          "content": "Eu trabalhei 15 anos em bancos na área de segurança. Vi muita empresa sendo atacada por falta de preparo básico. Saí em 2018 e fundei a TechSecure pra levar o nível de segurança bancária pra outras indústrias."
+        },
+        {
+          "role": "assistant",
+          "content": "15 anos em segurança bancária é uma bagagem pesada! Isso com certeza gera confiança. Vocês têm certificações específicas ou cases que destacam?"
+        },
+        {
+          "role": "user",
+          "content": "Temos todas as principais: CISSP, CEH, ISO 27001 Lead Auditor. Nossa equipe toda é certificada. Já atendemos bancos digitais como Nubank e startups como iFood na parte de segurança. Zero incidentes de segurança nos clientes que monitoramos desde 2020."
+        },
+        {
+          "role": "assistant",
+          "content": "Impressionante esse track record de zero incidentes. E existe algum diferencial no processo de vocês que torna isso possível?"
+        },
+        {
+          "role": "user",
+          "content": "Sim, desenvolvemos uma plataforma própria chamada ShieldView que monitora em tempo real e usa IA pra detectar anomalias antes que virem incidentes. É o nosso principal diferencial técnico. Somos proativos, não reativos."
+        },
+        {
+          "role": "assistant",
+          "content": "Perfeito! Plataforma própria com IA é um diferencial forte. Vou compilar tudo e montar o perfil da TechSecure!"
+        }
+      ]
+    }
+  ]
+}

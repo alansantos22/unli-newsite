@@ -19,6 +19,13 @@ export { default as PriceCalculator } from './PriceCalculator.vue';
 export { default as SiteConfigurator } from './SiteConfigurator.vue';
 export { default as FullScreenLoading } from './FullScreenLoading.vue';
 
+// Componentes de AI/Consultoria
+export { default as BrandConsultant } from './BrandConsultant.vue';
+export { default as AIContentGenerator } from './AIContentGenerator.vue';
+
+// Componentes de Onboarding/Wizard
+export { default as DynamicOnboardingWizard } from './DynamicOnboardingWizard.vue';
+
 // Componentes de Upload
 export { default as ImageUploader } from './ImageUploader.vue';
 export { default as VideoUploader } from './VideoUploader.vue';

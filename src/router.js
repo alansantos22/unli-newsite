@@ -43,5 +43,15 @@ export default [
         path: "/sucesso",
         name: "PaymentSuccess",
         component: () => import("./pages/PaymentSuccess.vue")
+    },
+    {
+        path: "/setup",
+        name: "OnboardingSetup",
+        component: () => import("./pages/OnboardingSetup/OnboardingSetup.vue"),
+        meta: {
+            title: 'Configure seu Site | Unli',
+            hideHeader: true,
+            hideFooter: true
+        }
     }
 ]

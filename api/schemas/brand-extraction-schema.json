@@ -1,0 +1,249 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "BrandExtractionSchema",
+  "description": "Schema para dados extraídos da conversa consultiva do Unli",
+  "version": "2.0.0",
+  "type": "object",
+  "required": ["extractionMeta", "companyInfo", "brandCore"],
+  "properties": {
+    "extractionMeta": {
+      "type": "object",
+      "description": "Metadados sobre a qualidade da extração",
+      "properties": {
+        "confidence": {
+          "type": "string",
+          "enum": ["high", "medium", "low"],
+          "description": "Nível de confiança na extração"
+        },
+        "conversationTurns": {
+          "type": "integer",
+          "description": "Número de trocas de mensagens na conversa"
+        },
+        "missingFields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Campos que não puderam ser extraídos"
+        },
+        "inferredFields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Campos que foram inferidos (não explícitos)"
+        }
+      },
+      "required": ["confidence", "conversationTurns"]
+    },
+
+    "companyInfo": {
+      "type": "object",
+      "description": "Informações básicas da empresa",
+      "properties": {
+        "name": {
+          "type": ["string", "null"],
+          "description": "Nome da empresa"
+        },
+        "niche": {
+          "type": "string",
+          "description": "Nicho/setor de atuação"
+        },
+        "targetAudience": {
+          "type": "string",
+          "description": "Descrição do público-alvo"
+        },
+        "mainProduct": {
+          "type": "string",
+          "description": "Produto ou serviço principal"
+        }
+      },
+      "required": ["niche", "targetAudience"]
+    },
+
+    "brandCore": {
+      "type": "object",
+      "description": "Núcleo da marca - essência e propósito",
+      "properties": {
+        "historySummary": {
+          "type": "string",
+          "description": "Resumo da história/origem da empresa"
+        },
+        "mission": {
+          "type": "string",
+          "description": "Declaração de missão (sintetizada ou inferida)"
+        },
+        "vision": {
+          "type": ["string", "null"],
+          "description": "Visão de futuro da empresa"
+        },
+        "values": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "maxItems": 5,
+          "description": "Lista de valores corporativos"
+        },
+        "foundingYear": {
+          "type": ["string", "null"],
+          "description": "Ano de fundação"
+        },
+        "founders": {
+          "type": ["string", "null"],
+          "description": "Nome dos fundadores"
+        }
+      },
+      "required": ["historySummary", "mission", "values"]
+    },
+
+    "authorityTriggers": {
+      "type": "object",
+      "description": "Gatilhos de autoridade e prova social",
+      "properties": {
+        "yearsInMarket": {
+          "type": ["string", "null"],
+          "description": "Tempo de mercado"
+        },
+        "certifications": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Certificações e prêmios"
+        },
+        "notableClients": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Clientes notáveis/famosos"
+        },
+        "keyAchievements": {
+          "type": "string",
+          "description": "Principais conquistas e cases"
+        },
+        "socialProofElements": {
+          "type": "string",
+          "description": "Elementos de prova social utilizados"
+        }
+      }
+    },
+
+    "differentiation": {
+      "type": "object",
+      "description": "Diferenciais competitivos",
+      "properties": {
+        "usp": {
+          "type": "string",
+          "description": "Unique Selling Proposition"
+        },
+        "uniqueMethodology": {
+          "type": ["string", "null"],
+          "description": "Metodologia ou processo proprietário"
+        },
+        "competitiveAdvantage": {
+          "type": "string",
+          "description": "Vantagem competitiva principal"
+        },
+        "additionalContext": {
+          "type": ["string", "null"],
+          "description": "Contexto adicional relevante"
+        }
+      },
+      "required": ["usp"]
+    },
+
+    "visualIdentity": {
+      "type": "object",
+      "description": "Identidade visual e sugestões de UI/UX",
+      "properties": {
+        "suggestedStyle": {
+          "type": "string",
+          "description": "Estilo visual sugerido (Ex: Minimalista, Cyberpunk, Corporativo)"
+        },
+        "colorVibe": {
+          "type": "string",
+          "description": "Descrição da vibe de cores (Ex: Tons de Azul Marinho com Dourado)"
+        },
+        "primaryColorSuggestion": {
+          "type": ["string", "null"],
+          "description": "Cor primária sugerida (nome ou hex)"
+        },
+        "secondaryColorSuggestion": {
+          "type": ["string", "null"],
+          "description": "Cor secundária sugerida (nome ou hex)"
+        },
+        "typographyMood": {
+          "type": "string",
+          "description": "Sugestão de tipografia (Ex: Serifada clássica, Sans-serif moderna)"
+        },
+        "layoutSuggestion": {
+          "type": "string",
+          "description": "Sugestão de layout (Ex: Muito espaço branco, foco em imagens)"
+        },
+        "moodKeywords": {
+          "type": "array",
+          "items": { "type": "string" },
+          "maxItems": 5,
+          "description": "Palavras-chave do mood visual"
+        },
+        "heroSuggestion": {
+          "type": ["string", "null"],
+          "description": "Sugestão para a seção hero do site"
+        },
+        "specialSections": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Seções especiais sugeridas para o site"
+        }
+      },
+      "required": ["suggestedStyle", "colorVibe"]
+    },
+
+    "aiSuggestions": {
+      "type": "object",
+      "description": "Sugestões geradas pela IA",
+      "properties": {
+        "suggestedTagline": {
+          "type": "string",
+          "description": "Tagline/slogan sugerido"
+        },
+        "alternativeTaglines": {
+          "type": "array",
+          "items": { "type": "string" },
+          "maxItems": 3,
+          "description": "Taglines alternativas"
+        },
+        "toneOfVoice": {
+          "type": "string",
+          "description": "Tom de voz recomendado"
+        },
+        "toneDescription": {
+          "type": "string",
+          "description": "Descrição detalhada do tom"
+        },
+        "suggestedKeywords": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Palavras-chave para SEO"
+        },
+        "colorPaletteSuggestion": {
+          "type": "string",
+          "description": "Sugestão de paleta de cores"
+        }
+      },
+      "required": ["suggestedTagline", "toneOfVoice"]
+    },
+
+    "contentSeeds": {
+      "type": "object",
+      "description": "Sementes para geração de conteúdo",
+      "properties": {
+        "aboutUsHook": {
+          "type": "string",
+          "description": "Gancho para página Sobre Nós"
+        },
+        "servicesAngle": {
+          "type": "string",
+          "description": "Ângulo para apresentar serviços"
+        },
+        "ctaSuggestion": {
+          "type": "string",
+          "description": "Sugestão de Call-to-Action"
+        }
+      }
+    }
+  }
+}
