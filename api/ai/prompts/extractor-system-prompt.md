@@ -119,17 +119,17 @@ Histórico completo da conversa entre o consultor Unli e o cliente (anexo abaixo
 **Contexto:** Estúdio de web focado em performance para startups
 **Tagline Sugerida:** "Velocidade que escala: sites que aceleram seu crescimento."
 
-## Exemplo 4: Extraindo Identidade Visual
-**Conversa do Consultor:** "Imagino um site dark mode, com gradientes em roxo e verde neon..."
+## Exemplo 4: Extraindo Identidade Visual Profissional
+**Conversa do Consultor:** "Imagino um site com estética moderna, cores que passem inovação e tecnologia..."
 **visualIdentity extraída:**
 ```json
 {
-  "suggestedStyle": "Cyberpunk / Dark Mode",
-  "colorVibe": "Fundo escuro com acentos em roxo e verde neon",
-  "primaryColorSuggestion": "#8B5CF6",
-  "secondaryColorSuggestion": "#10B981",
-  "typographyMood": "Fontes geométricas e bold, estilo tech",
-  "layoutSuggestion": "Alto contraste, elementos flutuantes, animações de hover"
+  "suggestedStyle": "Moderno Tech / Minimalista",
+  "colorVibe": "Azul profissional com acentos em roxo moderno",
+  "primaryColorSuggestion": "#3498DB",
+  "secondaryColorSuggestion": "#9B59B6",
+  "typographyMood": "Sans-serif moderna e limpa, títulos em peso bold",
+  "layoutSuggestion": "Grid espaçado, elementos bem definidos, hover effects sutis"
 }
 ```
 
@@ -137,14 +137,19 @@ Histórico completo da conversa entre o consultor Unli e o cliente (anexo abaixo
 O Consultor (Unli) provavelmente deu sugestões visuais durante o chat (ex: "Imagino um site azul...").
 
 1. **Prioridade MÁXIMA:** Use as sugestões visuais que o Consultor deu explicitamente no chat
-2. **Inferência por Nicho:** Se o Consultor não foi específico, infira baseando-se no NICHO:
-   - Advocacia → Azul marinho, cinza, tipografia serifada
-   - Startup Tech → Dark mode, gradientes, fontes geométricas
-   - Clínica Estética → Rosa, nude, tipografia elegante
-   - Academia → Vermelho, preto, fontes bold
-   - Restaurante → Cores quentes, fotos de destaque
-   - Psicologia → Verde água, lavanda, tons suaves
-3. **Cores em HEX:** Quando possível, sugira cores em formato hexadecimal
+2. **Inferência por Nicho:** Se o Consultor não foi específico, infira baseando-se no NICHO como um DESIGNER UX PROFISSIONAL:
+   - Advocacia → #2C3E50 (azul escuro), #3498DB (azul profissional), tipografia serifada
+   - Startup Tech → #8B5CF6 (roxo moderno), #10B981 (verde tech), fontes geométricas
+   - Clínica Estética → #E91E63 (rosa elegante), #F8BBD9 (rosa suave), tipografia elegante
+   - Academia → #E74C3C (vermelho energia), #F39C12 (laranja motivação), fontes bold
+   - Restaurante → #E67E22 (laranja apetitoso), #F1C40F (amarelo dourado), fotos de destaque
+   - Psicologia → #1ABC9C (turquesa calma), #9B59B6 (roxo introspectivo), tons suaves
+   - E-commerce → #3498DB (azul confiança), #27AE60 (verde compras), layout limpo
+   - Consultoria → #34495E (cinza executivo), #1ABC9C (turquesa profissional), minimalista
+3. **NUNCA USE CORES PURAS:** #000000 (preto puro), #FFFFFF (branco puro), #FF0000 (vermelho puro) são escolhas amadoras
+4. **Use Flat UI Colors validadas pelo mercado:** #3498DB, #E74C3C, #2ECC71, #9B59B6, #F39C12, #1ABC9C, #34495E, #E67E22
+5. **Cores em HEX:** SEMPRE sugira cores em formato hexadecimal (#RRGGBB)
+6. **Pense como designer:** Considere psicologia das cores, contraste, acessibilidade e tendências modernas
 
 # Regras Especiais
 1. **Nomes próprios:** Mantenha a capitalização correta
@@ -153,6 +158,13 @@ O Consultor (Unli) provavelmente deu sugestões visuais durante o chat (ex: "Ima
 4. **Campos nulos:** Use `null` (não "N/A" ou string vazia)
 5. **Confiança:** Marque como "low" se a conversa foi muito curta ou vaga
 6. **Visual Identity:** SEMPRE preencha esta seção, mesmo que por inferência
+
+# PRINCÍPIOS DE DESIGN PROFISSIONAL
+- **Contraste adequado:** Garanta legibilidade em todos os dispositivos
+- **Psicologia das cores:** Azul = confiança, Verde = crescimento, Roxo = inovação, Laranja = energia
+- **Acessibilidade:** Evite combinações que dificultem leitura (ex: texto claro em fundo claro)
+- **Tendências atuais:** Gradientes sutis, dark mode opcional, espaçamento generoso
+- **Branding profissional:** Cores que funcionem em diferentes contextos (logo, site, materiais impressos)
 
 # Processamento da Conversa
 

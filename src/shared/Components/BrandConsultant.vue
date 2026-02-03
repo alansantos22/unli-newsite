@@ -72,41 +72,41 @@
             </div>
           </div>
         </transition-group>
-        
-        <!-- Input Area (agora dentro do fluxo natural) -->
-        <div class="input-area-container">
-          <div class="input-area glass-effect">
-            <textarea 
-              ref="messageInput"
-              v-model="userInput" 
-              @keydown.enter.exact="handleEnterKey"
-              @input="autoResize"
-              placeholder="Digite sua resposta..."
-              :disabled="isLoading || isExtracting || conversationFinished || isTyping"
-              rows="1"
-            ></textarea>
-            <button 
-              class="btn-send" 
-              @click="sendMessage" 
-              :disabled="!userInput.trim() || isLoading || isExtracting || conversationFinished || isTyping"
-              :class="{ 'ready': userInput.trim().length > 0 }"
-            >
-              <i class="fas fa-arrow-up"></i>
-            </button>
-          </div>
-          
-          <transition name="fade">
-            <button 
-              v-if="canFinish && !conversationFinished"
-              class="btn-finish-floating"
-              :disabled="isLoading || isExtracting || isTyping"
-              @click="finishConversation"
-            >
-              <i class="fas fa-check"></i> Finalizar Briefing
-            </button>
-          </transition>
-        </div>
       </div>
+    </div>
+
+    <!-- Input Area Fixed (fora do scroll das mensagens) -->
+    <div class="input-area-fixed">
+      <div class="input-area glass-effect">
+        <textarea 
+          ref="messageInput"
+          v-model="userInput" 
+          @keydown.enter.exact="handleEnterKey"
+          @input="autoResize"
+          placeholder="Digite sua resposta..."
+          :disabled="isLoading || isExtracting || conversationFinished || isTyping"
+          rows="1"
+        ></textarea>
+        <button 
+          class="btn-send" 
+          @click="sendMessage" 
+          :disabled="!userInput.trim() || isLoading || isExtracting || conversationFinished || isTyping"
+          :class="{ 'ready': userInput.trim().length > 0 }"
+        >
+          <i class="fas fa-arrow-up"></i>
+        </button>
+      </div>
+      
+      <transition name="fade">
+        <button 
+          v-if="canFinish && !conversationFinished"
+          class="btn-finish-floating"
+          :disabled="isLoading || isExtracting || isTyping"
+          @click="finishConversation"
+        >
+          <i class="fas fa-check"></i> Finalizar Briefing
+        </button>
+      </transition>
     </div>
 
     <!-- Modal de Extração/Resultados -->
@@ -373,6 +373,11 @@ export default {
     initialData: {
       type: Object,
       default: () => ({})
+    },
+    // Páginas/serviços comprados pelo cliente
+    purchasedPages: {
+      type: Array,
+      default: () => []
     },
     // API Base URL
     apiBaseUrl: {
@@ -658,7 +663,7 @@ Comece pedindo uma apresentação da empresa: nome, origem e história.`,
       this.isLoading = true;
       
       try {
-        const response = await this.callChatAPI(this.chatHistory);
+        const result = await this.callChatAPI(this.chatHistory);
         
         // Muda para o estado de "digitando"
         this.isLoading = false;
@@ -669,10 +674,10 @@ Comece pedindo uma apresentação da empresa: nome, origem e história.`,
         await this.simulateTypingDelay();
         
         this.isTyping = false;
-        this.addMessage('assistant', response);
+        this.addMessage('assistant', result.message);
         
-        // Verificar se a conversa deve terminar (IA encerrou)
-        if (this.shouldEndConversation(response)) {
+        // Verificar se a conversa deve terminar (flag finished do Gemini)
+        if (result.finished) {
           this.conversationFinished = true;
           setTimeout(() => this.startExtraction(), 1500);
         }
@@ -711,18 +716,34 @@ Comece pedindo uma apresentação da empresa: nome, origem e história.`,
         }))
       ];
 
+      // Preparar contexto do pedido com páginas/serviços comprados
+      const orderContext = {
+        planName: this.initialContext?.planName || 'Site Vitrine',
+        purchasedPages: this.purchasedPages || [],
+        orderDetails: this.initialContext?.orderDetails || {}
+      };
+
       const response = await fetch(`${this.apiBaseUrl}/consultant-chat.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages })
+        body: JSON.stringify({ 
+          messages,
+          orderContext // Enviar contexto do pedido para o backend
+        })
       });
 
       if (!response.ok) throw new Error('Falha na API');
 
       const data = await response.json();
-      return data.response || data.message || 'Pode me contar mais?';
+      
+      // Retornar objeto com message e finished
+      return {
+        message: data.response || data.message || 'Pode me contar mais?',
+        finished: data.finished || false
+      };
     },
 
+    // Método mantido para compatibilidade, mas não mais usado para detecção
     shouldEndConversation(response) {
       const endPhrases = [
         'vou compilar',
@@ -913,17 +934,12 @@ Comece pedindo uma apresentação da empresa: nome, origem e história.`,
     },
 
     scrollToBottom() {
-      // Com o novo layout, scroll suave para o final da página/container
+      // Com o novo layout, scroll suave para o final das mensagens
       this.$nextTick(() => {
         const container = this.$refs.chatContainer;
         if (container) {
-          const targetElement = container.querySelector('.input-area-container');
-          if (targetElement) {
-            targetElement.scrollIntoView({ 
-              behavior: 'smooth',
-              block: 'end'
-            });
-          }
+          // Scroll até o final do container de mensagens
+          container.scrollTop = container.scrollHeight;
         }
       });
     },
@@ -1032,9 +1048,9 @@ $shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
   height: calc(100vh - 70px);
   margin-top: 70px;
   position: relative;
-  overflow: hidden;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   color: $text-dark;
+  overflow: hidden; // Impede scroll da página principal
 }
 
 // Fundo Animado (Sutil)
@@ -1265,8 +1281,9 @@ $shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
 // CHAT CONTAINER & MESSAGES
 // ===========================================
 .chat-container {
-  width: 100%;
-  padding: 40px 20px 40px 20px;
+  flex: 1; // Ocupa o espaço entre header e input
+  overflow-y: auto; // Scroll próprio do chat
+  padding: 40px 20px 20px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1285,7 +1302,7 @@ $shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
   display: flex;
   flex-direction: column;
   gap: 24px;
-  margin-bottom: 32px;
+  padding-bottom: 20px; // Espaço no final para não grudar
 }
 
 .message-row {
@@ -1376,8 +1393,26 @@ $shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
 }
 
 // ===========================================
-// INPUT AREA (agora no fluxo natural)
+// INPUT AREA FIXED (na parte inferior)
 // ===========================================
+.input-area-fixed {
+  position: relative;
+  z-index: 10;
+  padding: 20px 32px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  
+  // Garantir largura total
+  width: 100%;
+  box-sizing: border-box;
+}
+
+// INPUT AREA (dentro do fixed)
 .input-area-container {
   width: 100%;
   display: flex;
@@ -1387,8 +1422,9 @@ $shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
   margin-top: 20px;
 }
 
-.input-area {
+.input-area-fixed .input-area {
   width: 100%;
+  max-width: 800px; // Mesma largura máxima do chat
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(16px);
   padding: 8px 8px 8px 20px;
@@ -1809,7 +1845,7 @@ $shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
       display: inline-block;
       padding: 4px 10px;
       background: $gray-darkness;
-      color: $white;
+      color: $white !important;
       border-radius: 6px;
       font-weight: 600;
     }
@@ -1819,13 +1855,16 @@ $shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
     // ==========================================
     
     &.visual-identity {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
       margin: 0 -32px;
       padding: 24px 32px;
       border-radius: 0;
+      border-top: 1px solid $gray-light;
+      border-bottom: 1px solid $gray-light;
 
       h4 {
-        color: $white;
+        color: $gray-darkness;
+        font-weight: 700;
 
         i {
           color: #f472b6;
@@ -1833,19 +1872,22 @@ $shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
       }
 
       .result-item label {
-        color: rgba(255, 255, 255, 0.7);
+        color: $gray-medium;
+        font-weight: 600;
       }
 
       .result-item span {
-        color: $white;
+        color: $gray-darkness;
+        font-weight: 500;
       }
     }
 
     .visual-preview-card {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: $white;
+      border: 2px solid $gray-light;
       border-radius: 16px;
       padding: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       
       .visual-header {
         margin-bottom: 16px;
@@ -1861,6 +1903,7 @@ $shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
         font-size: 0.9rem;
         text-transform: uppercase;
         letter-spacing: 1px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
       }
 
       .color-preview {
@@ -1870,16 +1913,17 @@ $shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
           display: block;
           font-size: 0.8rem;
           font-weight: 600;
-          color: rgba(255, 255, 255, 0.7);
+          color: $gray-medium;
           text-transform: uppercase;
           letter-spacing: 0.5px;
           margin-bottom: 8px;
         }
 
         .color-description {
-          color: $white;
+          color: $gray-darkness;
           font-size: 0.95rem;
           margin-bottom: 12px;
+          font-weight: 400;
         }
 
         .color-swatches {
@@ -1918,7 +1962,7 @@ $shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
           display: block;
           font-size: 0.8rem;
           font-weight: 600;
-          color: rgba(255, 255, 255, 0.7);
+          color: $gray-medium;
           text-transform: uppercase;
           margin-bottom: 8px;
         }
@@ -1931,9 +1975,9 @@ $shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
 
         .mood-tag {
           padding: 6px 14px;
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          color: $white;
+          background: $gray-light;
+          border: 1px solid $gray-medium;
+          color: $gray-darkness;
           border-radius: 20px;
           font-size: 0.85rem;
           font-weight: 500;
@@ -1943,13 +1987,13 @@ $shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
       .special-sections {
         margin-top: 20px;
         padding-top: 16px;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-top: 1px solid $gray-light;
 
         label {
           display: block;
           font-size: 0.8rem;
           font-weight: 600;
-          color: rgba(255, 255, 255, 0.7);
+          color: $gray-medium;
           text-transform: uppercase;
           margin-bottom: 12px;
         }
@@ -1963,12 +2007,13 @@ $shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
             display: flex;
             align-items: center;
             gap: 8px;
-            color: $white;
+            color: $gray-darkness;
             font-size: 0.9rem;
             padding: 6px 0;
+            font-weight: 400;
 
             i {
-              color: #4ade80;
+              color: #22c55e;
               font-size: 0.85rem;
             }
           }

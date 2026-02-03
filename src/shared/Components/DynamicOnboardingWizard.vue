@@ -3,7 +3,7 @@
     <!-- DESKTOP SIDEBAR -->
     <aside class="wizard-sidebar" v-if="!isMobile && !showContentGeneration">
       <div class="sidebar-brand">
-        <span class="brand-icon">Ô£¿</span>
+        <span class="brand-icon">🎯</span>
         <span class="brand-text">Construtor de Site</span>
       </div>
       
@@ -21,10 +21,10 @@
           :disabled="index > currentStepIndex"
         >
           <span class="nav-indicator">
-            <span v-if="index < currentStepIndex">Ô£ô</span>
+            <span v-if="index < currentStepIndex">✓</span>
             <span v-else>{{ index + 1 }}</span>
           </span>
-          <span class="nav-label">{{ step.title.replace(/[­ƒÄ¿­ƒô×­ƒÅóÔÜÖ´©ÅÔØô­ƒû╝´©ÅÔ¡É­ƒôØ­ƒøì´©Å]/g, '').trim() }}</span>
+          <span class="nav-label">{{ step.title }}</span>
         </button>
       </nav>
       
@@ -43,7 +43,7 @@
     <div class="wizard-main">
       <!-- Phase indicator -->
       <div v-if="showContentGeneration" class="phase-indicator">
-        <span class="phase-badge">Fase 2: Gera├º├úo de Conte├║do</span>
+        <span class="phase-badge">Fase 2: Geração de Conteúdo</span>
       </div>
       
       <!-- MOBILE: Progress Header -->
@@ -118,14 +118,14 @@
       </TransitionGroup>
     </main>
     
-    <!-- LOADING GAMIFICADO: Transi├º├úo para fase 2 -->
+    <!-- LOADING GAMIFICADO: Transição para fase 2 -->
     <main class="wizard-content preparing-content" v-else-if="isPreparingContent">
       <div class="preparing-container">
         <div class="preparing-animation">
           <div class="pulse-ring"></div>
           <div class="pulse-ring delay-1"></div>
           <div class="pulse-ring delay-2"></div>
-          <div class="preparing-icon">­ƒÜÇ</div>
+          <div class="preparing-icon">⚙️</div>
         </div>
         
         <h2 class="preparing-title">Preparando seu site...</h2>
@@ -138,17 +138,17 @@
           <span class="progress-text">{{ preparingProgress }}%</span>
         </div>
         
-        <p class="preparing-tip">Nossos especialistas est├úo trabalhando nos melhores textos para voc├¬</p>
+        <p class="preparing-tip">Nossos especialistas estão trabalhando nos melhores textos para você</p>
       </div>
     </main>
     
-    <!-- FASE 2: Gera├º├úo de Conte├║do por Se├º├Áes -->
+    <!-- FASE 2: Geração de Conteúdo por Seções -->
     <main class="wizard-content content-generation-phase" v-else>
       <div class="generation-pages" v-if="currentGenerationPage === null">
-        <h2 class="generation-title">­ƒÄë Formul├írio conclu├¡do!</h2>
-        <p class="generation-subtitle">Agora escolha uma p├ígina para gerar os textos com IA</p>
+        <h2 class="generation-title">🎉 Formulário concluído!</h2>
+        <p class="generation-subtitle">Agora escolha uma página para gerar os textos com IA</p>
         
-        <!-- Mostra p├íginas se existirem -->
+        <!-- Mostra páginas se existirem -->
         <div v-if="safePages.length > 0" class="pages-to-generate">
           <div 
             v-for="page in safePages" 
@@ -159,27 +159,27 @@
           >
             <span class="page-icon">{{ getPageIcon(page) }}</span>
             <span class="page-name">{{ getPageName(page) }}</span>
-            <span v-if="generatedPages[page]" class="done-badge">Ô£ô</span>
+            <span v-if="generatedPages[page]" class="done-badge">✓</span>
           </div>
         </div>
         
-        <!-- Fallback se n├úo tiver p├íginas -->
+        <!-- Fallback se não tiver páginas -->
         <div v-else class="no-pages-warning">
-          <p>ÔÜá´©Å Nenhuma p├ígina encontrada. Verifique seu pedido.</p>
+          <p>⚠️ Nenhuma página encontrada. Verifique seu pedido.</p>
           <p class="debug-info">Debug: purchasedPages = {{ purchasedPages }}</p>
         </div>
         
-        <p class="ai-credits-hint">­ƒÆí <strong>10 gera├º├Áes de IA</strong> por dia</p>
+        <p class="ai-credits-hint">⚡ <strong>10 gerações de IA</strong> por dia</p>
       </div>
       
-      <!-- Gerador de Se├º├Áes para p├ígina selecionada -->
+      <!-- Gerador de Seções para página selecionada -->
       <SectionContentGenerator
         v-if="currentGenerationPage"
         :page-type="currentGenerationPage"
         :onboarding-data="getPageOnboardingData(currentGenerationPage)"
         :voice-tone="formData.identity?.voiceTone || 'profissional'"
         :allow-add-sections="currentGenerationPage === 'faq'"
-        :section-label="currentGenerationPage === 'faq' ? 'Pergunta' : 'Se├º├úo'"
+        :section-label="currentGenerationPage === 'faq' ? 'Pergunta' : 'Seção'"
         @update="handleSectionUpdate"
         @complete="handlePageComplete"
       />
@@ -199,7 +199,7 @@
       
       <div class="step-info">
         <span class="current-step-name">
-          {{ showContentGeneration ? 'Gera├º├úo de Conte├║do' : currentStep?.title }}
+          {{ showContentGeneration ? 'Geração de Conteúdo' : currentStep?.title }}
         </span>
       </div>
       
@@ -236,17 +236,17 @@ export default {
   },
   
   props: {
-    // Tipos de p├íginas que o usu├írio comprou
+    // Tipos de páginas que o usuário comprou
     purchasedPages: {
       type: Array,
       default: () => []
     },
-    // Dados pr├®-existentes (se retomando)
+    // Dados pré-existentes (se retomando)
     initialData: {
       type: Object,
       default: () => ({})
     },
-    // ID da sess├úo/pedido para auto-save
+    // ID da sessão/pedido para auto-save
     sessionId: {
       type: String,
       default: ''
@@ -275,7 +275,7 @@ export default {
       hasUnsavedChanges: false,
       lastSavedData: null,
       validationErrors: {},
-      // Fase 2: Gera├º├úo de conte├║do
+      // Fase 2: Geração de conteúdo
       showContentGeneration: false,
       isPreparingContent: false,
       preparingMessage: '',
@@ -289,14 +289,14 @@ export default {
   },
   
   computed: {
-    // Array seguro de p├íginas compradas
+    // Array seguro de páginas compradas
     safePages() {
-      // Se j├í ├® array, usa direto
+      // Se já é array, usa direto
       if (Array.isArray(this.purchasedPages)) {
         return this.purchasedPages;
       }
       
-      // Se ├® objeto {about: 1, services: 0}, converte para array das chaves com valor truthy
+      // Se é objeto {about: 1, services: 0}, converte para array das chaves com valor truthy
       if (this.purchasedPages && typeof this.purchasedPages === 'object') {
         const pages = Object.entries(this.purchasedPages)
           .filter(([, value]) => value) // valor truthy (1, true, etc)
@@ -327,18 +327,18 @@ export default {
     getNextButtonText() {
       if (this.showContentGeneration) {
         if (this.currentGenerationPage) {
-          return 'Concluir P├ígina';
+          return 'Concluir Página';
         }
         const allDone = this.safePages.length > 0 && this.safePages.every(p => this.generatedPages[p]);
-        return allDone ? '­ƒÜÇ Finalizar Site' : 'Pular Gera├º├úo';
+        return allDone ? '🚀 Finalizar Site' : 'Pular Geração';
       }
-      return this.isLastStep ? 'Continuar ÔåÆ' : 'Pr├│ximo ÔåÆ';
+      return this.isLastStep ? 'Continuar →' : 'Próximo →';
     },
     
     canProceed() {
       if (!this.currentStep) return false;
       
-      // Verifica campos obrigat├│rios do step atual
+      // Verifica campos obrigatórios do step atual
       const stepData = this.formData[this.currentStep.id] || {};
       const requiredFields = this.currentStep.fields?.filter(f => f.required) || [];
       
@@ -363,8 +363,19 @@ export default {
     formData: {
       deep: true,
       handler() {
-        // Marca que tem mudan├ºas pendentes (n├úo salva imediatamente)
+        // Marca que tem mudanças pendentes (não salva imediatamente)
         this.hasUnsavedChanges = true;
+      }
+    },
+    
+    // Reagir a mudanças no initialData (dados vindo do consultor)
+    initialData: {
+      deep: true,
+      handler(newData) {
+        if (newData && Object.keys(newData).length > 0) {
+          console.log('[DynamicWizard] Initial data changed, re-initializing:', newData);
+          this.initializeFormData();
+        }
       }
     }
   },
@@ -377,7 +388,7 @@ export default {
   },
   
   beforeUnmount() {
-    // Limpa intervalo e salva pend├¬ncias ao sair
+    // Limpa intervalo e salva pendências ao sair
     this.stopAutosaveInterval();
     if (this.hasUnsavedChanges) {
       this.autosave();
@@ -386,7 +397,7 @@ export default {
   },
   
   methods: {
-    // Detecta se ├® mobile
+    // Detecta se é mobile
     checkMobile() {
       this.isMobile = window.innerWidth < 900;
     },
@@ -443,12 +454,12 @@ export default {
       const { field: condField, value, contains } = field.conditional;
       const condValue = stepData[condField];
       
-      // Condi├º├úo de valor exato
+      // Condição de valor exato
       if (value !== undefined) {
         return condValue === value;
       }
       
-      // Condi├º├úo de array cont├®m valor
+      // Condição de array contém valor
       if (contains !== undefined && Array.isArray(condValue)) {
         return condValue.includes(contains);
       }
@@ -463,7 +474,7 @@ export default {
       this.formData[stepId][fieldId] = value;
     },
     
-    // Preenche campos de endere├ºo quando CEP ├® encontrado
+    // Preenche campos de endereço quando CEP é encontrado
     handleCepFound(stepId, addressData) {
       if (!this.formData[stepId]) {
         this.formData[stepId] = {};
@@ -488,8 +499,8 @@ export default {
       if (!this.canProceed) return;
       
       if (this.isLastStep) {
-        // Vai direto para Fase 2 (sele├º├úo de p├íginas)
-        console.log('[Wizard] Indo para Fase 2 - P├íginas:', this.safePages);
+        // Vai direto para Fase 2 (seleção de páginas)
+        console.log('[Wizard] Indo para Fase 2 - Páginas:', this.safePages);
         this.showContentGeneration = true;
         this.scrollToTop();
       } else {
@@ -499,7 +510,7 @@ export default {
       }
     },
     
-    // Navega├º├úo unificada
+    // Navegação unificada
     handleBack() {
       if (this.showContentGeneration) {
         if (this.currentGenerationPage) {
@@ -516,7 +527,7 @@ export default {
     handleNext() {
       if (this.showContentGeneration) {
         if (this.currentGenerationPage) {
-          // Volta para lista de p├íginas
+          // Volta para lista de páginas
           this.currentGenerationPage = null;
         } else {
           // Finaliza o wizard
@@ -527,32 +538,32 @@ export default {
       }
     },
     
-    // Loading gamificado + gera├º├úo real de conte├║do
+    // Loading gamificado + geração real de conteúdo
     async startPreparingContent() {
       this.isPreparingContent = true;
       this.preparingProgress = 0;
       this.scrollToTop();
       
       const messages = [
-        '­ƒöì Analisando seu neg├│cio...',
-        '­ƒôè Estudando seu mercado...',
-        'Ô£ì´©Å Especialistas criando textos...',
-        '­ƒÄ¿ Preparando sua identidade visual...',
-        'Ô£¿ Finalizando detalhes...'
+        '🔍 Analisando seu negócio...',
+        '🎨 Estudando seu mercado...',
+        '✨ Especialistas criando textos...',
+        '🎨 Preparando sua identidade visual...',
+        '🎯 Finalizando detalhes...'
       ];
       
-      // Preparar dados para gera├º├úo
+      // Preparar dados para geração
       const identityData = this.formData.identity || {};
       const companyName = identityData.companyName || 'Empresa';
       const voiceTone = identityData.voiceTone || 'profissional';
       const niche = identityData.niche || identityData.segment || '';
       
-      // Gerar conte├║do para cada p├ígina comprada
+      // Gerar conteúdo para cada página comprada
       const pagesToGenerate = this.safePages;
-      const totalSteps = Math.max(1, messages.length + pagesToGenerate.length); // Evita divis├úo por zero
+      const totalSteps = Math.max(1, messages.length + pagesToGenerate.length); // Evita divisão por zero
       let currentStep = 0;
       
-      // Fase 1: Mensagens de anima├º├úo inicial
+      // Fase 1: Mensagens de animação inicial
       for (let i = 0; i < Math.min(messages.length, 3); i++) {
         this.preparingMessage = messages[i];
         this.preparingProgress = Math.round(((currentStep + 1) / totalSteps) * 100);
@@ -560,10 +571,10 @@ export default {
         await new Promise(resolve => setTimeout(resolve, 600));
       }
       
-      // Fase 2: Gerar conte├║do real para cada p├ígina
+      // Fase 2: Gerar conteúdo real para cada página
       for (const pageType of pagesToGenerate) {
         const pageName = this.getPageName(pageType);
-        this.preparingMessage = `Ô£ì´©Å Criando conte├║do para ${pageName}...`;
+        this.preparingMessage = `✨ Criando conteúdo para ${pageName}...`;
         
         try {
           const content = await this.generatePageContent(pageType, {
@@ -579,15 +590,15 @@ export default {
           }
         } catch (error) {
           console.warn(`[Onboarding] Erro ao gerar ${pageType}:`, error);
-          // Continua mesmo com erro - usu├írio pode gerar manualmente depois
+          // Continua mesmo com erro - usuário pode gerar manualmente depois
         }
         
         currentStep++;
         this.preparingProgress = Math.round((currentStep / totalSteps) * 100);
       }
       
-      // Fase 3: Finaliza├º├úo
-      this.preparingMessage = 'Ô£¿ Finalizando detalhes...';
+      // Fase 3: Finalização
+      this.preparingMessage = '🎯 Finalizando detalhes...';
       this.preparingProgress = 100;
       await new Promise(resolve => setTimeout(resolve, 500));
       
@@ -596,15 +607,15 @@ export default {
       this.showContentGeneration = true;
     },
     
-    // M├®todo para chamar API de gera├º├úo de conte├║do
+    // Método para chamar API de geração de conteúdo
     async generatePageContent(pageType, context) {
       const { companyName, voiceTone, niche, pageData } = context;
       
-      // Montar user_input baseado nos dados do formul├írio
+      // Montar user_input baseado nos dados do formulário
       let userInput = `Nome da empresa: ${companyName}\n`;
       userInput += `Segmento/Nicho: ${niche}\n`;
       
-      // Adicionar dados espec├¡ficos da p├ígina
+      // Adicionar dados específicos da página
       if (pageData) {
         Object.entries(pageData).forEach(([key, value]) => {
           if (value && typeof value === 'string') {
@@ -933,6 +944,7 @@ export default {
   padding: 2rem;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   margin-bottom: 1.5rem;
+  min-height: 0px;
 }
 
 .step-section {

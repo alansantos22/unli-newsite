@@ -40,6 +40,7 @@
           :session-id="token"
           :customer-name="customerName"
           :initial-context="orderContext"
+          :purchased-pages="purchasedPages"
           @data-extracted="handleDataExtracted"
           @conversation-saved="handleConversationSaved"
         />
@@ -153,19 +154,38 @@ export default {
     wizardInitialData() {
       if (!this.extractedData) return {};
       
+      console.log('[OnboardingSetup] Extracted Data:', this.extractedData);
+      
       const data = this.extractedData;
       
-      return {
-        // Step: Identidade
+      const mapped = {
+        // Step: Identidade (usando IDs corretos dos campos) - EXPANDIDO
         identity: {
           companyName: data.companyInfo?.name || '',
-          segment: data.companyInfo?.niche || '',
-          niche: data.companyInfo?.niche || '',
+          tagline: data.aiSuggestions?.suggestedTagline || '',
           voiceTone: data.aiSuggestions?.toneOfVoice || 'profissional',
-          slogan: data.aiSuggestions?.suggestedTagline || ''
+          // Cores da identidade visual
+          primaryColor: data.visualIdentity?.primaryColorSuggestion || '',
+          secondaryColor: data.visualIdentity?.secondaryColorSuggestion || '',
+          // Campos extras se existirem no step
+          segment: data.companyInfo?.niche || '',
+          niche: data.companyInfo?.niche || ''
         },
         
-        // Step: Sobre (About)
+        // Step: Sobre (About) - EXPANDIDO com todos os campos disponíveis
+        sobre_nos: {
+          companyBio: data.brandCore?.historySummary || '',
+          foundingYear: data.brandCore?.foundingYear || '',
+          founders: data.brandCore?.founders || '',
+          showMissionVision: !!(data.brandCore?.mission || data.brandCore?.vision || data.brandCore?.values?.length),
+          mission: data.brandCore?.mission || '',
+          vision: data.brandCore?.vision || '',
+          values: Array.isArray(data.brandCore?.values) 
+            ? data.brandCore.values
+            : (data.brandCore?.values ? [data.brandCore.values] : [])
+        },
+        
+        // Mapeamento adicional para compatibilidade
         about: {
           history: data.brandCore?.historySummary || '',
           mission: data.brandCore?.mission || '',
@@ -173,13 +193,27 @@ export default {
             ? data.brandCore.values.join(', ') 
             : data.brandCore?.values || '',
           differentials: data.differentiation?.usp || '',
-          methodology: data.differentiation?.uniqueMethodology || ''
+          methodology: data.differentiation?.uniqueMethodology || '',
+          companyBio: data.brandCore?.historySummary || ''
         },
         
-        // Step: Serviços (Services) 
+        // Step: Serviços (Services) - EXPANDIDO
+        servicos: {
+          servicesIntro: `Conheça as soluções que oferecemos para ${data.companyInfo?.targetAudience || 'nossos clientes'}.`,
+          // Se tiver produto principal, usar como primeiro serviço
+          ...(data.companyInfo?.mainProduct && {
+            services: [{
+              name: data.companyInfo.mainProduct,
+              shortDescription: data.differentiation?.usp || 'Serviço principal da empresa'
+            }]
+          })
+        },
+        
+        // Mapeamento adicional para compatibilidade
         services: {
           mainService: data.companyInfo?.mainProduct || '',
-          targetAudience: data.companyInfo?.targetAudience || ''
+          targetAudience: data.companyInfo?.targetAudience || '',
+          servicesIntro: `Oferecemos soluções especializadas para ${data.companyInfo?.targetAudience || 'nossos clientes'}.`
         },
         
         // Step: Autoridade/Prova Social
@@ -194,16 +228,33 @@ export default {
             : ''
         },
         
-        // Step: SEO/Marketing
+        // Step: SEO/Marketing - MUITO EXPANDIDO
         seo: {
           keywords: Array.isArray(data.aiSuggestions?.suggestedKeywords)
             ? data.aiSuggestions.suggestedKeywords.join(', ')
             : '',
-          metaDescription: data.companyInfo?.mainProduct || ''
+          targetKeywords: Array.isArray(data.aiSuggestions?.suggestedKeywords)
+            ? data.aiSuggestions.suggestedKeywords
+            : [],
+          metaDescription: data.companyInfo?.mainProduct || data.brandCore?.mission || '',
+          targetAudience: data.companyInfo?.targetAudience || ''
         },
         
         // Visual Identity (para uso futuro)
         visualIdentity: data.visualIdentity || {},
+        
+        // Step: Blog (se existir)
+        blog_noticias: {
+          targetKeywords: Array.isArray(data.aiSuggestions?.suggestedKeywords)
+            ? data.aiSuggestions.suggestedKeywords
+            : [],
+          mainTopics: data.companyInfo?.niche ? [data.companyInfo.niche] : []
+        },
+        
+        // Step: Portfolio (se existir) 
+        portfolio: {
+          portfolioIntro: data.authorityTriggers?.keyAchievements || 'Conheça alguns dos nossos principais trabalhos e resultados.'
+        },
         
         // Meta info
         _consultantData: {
@@ -212,6 +263,9 @@ export default {
           contentSeeds: data.contentSeeds || {}
         }
       };
+      
+      console.log('[OnboardingSetup] Mapped Initial Data:', mapped);
+      return mapped;
     }
   },
   
@@ -256,20 +310,22 @@ export default {
         this.orderStatus = data.status;
         this.customerName = data.customerName || '';
         
-        // Build context for consultant
+        // Extract purchased pages first
+        this.purchasedPages = this.extractPurchasedPages(data);
+        
+        // Build context for consultant (including purchased pages/services)
         this.orderContext = {
           orderId: data.orderId,
           planName: data.orderDetails?.planName || 'Site Vitrine',
-          customerEmail: data.email
+          customerEmail: data.email,
+          purchasedPages: this.purchasedPages,
+          orderDetails: data.orderDetails || {}
         };
         
         // Check if has saved briefing (partial or complete)
         if (data.briefing && Object.keys(data.briefing).length > 0) {
           this.extractedData = data.briefing;
         }
-        
-        // Extract purchased pages from order
-        this.purchasedPages = this.extractPurchasedPages(data);
         
       } catch (err) {
         console.error('Validation error:', err);
@@ -408,7 +464,24 @@ export default {
         extractedAt: data.extractionMeta?.extractedAt || new Date().toISOString(),
         
         // Content Seeds (for AI generation later)
-        contentSeeds: data.contentSeeds || {}
+        contentSeeds: data.contentSeeds || {},
+        
+        // NOVO: Perfil da Marca Extraído - Dados completos do modal
+        brandProfile: {
+          extractionMeta: data.extractionMeta || {},
+          companyInfo: data.companyInfo || {},
+          brandCore: data.brandCore || {},
+          authorityTriggers: data.authorityTriggers || {},
+          differentiation: data.differentiation || {},
+          visualIdentity: data.visualIdentity || {},
+          aiSuggestions: data.aiSuggestions || {},
+          conversationContext: {
+            chatHistory: this.getSavedChatHistory(),
+            keyInsights: data.keyInsights || [],
+            customerPainPoints: data.customerPainPoints || [],
+            businessGoals: data.businessGoals || []
+          }
+        }
       };
     },
     
@@ -664,7 +737,7 @@ $white: #ffffff;
 
 // Setup Flow
 .setup-flow {
-  min-height: 100vh;
+  min-height: calc(100vh - 70px);
 }
 
 // Phase Consultant

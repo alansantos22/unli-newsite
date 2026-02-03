@@ -1,44 +1,44 @@
 ﻿/**
  * ============================================
  * ONBOARDING STEPS CONFIG
- * Configura├º├úo Din├ómica do Wizard de Onboarding
+ * Configuração Dinâmica do Wizard de Onboarding
  * ============================================
  * 
- * Define quais perguntas aparecem para cada tipo de p├ígina
- * que o usu├írio comprou. O Wizard renderiza apenas os steps
+ * Define quais perguntas aparecem para cada tipo de página
+ * que o usuário comprou. O Wizard renderiza apenas os steps
  * relevantes para o pacote adquirido.
  */
 
 /**
- * Tipos de campos dispon├¡veis:
+ * Tipos de campos disponíveis:
  * - text: Input de texto simples
- * - textarea: ├ürea de texto (com op├º├úo AI Enhance)
- * - number: Input num├®rico
- * - select: Dropdown de op├º├Áes
+ * - textarea: Área de texto (com opção AI Enhance)
+ * - number: Input numérico
+ * - select: Dropdown de opções
  * - checkbox: Checkbox simples
  * - checkbox-group: Grupo de checkboxes
  * - color: Color picker
- * - tags: Input de tags (m├║ltiplos valores)
- * - repeater: Campo repet├¡vel (adicionar m├║ltiplos itens)
+ * - tags: Input de tags (múltiplos valores)
+ * - repeater: Campo repetível (adicionar múltiplos itens)
  * - upload: Upload de arquivo
  * - conditional: Campo condicional (aparece baseado em outro)
  */
 
 export const voiceToneOptions = [
-  { value: 'profissional', label: 'Profissional', description: 'S├®rio, confi├ível, corporativo' },
-  { value: 'amigavel', label: 'Amig├ível', description: 'Pr├│ximo, acolhedor, simp├ítico' },
-  { value: 'descontraido', label: 'Descontra├¡do', description: 'Leve, divertido, jovem' },
+  { value: 'profissional', label: 'Profissional', description: 'Sério, confiável, corporativo' },
+  { value: 'amigavel', label: 'Amigável', description: 'Próximo, acolhedor, simpático' },
+  { value: 'descontraido', label: 'Descontraído', description: 'Leve, divertido, jovem' },
   { value: 'luxuoso', label: 'Luxuoso', description: 'Sofisticado, premium, exclusivo' },
-  { value: 'tecnico', label: 'T├®cnico', description: 'Preciso, detalhista, especialista' },
-  { value: 'inspirador', label: 'Inspirador', description: 'Motivacional, empoderador, vision├írio' }
+  { value: 'tecnico', label: 'Técnico', description: 'Preciso, detalhista, especialista' },
+  { value: 'inspirador', label: 'Inspirador', description: 'Motivacional, empoderador, visionário' }
 ];
 
 export const colorPresets = [
   { value: '#0066CC', name: 'Azul Profissional' },
-  { value: '#28A745', name: 'Verde Sa├║de' },
+  { value: '#28A745', name: 'Verde Saúde' },
   { value: '#DC3545', name: 'Vermelho Energia' },
   { value: '#FF6B35', name: 'Laranja Criativo' },
-  { value: '#6F42C1', name: 'Roxo Inova├º├úo' },
+  { value: '#6F42C1', name: 'Roxo Inovação' },
   { value: '#212529', name: 'Preto Elegante' },
   { value: '#E83E8C', name: 'Rosa Moderno' },
   { value: '#17A2B8', name: 'Azul Claro' }
@@ -46,13 +46,13 @@ export const colorPresets = [
 
 /**
  * Step de Identidade Global - SEMPRE APARECE
- * Coleta informa├º├Áes b├ísicas da marca
+ * Coleta informações básicas da marca
  */
 export const identityStep = {
   id: 'identity',
-  title: 'Ô£¿ Identidade da Marca',
-  subtitle: 'Como seus clientes v├úo reconhecer voc├¬',
-  icon: '­ƒÄ¿',
+  title: '🎨 Identidade da Marca',
+  subtitle: 'Como seus clientes vão reconhecer você',
+  icon: '🎨',
   required: true, // Sempre aparece
   fields: [
     {
@@ -61,15 +61,15 @@ export const identityStep = {
       label: 'Nome da Empresa / Projeto',
       placeholder: 'Ex: Padaria Dona Maria',
       required: true,
-      hint: 'O nome que aparecer├í no site'
+      hint: 'O nome que aparecerá no site'
     },
     {
       id: 'tagline',
       type: 'text',
-      label: 'Em uma frase, o que voc├¬ faz?',
+      label: 'Em uma frase, o que você faz?',
       placeholder: 'Ex: Transformamos casas em lares desde 2010',
-      hint: 'Ser├í o destaque do seu site',
-      aiEnhance: true // Habilita bot├úo "Melhorar com IA"
+      hint: 'Será o destaque do seu site',
+      aiEnhance: true // Habilita botão "Melhorar com IA"
     },
     {
       id: 'primaryColor',
@@ -81,7 +81,7 @@ export const identityStep = {
     {
       id: 'secondaryColor',
       type: 'color',
-      label: 'Cor secund├íria (opcional)',
+      label: 'Cor secundária (opcional)',
       presets: colorPresets,
       default: '#28A745'
     },
@@ -91,7 +91,7 @@ export const identityStep = {
       label: 'Qual o tom de voz da sua marca?',
       options: voiceToneOptions,
       required: true,
-      hint: 'Isso define como os textos do site ser├úo escritos'
+      hint: 'Isso define como os textos do site serão escritos'
     },
     {
       id: 'logo',
@@ -99,25 +99,25 @@ export const identityStep = {
       label: 'Logotipo',
       accept: 'image/*',
       maxSize: 5 * 1024 * 1024, // 5MB
-      hint: 'PNG, JPG ou SVG (m├íx. 5MB)'
+      hint: 'PNG, JPG ou SVG (máx. 5MB)'
     },
     {
       id: 'hasNoLogo',
       type: 'checkbox',
-      label: 'Ainda n├úo tenho logo (Criaremos um texto estilizado)'
+      label: 'Ainda não tenho logo (Criaremos um texto estilizado)'
     }
   ]
 };
 
 /**
  * Step de Contato - SEMPRE APARECE
- * Coleta informa├º├Áes de contato
+ * Coleta informações de contato
  */
 export const contactStep = {
   id: 'contact',
-  title: '­ƒô× Contato e Localiza├º├úo',
-  subtitle: 'Como seus clientes v├úo te encontrar',
-  icon: '­ƒôì',
+  title: '📞 Contato e Localização',
+  subtitle: 'Como seus clientes vão te encontrar',
+  icon: '📞',
   required: true, // Sempre aparece
   fields: [
     {
@@ -126,7 +126,7 @@ export const contactStep = {
       label: 'WhatsApp Principal',
       placeholder: '(11) 99999-9999',
       required: true,
-      hint: '­ƒÆí Este ser├í o bot├úo flutuante do site',
+      hint: '📱 Este será o botão flutuante do site',
       mask: 'phone'
     },
     {
@@ -135,32 +135,32 @@ export const contactStep = {
       label: 'Outros Telefones de Contato',
       addButtonText: '+ Adicionar telefone',
       maxItems: 5,
-      hint: 'Telefones adicionais que aparecer├úo na p├ígina de contato',
+      hint: 'Telefones adicionais que aparecerão na página de contato',
       fields: [
         {
           id: 'type',
           type: 'select',
           label: 'Tipo',
           options: [
-            { value: 'whatsapp', label: '­ƒô▒ WhatsApp' },
-            { value: 'celular', label: '­ƒô▓ Celular' },
-            { value: 'fixo', label: 'ÔÿÄ´©Å Telefone Fixo' },
-            { value: 'comercial', label: '­ƒÅó Comercial' },
-            { value: 'suporte', label: '­ƒøƒ Suporte' },
-            { value: 'vendas', label: '­ƒÆ╝ Vendas' }
+            { value: 'whatsapp', label: '📱 WhatsApp' },
+            { value: 'celular', label: '📱 Celular' },
+            { value: 'fixo', label: '☎️ Telefone Fixo' },
+            { value: 'comercial', label: '🏢 Comercial' },
+            { value: 'suporte', label: '🛠️ Suporte' },
+            { value: 'vendas', label: '💼 Vendas' }
           ]
         },
         {
           id: 'number',
           type: 'text',
-          label: 'N├║mero',
+          label: 'Número',
           placeholder: '(11) 99999-9999'
         },
         {
           id: 'label',
           type: 'text',
-          label: 'R├│tulo (opcional)',
-          placeholder: 'Ex: Atendimento, Suporte t├®cnico...'
+          label: 'Rótulo (opcional)',
+          placeholder: 'Ex: Atendimento, Suporte técnico...'
         }
       ]
     },
@@ -176,14 +176,14 @@ export const contactStep = {
           type: 'select',
           label: 'Rede',
           options: [
-            { value: 'instagram', label: '­ƒô© Instagram' },
-            { value: 'facebook', label: '­ƒæÑ Facebook' },
-            { value: 'linkedin', label: '­ƒÆ╝ LinkedIn' },
-            { value: 'twitter', label: '­ƒÉª Twitter/X' },
-            { value: 'tiktok', label: '­ƒÄÁ TikTok' },
-            { value: 'youtube', label: 'ÔûÂ´©Å YouTube' },
-            { value: 'discord', label: '­ƒÄ« Discord' },
-            { value: 'other', label: '­ƒöù Outro' }
+            { value: 'instagram', label: '📷 Instagram' },
+            { value: 'facebook', label: '📘 Facebook' },
+            { value: 'linkedin', label: '💼 LinkedIn' },
+            { value: 'twitter', label: '🐦 Twitter/X' },
+            { value: 'tiktok', label: '🎵 TikTok' },
+            { value: 'youtube', label: '▶️ YouTube' },
+            { value: 'discord', label: '🎮 Discord' },
+            { value: 'other', label: '🔗 Outro' }
           ]
         },
         {
@@ -197,7 +197,7 @@ export const contactStep = {
     {
       id: 'hasPhysicalLocation',
       type: 'switch',
-      label: 'Tenho endere├ºo f├¡sico para atendimento',
+      label: 'Tenho endereço físico para atendimento',
       default: false
     },
     {
@@ -206,7 +206,7 @@ export const contactStep = {
       label: 'CEP',
       placeholder: '00000-000',
       conditional: { field: 'hasPhysicalLocation', value: true },
-      hint: '­ƒÆí Digite o CEP e clique em Buscar para preencher automaticamente'
+      hint: '💡 Digite o CEP e clique em Buscar para preencher automaticamente'
     },
     {
       id: 'addressStreet',
@@ -217,7 +217,7 @@ export const contactStep = {
     {
       id: 'addressNumber',
       type: 'text',
-      label: 'N├║mero',
+      label: 'Número',
       conditional: { field: 'hasPhysicalLocation', value: true }
     },
     {
@@ -248,79 +248,79 @@ export const contactStep = {
     {
       id: 'businessHours',
       type: 'text',
-      label: 'Hor├írio de Funcionamento',
-      placeholder: 'Seg-Sex: 9h ├ás 18h | S├íb: 9h ├ás 13h',
-      hint: 'Deixe em branco se n├úo quiser exibir'
+      label: 'Horário de Funcionamento',
+      placeholder: 'Seg-Sex: 9h às 18h | Sáb: 9h às 13h',
+      hint: 'Deixe em branco se não quiser exibir'
     }
   ]
 };
 
 /**
- * Steps espec├¡ficos por tipo de p├ígina
- * S├│ aparecem se o usu├írio comprou a p├ígina
+ * Steps específicos por tipo de página
+ * Só aparecem se o usuário comprou a página
  */
 export const pageSteps = {
   
-  // ===== SOBRE N├ôS (REFORMULADO) =====
+  // ===== SOBRE NÓS (REFORMULADO) =====
   sobre_nos: {
     id: 'sobre_nos',
     pageType: 'sobre_nos',
-    title: '­ƒÅó A Empresa',
-    subtitle: 'Crie conte├║do institucional que gera autoridade',
-    icon: '­ƒÅó',
+    title: '🏢 A Empresa',
+    subtitle: 'Crie conteúdo institucional que gera autoridade',
+    icon: '🏢',
     fields: [
-      // ---- Se├º├úo: T├¡tulo ----
+      // ---- Seção: Título ----
       {
         id: 'aboutSectionTitle',
         type: 'select',
-        label: 'T├¡tulo da Se├º├úo "Sobre"',
+        label: 'Título da Seção "Sobre"',
         options: [
-          { value: 'Sobre N├│s', label: 'Sobre N├│s' },
-          { value: 'Nossa Hist├│ria', label: 'Nossa Hist├│ria' },
+          { value: 'Sobre Nós', label: 'Sobre Nós' },
+          { value: 'Nossa História', label: 'Nossa História' },
           { value: 'Quem Somos', label: 'Quem Somos' },
           { value: 'A Empresa', label: 'A Empresa' },
           { value: 'Nossa Jornada', label: 'Nossa Jornada' }
         ],
-        default: 'Sobre N├│s',
-        hint: 'Como a se├º├úo ser├í chamada no site'
+        default: 'Sobre Nós',
+        hint: 'Como a seção será chamada no site'
       },
-      // ---- Se├º├úo: Hist├│ria ----
+      // ---- Seção: História ----
       {
         id: 'companyBio',
         type: 'textarea',
-        label: 'Hist├│ria / Bio da Empresa',
-        placeholder: 'Escreva livremente sobre como a empresa come├ºou, o que motivou a cria├º├úo, a trajet├│ria at├® aqui...',
+        label: 'História / Bio da Empresa',
+        placeholder: 'Escreva livremente sobre como a empresa começou, o que motivou a criação, a trajetória até aqui...',
         rows: 6,
         aiEnhance: true,
-        aiPrompt: 'Transforme em uma hist├│ria de marca inspiradora com 2-3 par├ígrafos persuasivos. Use o tom de voz definido e destaque a jornada, valores e diferenciais.',
-        aiContext: 'hist├│ria institucional para p├ígina Sobre N├│s',
-        hint: 'Ô£¿ Escreva de qualquer jeito - depois clique no bot├úo "Melhorar com IA" para transformar em algo profissional'
+        aiPrompt: 'Transforme em uma história de marca inspiradora com 2-3 parágrafos persuasivos. Use o tom de voz definido e destaque a jornada, valores e diferenciais.',
+        aiContext: 'história institucional para página Sobre Nós',
+        hint: '💡 Escreva de qualquer jeito - depois clique no botão "Melhorar com IA" para transformar em algo profissional'
       },
       {
         id: 'foundingYear',
         type: 'number',
-        label: 'Ano de Funda├º├úo',
+        label: 'Ano de Fundação',
         placeholder: '2015',
         min: 1900,
         max: new Date().getFullYear(),
-        hint: 'Usaremos para mostrar "X anos de experi├¬ncia"'
+        hint: 'Usaremos para mostrar "X anos de experiência"'
       },
       {
         id: 'founders',
         type: 'text',
         label: 'Fundador(es) (opcional)',
-        placeholder: 'Jo├úo Silva e Maria Santos',
-        hint: 'Deixe em branco se n├úo quiser exibir'
+        placeholder: 'João Silva e Maria Santos',
+        hint: 'Deixe em branco se não quiser exibir'
       },
-      // ---- Se├º├úo: Imagem de Destaque ----
+      // ---- Seção: Imagem de Destaque ----
       {
         id: 'aboutImage',
         type: 'upload',
         label: 'Imagem de Destaque',
         accept: 'image/*',
-        hint: 'Foto da equipe, fachada, fundador ou ambiente de trabalho. Gera confian├ºa!'
+        hint: 'Foto da equipe, fachada, fundador ou ambiente de trabalho. Gera confiança!'
       },
-      // ---- Se├º├úo: Diferenciais (Repeater) ----
+      // ---- Seção: Diferenciais (Repeater) ----
       {
         id: 'companyHighlights',
         type: 'repeater',
@@ -328,25 +328,25 @@ export const pageSteps = {
         addButtonText: '+ Adicionar Diferencial',
         minItems: 0,
         maxItems: 6,
-        hint: 'Adicione 3-4 diferenciais que ser├úo exibidos como cards ou ├¡cones',
+        hint: 'Adicione 3-4 diferenciais que serão exibidos como cards ou ícones',
         fields: [
           {
             id: 'icon',
             type: 'select',
             label: '├ìcone',
             options: [
-              { value: '­ƒÅå', label: '­ƒÅå Trof├®u' },
-              { value: 'ÔÅ░', label: 'ÔÅ░ Rel├│gio (Tempo)' },
-              { value: 'Ô£à', label: 'Ô£à Check (Garantia)' },
-              { value: '­ƒñØ', label: '­ƒñØ Parceria' },
-              { value: '­ƒÆí', label: '­ƒÆí Inova├º├úo' },
-              { value: '­ƒøí´©Å', label: '­ƒøí´©Å Seguran├ºa' },
-              { value: 'Ô¡É', label: 'Ô¡É Qualidade' },
-              { value: '­ƒÜÇ', label: '­ƒÜÇ Agilidade' },
-              { value: '­ƒÆ¼', label: '­ƒÆ¼ Atendimento' },
-              { value: '­ƒôì', label: '­ƒôì Localiza├º├úo' },
-              { value: '­ƒÄ»', label: '­ƒÄ» Precis├úo' },
-              { value: '­ƒÆ░', label: '­ƒÆ░ Economia' }
+              { value: '🏆', label: '🏆 Troféu' },
+              { value: '⏰', label: '⏰ Relógio (Tempo)' },
+              { value: '✅', label: '✅ Check (Garantia)' },
+              { value: '🤝', label: '🤝 Parceria' },
+              { value: '💡', label: '💡 Inovação' },
+              { value: '🔒', label: '🔒 Segurança' },
+              { value: '⭐', label: '⭐ Qualidade' },
+              { value: '🚀', label: '🚀 Agilidade' },
+              { value: '🎆', label: '🎆 Atendimento' },
+              { value: '📍', label: '📍 Localização' },
+              { value: '🎯', label: '🎯 Precisão' },
+              { value: '💰', label: '💰 Economia' }
             ]
           },
           {
@@ -359,23 +359,23 @@ export const pageSteps = {
           {
             id: 'description',
             type: 'text',
-            label: 'Breve Descri├º├úo',
-            placeholder: 'Ex: Uma d├®cada de experi├¬ncia atendendo nossos clientes'
+            label: 'Breve Descrição',
+            placeholder: 'Ex: Uma década de experiência atendendo nossos clientes'
           }
         ]
       },
-      // ---- Se├º├úo: Miss├úo/Vis├úo/Valores ----
+      // ---- Seção: Missão/Visão/Valores ----
       {
         id: 'showMissionVision',
         type: 'switch',
-        label: 'Incluir Miss├úo, Vis├úo e Valores',
+        label: 'Incluir Missão, Visão e Valores',
         default: false
       },
       {
         id: 'mission',
         type: 'textarea',
-        label: 'Miss├úo (O que voc├¬s fazem)',
-        placeholder: 'Nossa miss├úo ├®...',
+        label: 'Missão (O que vocês fazem)',
+        placeholder: 'Nossa missão é...',
         rows: 2,
         aiEnhance: true,
         conditional: { field: 'showMissionVision', value: true }
@@ -383,8 +383,8 @@ export const pageSteps = {
       {
         id: 'vision',
         type: 'textarea',
-        label: 'Vis├úo (Onde querem chegar)',
-        placeholder: 'Queremos ser refer├¬ncia em...',
+        label: 'Visão (Onde querem chegar)',
+        placeholder: 'Queremos ser referência em...',
         rows: 2,
         aiEnhance: true,
         conditional: { field: 'showMissionVision', value: true }
@@ -405,48 +405,48 @@ export const pageSteps = {
   servicos: {
     id: 'servicos',
     pageType: 'servicos',
-    title: 'ÔÜÖ´©Å Nossas Solu├º├Áes',
-    subtitle: 'Estruture seus servi├ºos de forma profissional',
-    icon: 'ÔÜÖ´©Å',
+    title: '⚙️ Nossas Soluções',
+    subtitle: 'Estruture seus serviços de forma profissional',
+    icon: '⚙️',
     fields: [
-      // ---- Introdu├º├úo ----
+      // ---- Introdução ----
       {
         id: 'servicesSectionTitle',
         type: 'select',
-        label: 'T├¡tulo da Se├º├úo',
+        label: 'Título da Seção',
         options: [
-          { value: 'Nossos Servi├ºos', label: 'Nossos Servi├ºos' },
-          { value: 'Nossas Solu├º├Áes', label: 'Nossas Solu├º├Áes' },
+          { value: 'Nossos Serviços', label: 'Nossos Serviços' },
+          { value: 'Nossas Soluções', label: 'Nossas Soluções' },
           { value: 'O Que Fazemos', label: 'O Que Fazemos' },
-          { value: '├üreas de Atua├º├úo', label: '├üreas de Atua├º├úo' },
+          { value: 'Áreas de Atuação', label: 'Áreas de Atuação' },
           { value: 'Como Podemos Ajudar', label: 'Como Podemos Ajudar' }
         ],
-        default: 'Nossos Servi├ºos'
+        default: 'Nossos Serviços'
       },
       {
         id: 'servicesIntro',
         type: 'textarea',
-        label: 'Texto de Apresenta├º├úo',
-        placeholder: 'Oferecemos solu├º├Áes completas para... Somos especialistas em...',
+        label: 'Texto de Apresentação',
+        placeholder: 'Oferecemos soluções completas para... Somos especialistas em...',
         rows: 3,
         aiEnhance: true,
-        aiPrompt: 'Crie um texto de introdu├º├úo profissional para a se├º├úo de servi├ºos, destacando expertise e benef├¡cios para o cliente',
-        hint: 'Uma vis├úo geral antes de listar os servi├ºos'
+        aiPrompt: 'Crie um texto de introdução profissional para a seção de serviços, destacando expertise e benefícios para o cliente',
+        hint: 'Uma visão geral antes de listar os serviços'
       },
       // ---- Lista de Servi├ºos (Repeater Melhorado) ----
       {
         id: 'services',
         type: 'repeater',
-        label: 'Lista de Servi├ºos',
-        addButtonText: '+ Adicionar Servi├ºo',
+        label: 'Lista de Serviços',
+        addButtonText: '+ Adicionar Serviço',
         minItems: 1,
         maxItems: 12,
-        hint: 'Cada servi├ºo vira um card clic├ível no site',
+        hint: 'Cada serviço vira um card clicável no site',
         fields: [
           {
             id: 'name',
             type: 'text',
-            label: 'Nome do Servi├ºo',
+            label: 'Nome do Serviço',
             placeholder: 'Ex: Consultoria Empresarial',
             required: true
           },
@@ -460,19 +460,19 @@ export const pageSteps = {
           {
             id: 'shortDescription',
             type: 'textarea',
-            label: 'Descri├º├úo do Servi├ºo',
-            placeholder: 'Descreva o servi├ºo brevemente...',
+            label: 'Descrição do Serviço',
+            placeholder: 'Descreva o serviço brevemente...',
             rows: 3,
             aiEnhance: true,
-            aiPrompt: 'Reescreva como uma descri├º├úo profissional e persuasiva de servi├ºo, destacando benef├¡cios e resultados para o cliente'
+            aiPrompt: 'Reescreva como uma descrição profissional e persuasiva de serviço, destacando benefícios e resultados para o cliente'
           },
           {
             id: 'priceType',
             type: 'select',
-            label: 'Exibi├º├úo de Pre├ºo',
+            label: 'Exibição de Preço',
             options: [
-              { value: 'hidden', label: 'N├úo exibir pre├ºo' },
-              { value: 'fixed', label: 'Pre├ºo fixo' },
+              { value: 'hidden', label: 'Não exibir preço' },
+              { value: 'fixed', label: 'Preço fixo' },
               { value: 'from', label: 'A partir de...' },
               { value: 'consult', label: 'Sob consulta' }
             ],
@@ -481,20 +481,20 @@ export const pageSteps = {
           {
             id: 'price',
             type: 'text',
-            label: 'Valor (se aplic├ível)',
+            label: 'Valor (se aplicável)',
             placeholder: 'R$ 150,00 ou A partir de R$ 99,00',
-            hint: 'Deixe em branco se n├úo quiser exibir pre├ºo'
+            hint: 'Deixe em branco se não quiser exibir preço'
           },
           {
             id: 'ctaButton',
             type: 'select',
-            label: 'Bot├úo de A├º├úo',
+            label: 'Botão de Ação',
             options: [
-              { value: 'quote', label: '­ƒô® Pedir Or├ºamento' },
-              { value: 'whatsapp', label: '­ƒÆ¼ Falar no WhatsApp' },
-              { value: 'more', label: 'Ô×í´©Å Saiba Mais' },
-              { value: 'schedule', label: '­ƒôà Agendar' },
-              { value: 'none', label: 'Sem bot├úo' }
+              { value: 'quote', label: '💰 Pedir Orçamento' },
+              { value: 'whatsapp', label: '📱 Falar no WhatsApp' },
+              { value: 'more', label: '➕ Saiba Mais' },
+              { value: 'schedule', label: '📅 Agendar' },
+              { value: 'none', label: 'Sem botão' }
             ],
             default: 'whatsapp'
           }
@@ -504,7 +504,7 @@ export const pageSteps = {
       {
         id: 'hasGuarantee',
         type: 'switch',
-        label: 'Oferecemos garantia nos servi├ºos',
+        label: 'Oferecemos garantia nos serviços',
         default: false
       },
       {
@@ -521,10 +521,10 @@ export const pageSteps = {
   config_contato: {
     id: 'config_contato',
     pageType: 'config_contato',
-    title: 'Configura├º├úo de Leads',
-    subtitle: 'Defina como voc├¬ vai receber contatos do site',
-    icon: '­ƒô¿',
-    required: true, // Sempre aparece ap├│s contato b├ísico
+    title: 'Configuração de Leads',
+    subtitle: 'Defina como você vai receber contatos do site',
+    icon: '📧',
+    required: true, // Sempre aparece após contato básico
     fields: [
       // ---- E-mail para Leads ----
       {
@@ -533,12 +533,12 @@ export const pageSteps = {
         label: 'E-mail para Recebimento de Leads',
         placeholder: 'contato@suaempresa.com.br',
         required: true,
-        hint: 'Onde os formul├írios do site ser├úo enviados'
+        hint: 'Onde os formulários do site serão enviados'
       },
       {
         id: 'leadEmailCC',
         type: 'text',
-        label: 'E-mail em C├│pia (opcional)',
+        label: 'E-mail em Cópia (opcional)',
         placeholder: 'vendas@suaempresa.com.br',
         hint: 'Um segundo e-mail para receber c├│pia dos contatos'
       },
@@ -546,50 +546,50 @@ export const pageSteps = {
       {
         id: 'formFields',
         type: 'checkbox-group',
-        label: 'Campos do Formul├írio de Contato',
-        hint: 'Marque o que voc├¬ quer perguntar para seu cliente',
+        label: 'Campos do Formulário de Contato',
+        hint: 'Marque o que você quer perguntar para seu cliente',
         options: [
-          { value: 'name', label: '­ƒæñ Nome (sempre obrigat├│rio)' },
-          { value: 'email', label: '­ƒôº E-mail' },
-          { value: 'phone', label: '­ƒô▒ Telefone/WhatsApp' },
-          { value: 'subject', label: '­ƒôî Assunto' },
-          { value: 'message', label: '­ƒÆ¼ Mensagem' },
-          { value: 'company', label: '­ƒÅó Nome da Empresa' },
-          { value: 'city', label: '­ƒôì Cidade' },
-          { value: 'service', label: 'ÔÜÖ´©Å Servi├ºo de Interesse (select)' },
-          { value: 'attachment', label: '­ƒôÄ Anexar Arquivo' }
+          { value: 'name', label: '👤 Nome (sempre obrigatório)' },
+          { value: 'email', label: '📧 E-mail' },
+          { value: 'phone', label: '📱 Telefone/WhatsApp' },
+          { value: 'subject', label: '📝 Assunto' },
+          { value: 'message', label: '💬 Mensagem' },
+          { value: 'company', label: '🏢 Nome da Empresa' },
+          { value: 'city', label: '📍 Cidade' },
+          { value: 'service', label: '⚙️ Serviço de Interesse (select)' },
+          { value: 'attachment', label: '📎 Anexar Arquivo' }
         ]
       },
       {
         id: 'formRequiredFields',
         type: 'checkbox-group',
-        label: 'Quais campos s├úo obrigat├│rios?',
+        label: 'Quais campos são obrigatórios?',
         options: [
-          { value: 'email', label: '­ƒôº E-mail' },
-          { value: 'phone', label: '­ƒô▒ Telefone/WhatsApp' },
-          { value: 'message', label: '­ƒÆ¼ Mensagem' }
+          { value: 'email', label: '📧 E-mail' },
+          { value: 'phone', label: '📱 Telefone/WhatsApp' },
+          { value: 'message', label: '💬 Mensagem' }
         ]
       },
       // ---- WhatsApp Flutuante ----
       {
         id: 'whatsappFloatingEnabled',
         type: 'switch',
-        label: 'Bot├úo Flutuante de WhatsApp',
+        label: 'Botão Flutuante de WhatsApp',
         default: true,
-        hint: 'Bot├úo fixo no canto da tela para contato direto'
+        hint: 'Botão fixo no canto da tela para contato direto'
       },
       {
         id: 'whatsappGreeting',
         type: 'text',
-        label: 'Mensagem de Sauda├º├úo Autom├ítica',
-        placeholder: 'Ol├í! Vi seu site e gostaria de mais informa├º├Áes...',
+        label: 'Mensagem de Saudação Automática',
+        placeholder: 'Olá! Vi seu site e gostaria de mais informações...',
         conditional: { field: 'whatsappFloatingEnabled', value: true },
-        hint: 'Texto que aparecer├í pr├®-preenchido no WhatsApp do cliente'
+        hint: 'Texto que aparecerá pré-preenchido no WhatsApp do cliente'
       },
       {
         id: 'whatsappPosition',
         type: 'select',
-        label: 'Posi├º├úo do Bot├úo',
+        label: 'Posição do Botão',
         options: [
           { value: 'bottom-right', label: 'Canto Inferior Direito' },
           { value: 'bottom-left', label: 'Canto Inferior Esquerdo' }
@@ -601,28 +601,28 @@ export const pageSteps = {
       {
         id: 'showMap',
         type: 'switch',
-        label: 'Mostrar Mapa de Localiza├º├úo no Site',
+        label: 'Mostrar Mapa de Localização no Site',
         default: true,
         hint: 'Exibe o Google Maps com seu endere├ºo (se informado)'
       },
-      // ---- Configura├º├Áes Avan├ºadas ----
+      // ---- Configurações Avançadas ----
       {
         id: 'enableCaptcha',
         type: 'switch',
-        label: 'Ativar Prote├º├úo Anti-Spam (reCAPTCHA)',
+        label: 'Ativar Proteção Anti-Spam (reCAPTCHA)',
         default: true
       },
       {
         id: 'autoReply',
         type: 'switch',
-        label: 'Enviar e-mail autom├ítico de confirma├º├úo para o cliente',
+        label: 'Enviar e-mail automático de confirmação para o cliente',
         default: false
       },
       {
         id: 'autoReplyMessage',
         type: 'textarea',
-        label: 'Mensagem de Confirma├º├úo',
-        placeholder: 'Recebemos sua mensagem e entraremos em contato em at├® 24 horas...',
+        label: 'Mensagem de Confirmação',
+        placeholder: 'Recebemos sua mensagem e entraremos em contato em até 24 horas...',
         rows: 3,
         aiEnhance: true,
         conditional: { field: 'autoReply', value: true }
@@ -634,37 +634,37 @@ export const pageSteps = {
   faq: {
     id: 'faq',
     pageType: 'faq',
-    title: 'ÔØô Perguntas Frequentes',
-    subtitle: 'Quais d├║vidas seus clientes sempre perguntam?',
-    icon: 'ÔØô',
+    title: '❓ Perguntas Frequentes',
+    subtitle: 'Quais dúvidas seus clientes sempre perguntam?',
+    icon: '❓',
     fields: [
       {
         id: 'faqIntro',
         type: 'textarea',
-        label: 'Texto de introdu├º├úo do FAQ (opcional)',
-        placeholder: 'Reunimos aqui as principais d├║vidas...',
+        label: 'Texto de introdução do FAQ (opcional)',
+        placeholder: 'Reunimos aqui as principais dúvidas...',
         rows: 2,
         aiEnhance: true
       },
       {
         id: 'commonQuestions',
         type: 'checkbox-group',
-        label: 'Marque as d├║vidas comuns no seu neg├│cio:',
+        label: 'Marque as dúvidas comuns no seu negócio:',
         hint: 'A IA vai gerar respostas personalizadas para cada uma',
         options: [
-          { value: 'pricing', label: '­ƒÆ░ Formas de pagamento / Pre├ºos' },
-          { value: 'delivery', label: '­ƒÜÜ Prazos de entrega' },
-          { value: 'warranty', label: '­ƒøí´©Å Garantia e trocas' },
-          { value: 'support', label: '­ƒô× Suporte e atendimento' },
-          { value: 'process', label: '­ƒôï Como funciona o processo' },
-          { value: 'coverage', label: '­ƒôì ├ürea de atendimento' }
+          { value: 'pricing', label: '💰 Formas de pagamento / Preços' },
+          { value: 'delivery', label: '🚚 Prazos de entrega' },
+          { value: 'warranty', label: '🛡️ Garantia e trocas' },
+          { value: 'support', label: '🔧 Suporte e atendimento' },
+          { value: 'process', label: '🔄 Como funciona o processo' },
+          { value: 'coverage', label: '📍 Área de atendimento' }
         ]
       },
       {
         id: 'pricingDetails',
         type: 'textarea',
-        label: 'Detalhes sobre pagamento/pre├ºos',
-        placeholder: 'Aceitamos cart├úo, pix, boleto... Parcelamos em at├®...',
+        label: 'Detalhes sobre pagamento/preços',
+        placeholder: 'Aceitamos cartão, pix, boleto... Parcelamos em até...',
         conditional: { field: 'commonQuestions', contains: 'pricing' },
         aiEnhance: true
       },
@@ -672,7 +672,7 @@ export const pageSteps = {
         id: 'deliveryDetails',
         type: 'textarea',
         label: 'Detalhes sobre prazos',
-        placeholder: 'O prazo m├®dio ├® de... depende de...',
+        placeholder: 'O prazo médio é de... depende de...',
         conditional: { field: 'commonQuestions', contains: 'delivery' },
         aiEnhance: true
       },
@@ -687,7 +687,7 @@ export const pageSteps = {
       {
         id: 'customQuestions',
         type: 'repeater',
-        label: 'Outras d├║vidas frequentes',
+        label: 'Outras dúvidas frequentes',
         addButtonText: '+ Adicionar Pergunta',
         maxItems: 10,
         fields: [
@@ -695,7 +695,7 @@ export const pageSteps = {
             id: 'question',
             type: 'text',
             label: 'Pergunta',
-            placeholder: 'Ex: Voc├¬s atendem aos finais de semana?'
+            placeholder: 'Ex: Vocês atendem aos finais de semana?'
           },
           {
             id: 'answer',
@@ -709,18 +709,18 @@ export const pageSteps = {
     ]
   },
 
-  // ===== PORTF├ôLIO =====
+  // ===== PORTFÓLIO =====
   portfolio: {
     id: 'portfolio',
     pageType: 'portfolio',
-    title: '­ƒû╝´©Å Portf├│lio / Trabalhos Realizados',
-    subtitle: 'Mostre o que voc├¬ j├í fez de incr├¡vel',
-    icon: '­ƒû╝´©Å',
+    title: '📁 Portfólio / Trabalhos Realizados',
+    subtitle: 'Mostre o que você já fez de incrível',
+    icon: '📁',
     fields: [
       {
         id: 'portfolioIntro',
         type: 'textarea',
-        label: 'Apresenta├º├úo do portf├│lio',
+        label: 'Apresentação do portfólio',
         placeholder: 'Confira alguns dos nossos melhores trabalhos...',
         rows: 2,
         aiEnhance: true
@@ -737,7 +737,7 @@ export const pageSteps = {
             id: 'title',
             type: 'text',
             label: 'Nome do Projeto / Cliente',
-            placeholder: 'Ex: Reforma Resid├¬ncia Silva',
+            placeholder: 'Ex: Reforma Residência Silva',
             required: true
           },
           {
@@ -749,7 +749,7 @@ export const pageSteps = {
           {
             id: 'description',
             type: 'textarea',
-            label: 'Breve descri├º├úo',
+            label: 'Breve descrição',
             placeholder: 'O que foi feito, desafios, resultados...',
             rows: 3,
             aiEnhance: true
@@ -774,21 +774,21 @@ export const pageSteps = {
       {
         id: 'metrics',
         type: 'repeater',
-        label: 'M├®tricas de sucesso (opcional)',
-        addButtonText: '+ Adicionar m├®trica',
+        label: 'Métricas de sucesso (opcional)',
+        addButtonText: '+ Adicionar métrica',
         maxItems: 4,
-        hint: 'Ex: "500+ projetos entregues", "98% de satisfa├º├úo"',
+        hint: 'Ex: "500+ projetos entregues", "98% de satisfação"',
         fields: [
           {
             id: 'value',
             type: 'text',
-            label: 'N├║mero',
+            label: 'Número',
             placeholder: '500+'
           },
           {
             id: 'label',
             type: 'text',
-            label: 'Descri├º├úo',
+            label: 'Descrição',
             placeholder: 'Projetos entregues'
           }
         ]
@@ -800,14 +800,14 @@ export const pageSteps = {
   vitrine_produtos: {
     id: 'vitrine_produtos',
     pageType: 'vitrine_produtos',
-    title: '­ƒøì´©Å Vitrine de Produtos',
-    subtitle: 'Apresente seus produtos de forma irresist├¡vel',
-    icon: '­ƒøì´©Å',
+    title: '🛒 Vitrine de Produtos',
+    subtitle: 'Apresente seus produtos de forma irresistível',
+    icon: '🛒',
     fields: [
       {
         id: 'storeIntro',
         type: 'textarea',
-        label: 'Apresenta├º├úo da loja/produtos',
+        label: 'Apresentação da loja/produtos',
         placeholder: 'Conhe├ºa nossa linha de produtos...',
         rows: 2,
         aiEnhance: true
@@ -839,12 +839,12 @@ export const pageSteps = {
             placeholder: 'Caracter├¡sticas, benef├¡cios...',
             rows: 2,
             aiEnhance: true,
-            aiPrompt: 'Crie uma descri├º├úo persuasiva de produto para e-commerce'
+            aiPrompt: 'Crie uma descrição persuasiva de produto para e-commerce'
           },
           {
             id: 'specs',
             type: 'tags',
-            label: 'Especifica├º├Áes',
+            label: 'Especificações',
             placeholder: 'Ex: 100% algod├úo, Tamanho M...'
           },
           {
@@ -953,19 +953,19 @@ export const pageSteps = {
   blog_noticias: {
     id: 'blog_noticias',
     pageType: 'blog_noticias',
-    title: '­ƒôØ Blog / Not├¡cias',
-    subtitle: 'Sobre o que voc├¬ quer escrever?',
-    icon: '­ƒôØ',
+    title: '📝 Blog / Notícias',
+    subtitle: 'Sobre o que você quer escrever?',
+    icon: '📝',
     fields: [
       {
         id: 'blogPurpose',
         type: 'select',
         label: 'Qual o objetivo do blog?',
         options: [
-          { value: 'seo', label: '­ƒöì Atrair visitantes do Google (SEO)' },
-          { value: 'authority', label: '­ƒÅå Mostrar autoridade no assunto' },
-          { value: 'news', label: '­ƒô░ Divulgar novidades da empresa' },
-          { value: 'education', label: '­ƒôÜ Educar clientes sobre o produto/servi├ºo' }
+          { value: 'seo', label: '🔍 Atrair visitantes do Google (SEO)' },
+          { value: 'authority', label: '🏆 Mostrar autoridade no assunto' },
+          { value: 'news', label: '📰 Divulgar novidades da empresa' },
+          { value: 'education', label: '🎓 Educar clientes sobre o produto/serviço' }
         ]
       },
       {
@@ -1047,8 +1047,8 @@ export const pageSteps = {
             type: 'select',
             label: 'Onde usar este v├¡deo?',
             options: [
-              { value: 'hero', label: '­ƒÅá Banner Principal (Home)' },
-              { value: 'about', label: '­ƒÅó P├ígina Sobre N├│s' },
+              { value: 'hero', label: '🏠 Banner Principal (Home)' },
+              { value: 'about', label: '🏢 Página Sobre Nós' },
               { value: 'services', label: 'ÔÜÖ´©Å P├ígina de Servi├ºos' },
               { value: 'background', label: '­ƒÄ¿ V├¡deo de Fundo' },
               { value: 'gallery', label: '­ƒû╝´©Å Galeria de M├¡dia' },
@@ -1102,7 +1102,7 @@ export const pageSteps = {
         type: 'select',
         label: 'Qual o objetivo principal dos v├¡deos?',
         options: [
-          { value: 'presentation', label: '­ƒÄñ Apresenta├º├úo institucional' },
+          { value: 'presentation', label: '🎤 Apresentação institucional' },
           { value: 'product', label: '­ƒôª Demonstra├º├úo de produtos' },
           { value: 'tutorial', label: '­ƒôÜ Tutoriais e explica├º├Áes' },
           { value: 'testimonial', label: 'Ô¡É Depoimentos em v├¡deo' },
@@ -1146,13 +1146,13 @@ export const pageSteps = {
             label: 'Onde usar este v├¡deo?',
             options: [
               { value: 'hero', label: '­ƒÅá Banner Principal (Home)' },
-              { value: 'hero-background', label: '­ƒÄ¼ Fundo do Banner (Autoplay)' },
+              { value: 'hero-background', label: '🎥 Fundo do Banner (Autoplay)' },
               { value: 'about', label: '­ƒÅó P├ígina Sobre N├│s' },
               { value: 'services', label: 'ÔÜÖ´©Å P├ígina de Servi├ºos' },
-              { value: 'products', label: '­ƒøì´©Å P├ígina de Produtos' },
-              { value: 'testimonials', label: 'Ô¡É Depoimentos' },
-              { value: 'gallery', label: '­ƒû╝´©Å Galeria de M├¡dia' },
-              { value: 'popup', label: '­ƒÄ» Popup/Modal' },
+              { value: 'products', label: '🛒 Página de Produtos' },
+              { value: 'testimonials', label: '⭐ Depoimentos' },
+              { value: 'gallery', label: '🎬 Galeria de Mídia' },
+              { value: 'popup', label: '📺 Popup/Modal' },
               { value: 'other', label: '­ƒôì Outro local' }
             ],
             default: 'hero'
@@ -1202,7 +1202,7 @@ export const pageSteps = {
             label: 'Onde exibir',
             options: [
               { value: 'gallery', label: '­ƒû╝´©Å Galeria' },
-              { value: 'inline', label: '­ƒôä Inline na p├ígina' }
+              { value: 'inline', label: '📋 Inline na página' }
             ]
           }
         ]
@@ -1214,23 +1214,23 @@ export const pageSteps = {
   documentos_pdf: {
     id: 'documentos_pdf',
     pageType: 'documentos_pdf',
-    title: '­ƒôä Documentos e PDFs',
-    subtitle: 'Cat├ílogos, portf├│lios, tabelas de pre├ºo e materiais para download',
-    icon: '­ƒôä',
+    title: '📄 Documentos e PDFs',
+    subtitle: 'Catálogos, portfólios, tabelas de preço e materiais para download',
+    icon: '📄',
     fields: [
       {
         id: 'documentPurpose',
         type: 'checkbox-group',
         label: 'Que tipo de documentos voc├¬ quer disponibilizar?',
         options: [
-          { value: 'catalog', label: '­ƒôÜ Cat├ílogo de Produtos/Servi├ºos' },
-          { value: 'price', label: '­ƒÆ░ Tabela de Pre├ºos' },
+          { value: 'catalog', label: '📃 Catálogo de Produtos/Serviços' },
+          { value: 'price', label: '💰 Tabela de Preços' },
           { value: 'portfolio', label: '­ƒû╝´©Å Portf├│lio em PDF' },
           { value: 'manual', label: '­ƒôï Manuais e Instru├º├Áes' },
           { value: 'contract', label: '­ƒôØ Modelos de Contrato' },
           { value: 'ebook', label: '­ƒôû E-book / Material Rico' },
           { value: 'certificate', label: '­ƒÅå Certifica├º├Áes e Licen├ºas' },
-          { value: 'other', label: '­ƒôÄ Outros documentos' }
+          { value: 'other', label: '📎 Outros documentos' }
         ],
         hint: 'Selecione os tipos que voc├¬ pretende disponibilizar'
       },
@@ -1263,8 +1263,8 @@ export const pageSteps = {
             type: 'select',
             label: 'Categoria',
             options: [
-              { value: 'catalog', label: '­ƒôÜ Cat├ílogo' },
-              { value: 'price', label: '­ƒÆ░ Tabela de Pre├ºos' },
+              { value: 'catalog', label: '📃 Catálogo' },
+              { value: 'price', label: '💰 Tabela de Preços' },
               { value: 'portfolio', label: '­ƒû╝´©Å Portf├│lio' },
               { value: 'manual', label: '­ƒôï Manual' },
               { value: 'ebook', label: '­ƒôû E-book' },
@@ -1315,23 +1315,23 @@ export const pageSteps = {
  */
 export const finalizationStep = {
   id: 'finalization',
-  title: 'Quase L├í!',
-  subtitle: '├Ültimos detalhes antes de come├ºarmos',
-  icon: '­ƒÜÇ',
+  title: 'Quase Lá!',
+  subtitle: 'Últimos detalhes antes de começarmos',
+  icon: '✅',
   required: true,
   fields: [
     {
       id: 'additionalNotes',
       type: 'textarea',
       label: 'Tem algo mais que devemos saber?',
-      placeholder: 'Refer├¬ncias de sites que voc├¬ gosta, prefer├¬ncias especiais, observa├º├Áes...',
+      placeholder: 'Referências de sites que você gosta, preferências especiais, observações...',
       rows: 4
     },
     {
       id: 'referenceUrls',
       type: 'repeater',
-      label: 'Sites que voc├¬ gosta como refer├¬ncia',
-      addButtonText: '+ Adicionar refer├¬ncia',
+      label: 'Sites que você gosta como referência',
+      addButtonText: '+ Adicionar referência',
       maxItems: 5,
       fields: [
         {
@@ -1343,8 +1343,8 @@ export const finalizationStep = {
         {
           id: 'whatYouLike',
           type: 'text',
-          label: 'O que voc├¬ gosta nele?',
-          placeholder: 'Ex: As cores, o layout, as anima├º├Áes...'
+          label: 'O que você gosta nele?',
+          placeholder: 'Ex: As cores, o layout, as animações...'
         }
       ]
     }
@@ -1357,16 +1357,16 @@ export const finalizationStep = {
  * Steps usam: sobre_nos, servicos, portfolio, faq, config_contato, blog_noticias, vitrine_produtos
  */
 export const pageKeyToStepId = {
-  // P├íginas principais
+  // Páginas principais
   about: 'sobre_nos',
   services: 'servicos',
   portfolio: 'portfolio',
   faq: 'faq',
-  contact: 'config_contato', // Contact j├í ├® coberto pelo contactStep + config_contato
+  contact: 'config_contato', // Contact já é coberto pelo contactStep + config_contato
   blog: 'blog_noticias',
   showcase: 'vitrine_produtos',
   
-  // Conte├║do de m├¡dia
+  // Conteúdo de mídia
   video_basic: 'video_basico',
   video_pro: 'video_pro',
   pdf: 'documentos_pdf',
@@ -1376,31 +1376,31 @@ export const pageKeyToStepId = {
 };
 
 /**
- * Fun├º├úo para montar os steps baseado nas p├íginas compradas
- * @param {Array} purchasedPages - Array de page_types que o usu├írio comprou (chaves do order)
+ * Função para montar os steps baseado nas páginas compradas
+ * @param {Array} purchasedPages - Array de page_types que o usuário comprou (chaves do order)
  * @returns {Array} - Array de steps ordenados para o wizard
  */
 export function buildOnboardingSteps(purchasedPages = []) {
   const steps = [];
   
-  // Garantir que purchasedPages ├® um array
+  // Garantir que purchasedPages é um array
   const pages = Array.isArray(purchasedPages) ? purchasedPages : [];
   
-  // 1. Sempre come├ºa com Identidade
+  // 1. Sempre começa com Identidade
   steps.push(identityStep);
   
   // 2. Sempre inclui Contato
   steps.push(contactStep);
   
-  // 3. Sempre inclui Configura├º├úo de Leads (ap├│s contato b├ísico)
+  // 3. Sempre inclui Configuração de Leads (após contato básico)
   steps.push(pageSteps.config_contato);
   
-  // 4. Adiciona steps espec├¡ficos das p├íginas compradas
+  // 4. Adiciona steps específicos das páginas compradas
   pages.forEach(pageKey => {
     // Mapeia a chave do order para o ID do step
     const stepId = pageKeyToStepId[pageKey] || pageKey;
     
-    // Pula config_contato e contact pois j├í foram adicionados
+    // Pula config_contato e contact pois já foram adicionados
     if (stepId === 'config_contato' || pageKey === 'contact') {
       return;
     }
@@ -1409,11 +1409,11 @@ export function buildOnboardingSteps(purchasedPages = []) {
     if (pageSteps[stepId]) {
       steps.push(pageSteps[stepId]);
     } else {
-      console.warn(`[buildOnboardingSteps] Step n├úo encontrado para: ${pageKey} (mapeado: ${stepId})`);
+      console.warn(`[buildOnboardingSteps] Step não encontrado para: ${pageKey} (mapeado: ${stepId})`);
     }
   });
   
-  // 5. Sempre termina com Finaliza├º├úo
+  // 5. Sempre termina com Finalização
   steps.push(finalizationStep);
   
   return steps;

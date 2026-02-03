@@ -406,7 +406,23 @@ export function useBrandConsultant() {
         confidence: extracted?.extractionMeta?.confidence || null,
         suggestedTaglines: extracted?.aiSuggestions?.alternativeTaglines || [],
         contentSeeds: extracted?.contentSeeds || {}
-      }
+      },
+      // NOVO: Perfil da Marca Extraído completo
+      brandProfile: extracted ? {
+        extractionMeta: extracted.extractionMeta || {},
+        companyInfo: extracted.companyInfo || {},
+        brandCore: extracted.brandCore || {},
+        authorityTriggers: extracted.authorityTriggers || {},
+        differentiation: extracted.differentiation || {},
+        visualIdentity: extracted.visualIdentity || {},
+        aiSuggestions: extracted.aiSuggestions || {},
+        conversationContext: {
+          chatHistory: state.chatHistory || [],
+          keyInsights: extracted.keyInsights || [],
+          customerPainPoints: extracted.customerPainPoints || [],
+          businessGoals: extracted.businessGoals || []
+        }
+      } : null
     };
   }
   

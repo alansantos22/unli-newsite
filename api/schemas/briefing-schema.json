@@ -120,5 +120,67 @@
     "lastModified": "",
     "completionPercentage": 0,
     "status": "draft"
+  },
+  
+  "brandProfile": {
+    "extractionMeta": {
+      "confidence": "",
+      "conversationTurns": 0,
+      "extractedAt": "",
+      "missingFields": [],
+      "inferredFields": []
+    },
+    "companyInfo": {
+      "name": "",
+      "niche": "",
+      "targetAudience": "",
+      "mainProduct": ""
+    },
+    "brandCore": {
+      "historySummary": "",
+      "mission": "",
+      "vision": "",
+      "values": [],
+      "foundingYear": "",
+      "founders": ""
+    },
+    "authorityTriggers": {
+      "yearsInMarket": "",
+      "certifications": [],
+      "notableClients": [],
+      "keyAchievements": "",
+      "socialProofElements": ""
+    },
+    "differentiation": {
+      "usp": "",
+      "uniqueMethodology": "",
+      "competitiveAdvantages": [],
+      "marketPosition": ""
+    },
+    "visualIdentity": {
+      "suggestedStyle": "",
+      "colorVibe": "",
+      "primaryColorSuggestion": "",
+      "secondaryColorSuggestion": "",
+      "typographyMood": "",
+      "layoutSuggestion": "",
+      "moodKeywords": [],
+      "heroSuggestion": "",
+      "specialSections": []
+    },
+    "aiSuggestions": {
+      "suggestedTagline": "",
+      "alternativeTaglines": [],
+      "toneOfVoice": "",
+      "suggestedKeywords": [],
+      "colorPaletteSuggestion": "",
+      "contentDirections": []
+    },
+    "conversationContext": {
+      "chatHistory": [],
+      "keyInsights": [],
+      "customerPainPoints": [],
+      "businessGoals": []
+    }
   }
 }
