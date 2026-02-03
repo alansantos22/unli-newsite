@@ -46,65 +46,67 @@
 
     <!-- Área do Chat -->
     <div class="chat-container" ref="chatContainer">
-      <transition-group name="message-slide" tag="div" class="chat-messages">
-        <!-- Mensagens -->
-        <div 
-          v-for="(message, index) in chatHistory" 
-          :key="'msg-' + index"
-          :class="['message-row', message.role]"
-        >
-          <div class="message-bubble glass-panel">
-            <div class="message-content" v-html="formatMessage(message.content)"></div>
+      <div class="chat-messages-container">
+        <transition-group name="message-slide" tag="div" class="chat-messages">
+          <!-- Mensagens -->
+          <div 
+            v-for="(message, index) in chatHistory" 
+            :key="'msg-' + index"
+            :class="['message-row', message.role]"
+          >
+            <div class="message-bubble glass-panel">
+              <div class="message-content" v-html="formatMessage(message.content)"></div>
+            </div>
+            <div v-if="message.role === 'assistant'" class="bot-mini-avatar">
+              <i class="fas fa-cube"></i>
+            </div>
           </div>
-          <div v-if="message.role === 'assistant'" class="bot-mini-avatar">
-            <i class="fas fa-cube"></i>
-          </div>
-        </div>
 
-        <!-- Indicador de Digitação -->
-        <div v-if="isLoading || isTyping" key="loading" class="message-row assistant">
-          <div class="message-bubble glass-panel typing">
-            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <!-- Indicador de Digitação -->
+          <div v-if="isLoading || isTyping" key="loading" class="message-row assistant">
+            <div class="message-bubble glass-panel typing">
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            </div>
+            <div class="bot-mini-avatar">
+              <i class="fas fa-cube"></i>
+            </div>
           </div>
-          <div class="bot-mini-avatar">
-            <i class="fas fa-cube"></i>
+        </transition-group>
+        
+        <!-- Input Area (agora dentro do fluxo natural) -->
+        <div class="input-area-container">
+          <div class="input-area glass-effect">
+            <textarea 
+              ref="messageInput"
+              v-model="userInput" 
+              @keydown.enter.exact="handleEnterKey"
+              @input="autoResize"
+              placeholder="Digite sua resposta..."
+              :disabled="isLoading || isExtracting || conversationFinished || isTyping"
+              rows="1"
+            ></textarea>
+            <button 
+              class="btn-send" 
+              @click="sendMessage" 
+              :disabled="!userInput.trim() || isLoading || isExtracting || conversationFinished || isTyping"
+              :class="{ 'ready': userInput.trim().length > 0 }"
+            >
+              <i class="fas fa-arrow-up"></i>
+            </button>
           </div>
+          
+          <transition name="fade">
+            <button 
+              v-if="canFinish && !conversationFinished"
+              class="btn-finish-floating"
+              :disabled="isLoading || isExtracting || isTyping"
+              @click="finishConversation"
+            >
+              <i class="fas fa-check"></i> Finalizar Briefing
+            </button>
+          </transition>
         </div>
-      </transition-group>
-    </div>
-
-    <!-- Input Flutuante -->
-    <div class="input-area-container">
-      <div class="input-area glass-effect">
-        <textarea 
-          ref="messageInput"
-          v-model="userInput" 
-          @keydown.enter.exact="handleEnterKey"
-          @input="autoResize"
-          placeholder="Digite sua resposta..."
-          :disabled="isLoading || isExtracting || conversationFinished || isTyping"
-          rows="1"
-        ></textarea>
-        <button 
-          class="btn-send" 
-          @click="sendMessage" 
-          :disabled="!userInput.trim() || isLoading || isExtracting || conversationFinished || isTyping"
-          :class="{ 'ready': userInput.trim().length > 0 }"
-        >
-          <i class="fas fa-arrow-up"></i>
-        </button>
       </div>
-      
-      <transition name="fade">
-        <button 
-          v-if="canFinish && !conversationFinished"
-          class="btn-finish-floating"
-          :disabled="isLoading || isExtracting || isTyping"
-          @click="finishConversation"
-        >
-          <i class="fas fa-check"></i> Finalizar Briefing
-        </button>
-      </transition>
     </div>
 
     <!-- Modal de Extração/Resultados -->
@@ -911,10 +913,19 @@ Comece pedindo uma apresentação da empresa: nome, origem e história.`,
     },
 
     scrollToBottom() {
-      const container = this.$refs.chatContainer;
-      if (container) {
-        container.scrollTop = container.scrollHeight;
-      }
+      // Com o novo layout, scroll suave para o final da página/container
+      this.$nextTick(() => {
+        const container = this.$refs.chatContainer;
+        if (container) {
+          const targetElement = container.querySelector('.input-area-container');
+          if (targetElement) {
+            targetElement.scrollIntoView({ 
+              behavior: 'smooth',
+              block: 'end'
+            });
+          }
+        }
+      });
     },
 
     handleEnterKey(e) {
@@ -1254,22 +1265,27 @@ $shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
 // CHAT CONTAINER & MESSAGES
 // ===========================================
 .chat-container {
-  flex: 1;
-  overflow-y: auto;
-  padding: 40px 20px 140px 20px;
+  width: 100%;
+  padding: 40px 20px 40px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   z-index: 1;
-  scroll-behavior: smooth;
 }
 
-.chat-messages {
+.chat-messages-container {
   width: 100%;
   max-width: 800px;
   display: flex;
   flex-direction: column;
+}
+
+.chat-messages {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
   gap: 24px;
+  margin-bottom: 32px;
 }
 
 .message-row {
@@ -1360,36 +1376,29 @@ $shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
 }
 
 // ===========================================
-// INPUT AREA (Flutuante)
+// INPUT AREA (agora no fluxo natural)
 // ===========================================
 .input-area-container {
-  position: fixed;
-  bottom: 0;
-  left: 0;
   width: 100%;
-  z-index: 20;
-  padding: 0 20px 30px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: linear-gradient(to top, rgba(243, 244, 246, 1) 0%, rgba(243, 244, 246, 0.95) 70%, rgba(243, 244, 246, 0) 100%);
-  pointer-events: none;
+  gap: 16px;
+  margin-top: 20px;
 }
 
 .input-area {
-  pointer-events: auto;
   width: 100%;
-  max-width: 800px;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(16px);
   padding: 8px 8px 8px 20px;
   border-radius: 24px;
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.8);
   display: flex;
   align-items: flex-end;
   gap: 12px;
-  transition: transform 0.3s, box-shadow 0.3s;
+  transition: all 0.3s;
 
   &.glass-effect {
     background: rgba(255, 255, 255, 0.9);
@@ -1397,7 +1406,7 @@ $shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
   
   &:focus-within {
     transform: translateY(-2px);
-    box-shadow: 0 15px 50px -10px rgba($primary, 0.2);
+    box-shadow: 0 8px 30px rgba($primary, 0.15);
     border-color: rgba($primary, 0.3);
   }
 
@@ -1459,7 +1468,6 @@ $shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
 }
 
 .btn-finish-floating {
-  pointer-events: auto;
   margin-top: 12px;
   background: $text-dark;
   color: white;
@@ -2126,7 +2134,7 @@ $shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
   }
 
   .input-area-container {
-    padding: 0 12px 20px 12px;
+    margin-top: 16px;
   }
 
   .input-area {
