@@ -1,56 +1,88 @@
 <template>
   <div class="configurador-page">
-    <!-- Header Simples -->
-    <header class="configurador-header">
-      <div class="header-container">
-        <div class="header-left">
-          <router-link to="/site-vitrine" class="btn-back">
-            <i class="fas fa-arrow-left"></i>
-            <span>Voltar</span>
-          </router-link>
-        </div>
-        
-        <div class="header-center">
-          <h1 class="page-title">Configure seu Site</h1>
-          <p class="page-subtitle">Monte o site perfeito para o seu negócio</p>
-        </div>
-        
-        <div class="header-right">
-          <a href="https://wa.me/5511968354238?text=Olá! Estou no configurador e preciso de ajuda." 
-             class="btn-help"
-             target="_blank"
-             rel="noopener noreferrer">
-            <i class="fab fa-whatsapp"></i>
-            <span>Ajuda</span>
-          </a>
-        </div>
-      </div>
-    </header>
+    <!-- FASE 0: Tela de Decisão (Chat vs Form) -->
+    <template v-if="currentPhase === 'decision'">
+      <EntryDecisionHero
+        @select-chat="startChatFlow"
+        @select-form="startQuickCheckout"
+        @go-to-configurator="skipToConfigurator"
+      />
+    </template>
 
-    <!-- Configurador (componente isolado) -->
-    <main class="configurador-main">
-      <div class="configurador-wrapper">
-        <SiteConfigurator 
-          :initial-product="selectedPlan"
-          @order-submitted="handleOrderSubmitted"
-          @custom-request="handleCustomRequest"
-          @close="handleClose"
-        />
-      </div>
-    </main>
+    <!-- FASE 1: Chat com Assistente SDR -->
+    <template v-else-if="currentPhase === 'chat'">
+      <SDRChatAssistant
+        :api-base-url="apiBaseUrl"
+        @proceed-to-wizard="handleChatComplete"
+        @skip-to-form="goToQuickCheckout"
+      />
+    </template>
 
-    <!-- Footer Minimalista -->
-    <footer class="configurador-footer">
-      <div class="footer-container">
-        <p class="footer-trust">
-          <i class="fas fa-shield-alt"></i>
-          Pagamento 100% seguro • Suporte dedicado • Garantia de qualidade
-        </p>
-        <p class="footer-help">
-          Dúvidas? <a href="https://wa.me/5511968354238" target="_blank">Fale conosco no WhatsApp</a>
-        </p>
-      </div>
-    </footer>
+    <!-- FASE 2: Checkout Rápido (Direto para MP) -->
+    <template v-else-if="currentPhase === 'checkout'">
+      <QuickCheckout
+        :product="selectedPlan"
+        :package-key="selectedPackage"
+        :pricing-config="pricingConfig"
+        @go-back="goBackToDecision"
+      />
+    </template>
+
+    <!-- FASE 3: Configurador Completo (para customização avançada) -->
+    <template v-else-if="currentPhase === 'configurator'">
+      <!-- Header Simples -->
+      <header class="configurador-header">
+        <div class="header-container">
+          <div class="header-left">
+            <router-link to="/site-vitrine" class="btn-back">
+              <i class="fas fa-arrow-left"></i>
+              <span>Voltar</span>
+            </router-link>
+          </div>
+          
+          <div class="header-center">
+            <h1 class="page-title">Configure seu Site</h1>
+            <p class="page-subtitle">Monte o site perfeito para o seu negócio</p>
+          </div>
+          
+          <div class="header-right">
+            <a href="https://wa.me/5511968354238?text=Olá! Estou no configurador e preciso de ajuda." 
+               class="btn-help"
+               target="_blank"
+               rel="noopener noreferrer">
+              <i class="fab fa-whatsapp"></i>
+              <span>Ajuda</span>
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <!-- Configurador (componente isolado) -->
+      <main class="configurador-main">
+        <div class="configurador-wrapper">
+          <SiteConfigurator 
+            :initial-product="selectedPlan"
+            :prefilled-data="prefilledData"
+            @order-submitted="handleOrderSubmitted"
+            @custom-request="handleCustomRequest"
+            @close="handleClose"
+          />
+        </div>
+      </main>
+
+      <!-- Footer Minimalista -->
+      <footer class="configurador-footer">
+        <div class="footer-container">
+          <p class="footer-trust">
+            <i class="fas fa-shield-alt"></i>
+            Pagamento 100% seguro • Suporte dedicado • Garantia de qualidade
+          </p>
+          <p class="footer-help">
+            Dúvidas? <a href="https://wa.me/5511968354238" target="_blank">Fale conosco no WhatsApp</a>
+          </p>
+        </div>
+      </footer>
+    </template>
 
     <!-- Loading Screen Profissional -->
     <FullScreenLoading 
@@ -62,41 +94,217 @@
 </template>
 
 <script>
-import { SiteConfigurator, FullScreenLoading } from '@/shared/Components';
+import { SiteConfigurator, FullScreenLoading, EntryDecisionHero, SDRChatAssistant, QuickCheckout } from '@/shared/Components';
 
 export default {
   name: 'ConfiguradorPage',
   components: {
     SiteConfigurator,
-    FullScreenLoading
+    FullScreenLoading,
+    EntryDecisionHero,
+    SDRChatAssistant,
+    QuickCheckout
   },
   data() {
     return {
       selectedPlan: null,
-      isProcessingPayment: false
+      selectedPackage: 'essential', // Pacote padrão
+      isProcessingPayment: false,
+      // Controle de fases: 'decision' | 'chat' | 'checkout' | 'configurator'
+      currentPhase: 'decision',
+      // Dados extraídos do chat para pré-preencher o configurador
+      prefilledData: null,
+      // URL base da API
+      apiBaseUrl: '/api/ai',
+      // Configuração de preços (carregada da API)
+      pricingConfig: null
     };
   },
-  created() {
-    // IMPORTANTE: usar created() ao invés de mounted() 
-    // para garantir que selectedPlan esteja disponível antes do render
+  async created() {
     console.log('🔍 [ConfiguradorPage] Created - Query params:', this.$route.query);
     console.log('🔍 [ConfiguradorPage] Plan from query:', this.$route.query.plan);
+    console.log('🔍 [ConfiguradorPage] Package from query:', this.$route.query.package);
     
     this.selectedPlan = this.$route.query.plan || null;
+    this.selectedPackage = this.$route.query.package || 'essential';
+    
     console.log('🔍 [ConfiguradorPage] selectedPlan set to:', this.selectedPlan);
+    console.log('🔍 [ConfiguradorPage] selectedPackage set to:', this.selectedPackage);
     
     // Se não houver plano selecionado, redirecionar para página de vendas
     if (!this.selectedPlan) {
       console.warn('⚠️ [ConfiguradorPage] Nenhum plano selecionado, redirecionando...');
       this.$router.push('/site-vitrine#planos');
     } else {
-      console.log('✅ [ConfiguradorPage] Plano válido, continuando...');
+      console.log('✅ [ConfiguradorPage] Plano válido, mostrando tela de decisão...');
+      // Carregar preços e verificar progresso salvo
+      await this.loadPricingConfig();
+      this.checkSavedProgress();
     }
   },
   mounted() {
     console.log('🔍 [ConfiguradorPage] Mounted - selectedPlan final:', this.selectedPlan);
   },
   methods: {
+    // ==================
+    // CARREGAR CONFIGS
+    // ==================
+    
+    async loadPricingConfig() {
+      try {
+        const response = await fetch('/api/pricing.json');
+        if (response.ok) {
+          this.pricingConfig = await response.json();
+          console.log('💰 [ConfiguradorPage] Preços carregados:', this.pricingConfig);
+        } else {
+          console.warn('⚠️ [ConfiguradorPage] Erro HTTP ao carregar preços:', response.status);
+          this.loadFallbackPricing();
+        }
+      } catch (error) {
+        console.warn('⚠️ [ConfiguradorPage] Não foi possível carregar preços:', error);
+        this.loadFallbackPricing();
+      }
+    },
+    
+    loadFallbackPricing() {
+      // Preços de fallback caso o pricing.json não esteja disponível
+      // Valores SEM desconto (desconto é aplicado dinamicamente)
+      console.log('📋 [ConfiguradorPage] Usando preços de fallback');
+      this.pricingConfig = {
+        version: 'fallback',
+        currency: 'BRL',
+        products: {
+          landing: { name: 'Landing Page', base_price: 599, description: 'Página única focada em conversão' },
+          site_complete: { name: 'Site Completo', base_price: 619, description: 'Site institucional com múltiplas páginas' }
+        },
+        page_addons: {
+          about: { name: 'Sobre Nós', price: 59 },
+          services: { name: 'Serviços', price: 119 },
+          portfolio: { name: 'Portfólio', price: 159 },
+          faq: { name: 'FAQ', price: 89 },
+          contact: { name: 'Contato', price: 129 },
+          blog: { name: 'Blog de Notícias', price: 349, isPremium: true },
+          showcase: { name: 'Vitrine de Produtos', price: 449, isPremium: true }
+        },
+        predefined_packages: {
+          essential: { 
+            name: 'Essencial', 
+            icon: '🏢', 
+            pages: ['about', 'services', 'contact'],
+            ideal_for: 'Advogados, Clínicas, Consultores'
+          },
+          authority: { 
+            name: 'Autoridade', 
+            icon: '🚀', 
+            pages: ['about', 'services', 'contact', 'portfolio', 'faq'],
+            ideal_for: 'Arquitetos, Agências, Engenharia'
+          },
+          enterprise: { 
+            name: 'Ecossistema Digital', 
+            icon: '💎', 
+            pages: ['about', 'services', 'contact', 'portfolio', 'faq', 'blog', 'showcase'],
+            ideal_for: 'Lojas, Importadoras, Indústrias'
+          }
+        },
+        pricing_rules: {
+          cash_discount_percent: 15,
+          installments_12_markup_percent: 15,
+          installments: 12
+        }
+      };
+    },
+    
+    // ==================
+    // CONTROLE DE FASES
+    // ==================
+    
+    checkSavedProgress() {
+      // Verificar se usuário já passou pela decisão antes
+      const savedPhase = sessionStorage.getItem('unli_configurator_phase');
+      if (savedPhase === 'configurator') {
+        this.currentPhase = 'configurator';
+      } else if (savedPhase === 'checkout') {
+        this.currentPhase = 'checkout';
+      }
+    },
+    
+    startChatFlow() {
+      console.log('💬 [ConfiguradorPage] Iniciando chat com assistente');
+      this.currentPhase = 'chat';
+    },
+    
+    startQuickCheckout(payload) {
+      console.log('⚡ [ConfiguradorPage] Iniciando checkout rápido');
+      
+      // Se payload contém pacote selecionado, usar
+      if (payload && payload.package) {
+        this.selectedPackage = payload.package;
+      }
+      
+      console.log('📦 [ConfiguradorPage] Produto:', this.selectedPlan, 'Pacote:', this.selectedPackage);
+      this.currentPhase = 'checkout';
+      sessionStorage.setItem('unli_configurator_phase', 'checkout');
+    },
+    
+    goToQuickCheckout() {
+      // Usuário quer pular do chat direto para o checkout
+      console.log('⏭️ [ConfiguradorPage] Pulando do chat para checkout');
+      this.currentPhase = 'checkout';
+      sessionStorage.setItem('unli_configurator_phase', 'checkout');
+    },
+    
+    skipToConfigurator() {
+      console.log('⏭️ [ConfiguradorPage] Pulando para configurador completo');
+      this.currentPhase = 'configurator';
+      sessionStorage.setItem('unli_configurator_phase', 'configurator');
+    },
+    
+    goBackToDecision() {
+      console.log('🔙 [ConfiguradorPage] Voltando para tela de decisão');
+      this.currentPhase = 'decision';
+      sessionStorage.removeItem('unli_configurator_phase');
+    },
+    
+    handleChatComplete(payload) {
+      console.log('✅ [ConfiguradorPage] Chat concluído, dados extraídos:', payload);
+      
+      // Salvar dados extraídos para pré-preencher o configurador
+      if (payload && payload.extractedData) {
+        this.prefilledData = this.mapExtractedDataToConfigurator(payload.extractedData);
+        console.log('📝 [ConfiguradorPage] Dados mapeados para configurador:', this.prefilledData);
+      }
+      
+      // Avançar para o configurador
+      this.currentPhase = 'configurator';
+      sessionStorage.setItem('unli_configurator_phase', 'configurator');
+    },
+    
+    mapExtractedDataToConfigurator(extractedData) {
+      // Mapear dados do chat SDR para o formato do SiteConfigurator
+      const mapped = {
+        businessName: extractedData.business?.name || null,
+        businessNiche: extractedData.business?.niche || null,
+        businessDescription: extractedData.business?.description || null,
+        suggestedPages: extractedData.site?.pages || [],
+        suggestedPackage: extractedData.site?.suggestedPackage || null,
+        stylePreferences: {
+          tone: extractedData.site?.style?.tone || null,
+          colors: extractedData.site?.style?.colors || []
+        },
+        contactInfo: {
+          name: extractedData.contact?.name || null,
+          email: extractedData.contact?.email || null,
+          phone: extractedData.contact?.phone || null
+        }
+      };
+      
+      return mapped;
+    },
+    
+    // ==================
+    // HANDLERS EXISTENTES
+    // ==================
+    
     handleOrderSubmitted(orderPayload) {
       console.log('✅ [ConfiguradorPage] Pedido recebido do SiteConfigurator:', orderPayload);
       
@@ -128,12 +336,6 @@ export default {
     handleCustomRequest(customData) {
       console.log('Orçamento personalizado:', customData);
       
-      // TODO: Enviar para CRM/Email
-      // this.$http.post('/api/custom-requests', customData)
-      //   .then(() => {
-      //     this.$router.push('/site-vitrine#contact');
-      //   });
-      
       alert('Solicitação de orçamento enviada! Em produção, isso enviaria para o CRM.');
       
       // Redirecionar para página de contato
@@ -160,6 +362,12 @@ export default {
   display: flex;
   flex-direction: column;
   background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  
+  // Quando está na fase de decisão ou chat, ocupar toda a tela
+  &:has(.entry-decision-hero),
+  &:has(.sdr-chat-assistant) {
+    background: transparent;
+  }
 }
 
 // ==========================================

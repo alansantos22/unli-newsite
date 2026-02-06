@@ -163,7 +163,7 @@ Wizard de 4 etapas para geração de conteúdo.
 <template>
   <AIContentGenerator
     title="Crie seu conteúdo"
-    subtitle="Textos profissionais em segundos"
+    subtitle="Rascunhos de texto em segundos"
     api-base-url="/api/ai"
     @content-generated="handleGenerated"
     @content-applied="handleApplied"

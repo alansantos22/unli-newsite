@@ -22,6 +22,13 @@ export { default as FullScreenLoading } from './FullScreenLoading.vue';
 // Componentes de AI/Consultoria
 export { default as BrandConsultant } from './BrandConsultant.vue';
 export { default as AIContentGenerator } from './AIContentGenerator.vue';
+export { default as SDRChatAssistant } from './SDRChatAssistant.vue';
+
+// Componentes de Entrada/Decisão
+export { default as EntryDecisionHero } from './EntryDecisionHero.vue';
+
+// Componentes de Checkout
+export { default as QuickCheckout } from './QuickCheckout.vue';
 
 // Componentes de Onboarding/Wizard
 export { default as DynamicOnboardingWizard } from './DynamicOnboardingWizard.vue';

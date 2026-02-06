@@ -546,7 +546,7 @@
               <div class="faq-answer">
                 O plano inclui desenvolvimento com os <strong>textos fornecidos 
                 por você</strong>. Se precisar de ajuda com copywriting, 
-                oferecemos <strong>revisão de copy como add-on</strong>. 
+                podemos indicar <strong>parceiros sob consulta</strong>. 
                 Guiamos você com checklist do que precisa enviar.
               </div>
             </div>

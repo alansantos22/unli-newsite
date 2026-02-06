@@ -547,7 +547,7 @@ export default {
       const messages = [
         '🔍 Analisando seu negócio...',
         '🎨 Estudando seu mercado...',
-        '✨ Especialistas criando textos...',
+        '✨ IA preparando rascunhos de texto...',
         '🎨 Preparando sua identidade visual...',
         '🎯 Finalizando detalhes...'
       ];

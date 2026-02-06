@@ -249,7 +249,7 @@ export default {
     },
     subtitle: {
       type: String,
-      default: 'Crie textos profissionais em segundos'
+      default: 'Gere rascunhos de texto em segundos'
     },
     apiBaseUrl: {
       type: String,

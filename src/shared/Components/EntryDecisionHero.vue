@@ -1,0 +1,1101 @@
+<template>
+  <div class="entry-decision-hero">
+    <!-- Fundo com Partículas Animadas -->
+    <div class="hero-background">
+      <div class="gradient-orb orb-1"></div>
+      <div class="gradient-orb orb-2"></div>
+      <div class="gradient-orb orb-3"></div>
+      <div class="particles">
+        <div 
+          v-for="n in 20" 
+          :key="n" 
+          class="particle"
+          :style="getParticleStyle(n)"
+        ></div>
+      </div>
+    </div>
+
+    <!-- Conteúdo Principal - Decisão -->
+    <div class="hero-content" v-if="!showPackageSelector">
+      <!-- Logo ou Ícone -->
+      <div class="hero-logo">
+        <div class="logo-ring">
+          <div class="logo-inner">
+            <i class="fas fa-rocket"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Título -->
+      <h1 class="hero-title">
+        Vamos criar o 
+        <span class="highlight">site perfeito</span> 
+        para você
+      </h1>
+
+      <!-- Subtítulo -->
+      <p class="hero-subtitle">
+        Como você prefere começar?
+      </p>
+
+      <!-- Opções de Decisão -->
+      <div class="decision-cards">
+        <!-- Opção 1: Consultoria com IA -->
+        <div 
+          class="decision-card primary"
+          @click="selectOption('chat')"
+          :class="{ 'selected': selectedOption === 'chat' }"
+        >
+          <div class="card-glow"></div>
+          <div class="card-content">
+            <div class="card-icon">
+              <i class="fas fa-comments"></i>
+            </div>
+            <div class="card-badge">
+              <i class="fas fa-sparkles"></i>
+              Recomendado
+            </div>
+            <h3 class="card-title">Quero ajuda para escolher</h3>
+            <p class="card-description">
+              Converse com nosso consultor virtual e descubra 
+              o site ideal para o seu negócio
+            </p>
+            <ul class="card-benefits">
+              <li>
+                <i class="fas fa-check"></i>
+                Consultoria gratuita instantânea
+              </li>
+              <li>
+                <i class="fas fa-check"></i>
+                Dicas personalizadas para seu nicho
+              </li>
+              <li>
+                <i class="fas fa-check"></i>
+                Orçamento montado automaticamente
+              </li>
+            </ul>
+            <div class="card-time">
+              <i class="fas fa-clock"></i>
+              ~3 minutos
+            </div>
+          </div>
+        </div>
+
+        <!-- Opção 2: Self-Service -->
+        <div 
+          class="decision-card secondary"
+          @click="selectOption('form')"
+          :class="{ 'selected': selectedOption === 'form' }"
+        >
+          <div class="card-content">
+            <div class="card-icon">
+              <i class="fas fa-bolt"></i>
+            </div>
+            <h3 class="card-title">Já sei o que quero</h3>
+            <p class="card-description">
+              Escolha um pacote pronto e vá direto para o pagamento.
+              Simples e rápido!
+            </p>
+            <ul class="card-benefits">
+              <li>
+                <i class="fas fa-check"></i>
+                Pacotes prontos para seu perfil
+              </li>
+              <li>
+                <i class="fas fa-check"></i>
+                Checkout em 2 minutos
+              </li>
+              <li>
+                <i class="fas fa-check"></i>
+                Ideal para quem já decidiu
+              </li>
+            </ul>
+            <div class="card-time">
+              <i class="fas fa-clock"></i>
+              ~2 minutos
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="container-continueEPromo">
+        <!-- Botão de Continuar -->
+        <transition name="fade-slide">
+            <button 
+            v-if="selectedOption"
+            class="btn-continue"
+            @click="continueToSelected"
+            >
+            <span>Continuar</span>
+            <i class="fas fa-arrow-right"></i>
+            </button>
+        </transition>
+
+        <!-- Promoção Badge -->
+        <div class="promo-banner">
+            <div class="promo-icon">🎉</div>
+            <div class="promo-text">
+            <strong>Promoção "Iniciando 2026 Online"</strong>
+            <span>30% OFF em todos os planos + 15% OFF se pagar no pix</span>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Seletor de Pacotes (Exibido quando escolhe "Já sei o que quero") -->
+    <div class="hero-content package-selector-content" v-else>
+      <button class="btn-back-packages" @click="showPackageSelector = false">
+        <i class="fas fa-arrow-left"></i>
+        <span>Voltar</span>
+      </button>
+
+      <h2 class="packages-title">
+        Escolha o pacote ideal
+        <span class="highlight">para você</span>
+      </h2>
+      
+      <p class="packages-subtitle">
+        Todos incluem Site Completo PRO + Hospedagem + Domínio + SSL
+      </p>
+
+      <!-- Cards de Pacotes -->
+      <div class="packages-grid">
+        <!-- Essencial -->
+        <div 
+          class="package-card"
+          :class="{ 'selected': selectedPackage === 'essential' }"
+          @click="selectedPackage = 'essential'"
+        >
+          <div class="package-icon">🏢</div>
+          <h3 class="package-name">Essencial</h3>
+          <p class="package-tagline">Para prestadores de serviço</p>
+          <div class="package-pages">
+            <span class="page-tag">Sobre</span>
+            <span class="page-tag">Serviços</span>
+            <span class="page-tag">Contato</span>
+          </div>
+          <div class="package-price">
+            <span class="price-from">De <s>R$ 926</s></span>
+            <span class="price-now">R$ 648</span>
+            <span class="price-pix">ou R$ 551 no PIX</span>
+          </div>
+        </div>
+
+        <!-- Autoridade -->
+        <div 
+          class="package-card featured"
+          :class="{ 'selected': selectedPackage === 'authority' }"
+          @click="selectedPackage = 'authority'"
+        >
+          <div class="package-badge">Mais vendido</div>
+          <div class="package-icon">🚀</div>
+          <h3 class="package-name">Autoridade</h3>
+          <p class="package-tagline">Mostre seu trabalho e tire dúvidas</p>
+          <div class="package-pages">
+            <span class="page-tag">Sobre</span>
+            <span class="page-tag">Serviços</span>
+            <span class="page-tag">Portfólio</span>
+            <span class="page-tag">FAQ</span>
+            <span class="page-tag">Contato</span>
+          </div>
+          <div class="package-price">
+            <span class="price-from">De <s>R$ 1.174</s></span>
+            <span class="price-now">R$ 822</span>
+            <span class="price-pix">ou R$ 699 no PIX</span>
+          </div>
+        </div>
+
+        <!-- Ecossistema Digital -->
+        <div 
+          class="package-card"
+          :class="{ 'selected': selectedPackage === 'enterprise' }"
+          @click="selectedPackage = 'enterprise'"
+        >
+          <div class="package-icon">💎</div>
+          <h3 class="package-name">Ecossistema</h3>
+          <p class="package-tagline">Blog + Vitrine de produtos</p>
+          <div class="package-pages">
+            <span class="page-tag">Sobre</span>
+            <span class="page-tag">Serviços</span>
+            <span class="page-tag">Portfólio</span>
+            <span class="page-tag">FAQ</span>
+            <span class="page-tag">Blog</span>
+            <span class="page-tag">Vitrine</span>
+            <span class="page-tag">Contato</span>
+          </div>
+          <div class="package-price">
+            <span class="price-from">De <s>R$ 1.972</s></span>
+            <span class="price-now">R$ 1.380</span>
+            <span class="price-pix">ou R$ 1.173 no PIX</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botão de Checkout -->
+      <button 
+        class="btn-checkout-now"
+        @click="proceedToCheckout"
+        :disabled="!selectedPackage"
+      >
+        <i class="fas fa-lock"></i>
+        <span>Pagar agora com {{ selectedPackage ? getPackageName(selectedPackage) : '...' }}</span>
+        <i class="fas fa-arrow-right"></i>
+      </button>
+
+      <!-- Link para Customização -->
+      <p class="customize-link">
+        Quer personalizar? 
+        <a href="#" @click.prevent="goToCustomConfigurator">Acesse o configurador completo</a>
+      </p>
+    </div>
+
+    <!-- Footer discreto -->
+    <div class="hero-footer">
+      <p>
+        <i class="fas fa-lock"></i>
+        Seus dados estão seguros. Não compartilhamos com terceiros.
+      </p>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'EntryDecisionHero',
+  
+  props: {
+    // Callback quando usuário escolhe a opção de chat
+    onSelectChat: {
+      type: Function,
+      default: null
+    },
+    // Callback quando usuário escolhe ir direto para o form
+    onSelectForm: {
+      type: Function,
+      default: null
+    }
+  },
+
+  data() {
+    return {
+      selectedOption: null,
+      showPackageSelector: false,
+      selectedPackage: 'authority' // Pré-selecionar o mais vendido
+    }
+  },
+
+  methods: {
+    selectOption(option) {
+      this.selectedOption = option;
+    },
+    
+    continueToSelected() {
+      if (this.selectedOption === 'chat') {
+        this.$emit('select-chat');
+        if (this.onSelectChat) this.onSelectChat();
+      } else if (this.selectedOption === 'form') {
+        // Mostrar seletor de pacotes
+        this.showPackageSelector = true;
+      }
+    },
+    
+    getPackageName(key) {
+      const names = {
+        essential: 'Essencial',
+        authority: 'Autoridade',
+        enterprise: 'Ecossistema'
+      };
+      return names[key] || key;
+    },
+    
+    proceedToCheckout() {
+      if (!this.selectedPackage) return;
+      
+      // Atualizar URL com o pacote selecionado
+      const currentQuery = { ...this.$route?.query };
+      currentQuery.package = this.selectedPackage;
+      
+      // Emitir evento com pacote selecionado
+      this.$emit('select-form', { package: this.selectedPackage });
+      if (this.onSelectForm) this.onSelectForm({ package: this.selectedPackage });
+    },
+    
+    goToCustomConfigurator() {
+      // Emitir evento especial para ir ao configurador completo
+      this.$emit('go-to-configurator');
+    },
+    
+    getParticleStyle(index) {
+      const random = (min, max) => Math.random() * (max - min) + min;
+      // Usar index para seed consistente (evita warning de unused var)
+      const seed = index * 0.1;
+      return {
+        left: `${random(0, 100)}%`,
+        top: `${random(0, 100)}%`,
+        width: `${random(2, 6)}px`,
+        height: `${random(2, 6)}px`,
+        animationDelay: `${random(0, 5) + seed}s`,
+        animationDuration: `${random(10, 20)}s`
+      };
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+// ==================
+// VARIABLES
+// ==================
+$primary: #8B5CF6;
+$primary-light: #A78BFA;
+$secondary: #10B981;
+$accent: #F59E0B;
+$dark: #1A1A2E;
+$darker: #0F0F1A;
+$glass-bg: rgba(255, 255, 255, 0.05);
+$glass-border: rgba(255, 255, 255, 0.1);
+$text-primary: #FFFFFF;
+$text-secondary: rgba(255, 255, 255, 0.7);
+$text-muted: rgba(255, 255, 255, 0.5);
+
+// ==================
+// BASE
+// ==================
+.entry-decision-hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+  overflow: hidden;
+  background: linear-gradient(135deg, $darker 0%, $dark 100%);
+  font-family: 'Inter', -apple-system, sans-serif;
+}
+
+// ==================
+// BACKGROUND EFFECTS
+// ==================
+.hero-background {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.gradient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.6;
+  animation: float-orb 15s ease-in-out infinite;
+  
+  &.orb-1 {
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba($primary, 0.4), transparent);
+    top: -100px;
+    left: -100px;
+    animation-delay: 0s;
+  }
+  
+  &.orb-2 {
+    width: 350px;
+    height: 350px;
+    background: radial-gradient(circle, rgba($secondary, 0.3), transparent);
+    bottom: -50px;
+    right: -50px;
+    animation-delay: -5s;
+  }
+  
+  &.orb-3 {
+    width: 250px;
+    height: 250px;
+    background: radial-gradient(circle, rgba($accent, 0.2), transparent);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation-delay: -10s;
+  }
+}
+
+.particles {
+  position: absolute;
+  inset: 0;
+  
+  .particle {
+    position: absolute;
+    background: rgba($primary-light, 0.3);
+    border-radius: 50%;
+    animation: float-particle linear infinite;
+  }
+}
+
+@keyframes float-orb {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
+  50% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  75% {
+    transform: translate(20px, 30px) scale(1.05);
+  }
+}
+
+@keyframes float-particle {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+// ==================
+// CONTENT
+// ==================
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 900px;
+  width: 100%;
+  text-align: center;
+}
+
+.hero-logo {
+  margin-bottom: 32px;
+  
+  .logo-ring {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, $primary, $secondary);
+    position: relative;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 2px solid rgba($primary, 0.3);
+      animation: pulse-ring 2s infinite;
+    }
+  }
+  
+  .logo-inner {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: $darker;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    i {
+      font-size: 28px;
+      color: $primary-light;
+    }
+  }
+}
+
+.hero-title {
+  font-size: clamp(28px, 5vw, 42px);
+  font-weight: 700;
+  color: $text-primary;
+  margin: 0 0 16px;
+  line-height: 1.3;
+  
+  .highlight {
+    background: linear-gradient(135deg, $primary, $secondary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+.hero-subtitle {
+  font-size: 18px;
+  color: $text-secondary;
+  margin: 0 0 40px;
+}
+
+// ==================
+// DECISION CARDS
+// ==================
+.decision-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.decision-card {
+  position: relative;
+  background: $glass-bg;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 2px solid $glass-border;
+  border-radius: 24px;
+  padding: 32px 24px;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  text-align: left;
+  
+  &:hover {
+    transform: translateY(-8px);
+    border-color: rgba($primary, 0.4);
+    
+    .card-glow {
+      opacity: 1;
+    }
+  }
+  
+  &.selected {
+    border-color: $primary;
+    background: rgba($primary, 0.1);
+    
+    .card-glow {
+      opacity: 1;
+    }
+    
+    .card-icon {
+      background: linear-gradient(135deg, $primary, $secondary);
+      transform: scale(1.1);
+      
+      i { color: white; }
+    }
+  }
+  
+  &.primary {
+    .card-badge {
+      display: flex;
+    }
+  }
+  
+  &.secondary {
+    .card-icon {
+      background: rgba($secondary, 0.2);
+      
+      i { color: $secondary; }
+    }
+    
+    &.selected .card-icon {
+      background: linear-gradient(135deg, $secondary, darken($secondary, 10%));
+      
+      i { color: white; }
+    }
+  }
+}
+
+.card-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 0%,
+    rgba($primary, 0.15) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.card-content {
+  position: relative;
+  z-index: 1;
+}
+
+.card-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: rgba($primary, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  transition: all 0.3s ease;
+  
+  i {
+    font-size: 24px;
+    color: $primary-light;
+    transition: color 0.3s ease;
+  }
+}
+
+.card-badge {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, $accent, darken($accent, 10%));
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  color: $darker;
+  
+  i {
+    font-size: 10px;
+  }
+}
+
+.card-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: $text-primary;
+  margin: 0 0 12px;
+}
+
+.card-description {
+  font-size: 14px;
+  color: $text-secondary;
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+
+.card-benefits {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+  
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: $text-secondary;
+    padding: 8px 0;
+    
+    i {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: rgba($secondary, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8px;
+      color: $secondary;
+    }
+  }
+}
+
+.card-time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: $text-muted;
+  
+  i {
+    font-size: 11px;
+  }
+}
+
+// ==================
+// CONTINUE BUTTON
+// ==================
+.btn-continue {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 40px;
+  background: linear-gradient(135deg, $primary, $secondary);
+  border: none;
+  border-radius: 16px;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 40px;
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba($primary, 0.4);
+    
+    i {
+      transform: translateX(4px);
+    }
+  }
+  
+  i {
+    transition: transform 0.3s ease;
+  }
+}
+
+.container-continueEPromo{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+// ==================
+// PROMO BANNER
+// ==================
+.promo-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  background: rgba($accent, 0.1);
+  border: 1px solid rgba($accent, 0.3);
+  border-radius: 16px;
+  
+  .promo-icon {
+    font-size: 28px;
+  }
+  
+  .promo-text {
+    text-align: left;
+    
+    strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: $accent;
+      margin-bottom: 2px;
+    }
+    
+    span {
+      font-size: 12px;
+      color: $text-secondary;
+    }
+  }
+}
+
+// ==================
+// FOOTER
+// ==================
+.hero-footer {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  
+  p {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: $text-muted;
+    margin: 0;
+    
+    i {
+      font-size: 11px;
+    }
+  }
+}
+
+// ==================
+// ANIMATIONS
+// ==================
+@keyframes pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.4s ease;
+}
+
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+// ==================
+// RESPONSIVE
+// ==================
+@media (max-width: 700px) {
+  .entry-decision-hero {
+    padding: 60px 16px 80px;
+  }
+  
+  .hero-logo .logo-ring {
+    width: 64px;
+    height: 64px;
+    
+    .logo-inner {
+      width: 54px;
+      height: 54px;
+      
+      i { font-size: 22px; }
+    }
+  }
+  
+  .decision-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .decision-card {
+    padding: 24px 20px;
+  }
+  
+  .promo-banner {
+    flex-direction: column;
+    text-align: center;
+    
+    .promo-text {
+      text-align: center;
+    }
+  }
+  
+  .hero-footer {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    transform: none;
+    margin-top: 40px;
+  }
+  
+  // Package selector mobile
+  .packages-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .package-card {
+    padding: 20px !important;
+  }
+}
+
+// ==================
+// PACKAGE SELECTOR
+// ==================
+.package-selector-content {
+  max-width: 1000px;
+}
+
+.btn-back-packages {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: $glass-bg;
+  border: 1px solid $glass-border;
+  border-radius: 10px;
+  color: $text-secondary;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 32px;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: $text-primary;
+  }
+}
+
+.packages-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: $text-primary;
+  text-align: center;
+  margin: 0 0 12px;
+  
+  .highlight {
+    background: linear-gradient(135deg, $primary, $secondary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+.packages-subtitle {
+  font-size: 16px;
+  color: $text-secondary;
+  text-align: center;
+  margin: 0 0 40px;
+}
+
+.packages-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.package-card {
+  position: relative;
+  background: $glass-bg;
+  border: 2px solid transparent;
+  border-radius: 20px;
+  padding: 28px 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-4px);
+  }
+  
+  &.selected {
+    border-color: $primary;
+    background: rgba($primary, 0.1);
+  }
+  
+  &.featured {
+    border-color: rgba($accent, 0.5);
+    
+    &.selected {
+      border-color: $primary;
+    }
+  }
+  
+  .package-badge {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 12px;
+    background: linear-gradient(135deg, $accent, darken($accent, 10%));
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    color: white;
+    white-space: nowrap;
+  }
+  
+  .package-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  
+  .package-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: $text-primary;
+    text-align: center;
+    margin: 0 0 4px;
+  }
+  
+  .package-tagline {
+    font-size: 13px;
+    color: $text-secondary;
+    text-align: center;
+    margin: 0 0 16px;
+  }
+  
+  .package-pages {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 20px;
+    
+    .page-tag {
+      padding: 4px 10px;
+      background: rgba($primary, 0.15);
+      border-radius: 6px;
+      font-size: 11px;
+      color: $primary-light;
+    }
+  }
+  
+  .package-price {
+    text-align: center;
+    
+    .price-from {
+      display: block;
+      font-size: 12px;
+      color: $text-muted;
+      margin-bottom: 4px;
+      
+      s {
+        color: $text-muted;
+      }
+    }
+    
+    .price-now {
+      display: block;
+      font-size: 28px;
+      font-weight: 700;
+      color: $text-primary;
+      margin-bottom: 4px;
+    }
+    
+    .price-pix {
+      display: block;
+      font-size: 13px;
+      color: $secondary;
+      font-weight: 600;
+    }
+  }
+}
+
+.btn-checkout-now {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 400px;
+  padding: 18px 32px;
+  background: linear-gradient(135deg, $primary, darken($primary, 15%));
+  border: none;
+  border-radius: 14px;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 20px;
+  
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba($primary, 0.4);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.customize-link {
+  font-size: 14px;
+  color: $text-secondary;
+  text-align: center;
+  
+  a {
+    color: $primary-light;
+    text-decoration: none;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+</style>

@@ -44,6 +44,17 @@ Options -Indexes
   </IfModule>
 </FilesMatch>
 
+# Permite acesso a arquivos JSON públicos (pricing.json)
+<FilesMatch "^pricing\.json$">
+  <IfModule mod_authz_core.c>
+    Require all granted
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order Allow,Deny
+    Allow from all
+  </IfModule>
+</FilesMatch>
+
 # Proteção contra injeção de código
 <IfModule mod_rewrite.c>
   RewriteEngine On

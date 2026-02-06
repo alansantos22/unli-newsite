@@ -78,13 +78,13 @@ Ao concluir (após o cliente aprovar sua visão/resumo), finalize a conversa.
 |-------|-------------------------|
 | Advocacia | "Layout sóbrio, azul marinho (#1A365D) ou cinza (#4A5568), tipografia serifada, muito espaço em branco" |
 | Startup Tech | "Dark mode, gradientes modernos, tipografia geométrica, animações sutis com roxo (#8B5CF6)" |
-| Clínica de Estética | "Tons rosados (#F687B3) ou nude (#F7FAFC), tipografia elegante, fotos de alta qualidade" |
-| E-commerce de Moda | "Visual clean, tipografia sans-serif, foco em imagens de produto, cores neutras (#F7FAFC)" |
-| Restaurante | "Imagens de alta qualidade, tipografia com personalidade, cores quentes (#F56500)" |
-| Academia/CrossFit | "Cores intensas vermelho (#DC2626) e preto (#1A202C), fontes bold, fotos de ação" |
+| Clínica de Estética | "Tons rosados (#F687B3) ou nude (#F7FAFC), tipografia elegante, seções visuais com espaços reservados para conteúdos" |
+| E-commerce de Moda | "Visual clean, tipografia sans-serif, grid de produtos com placeholders, cores neutras (#F7FAFC)" |
+| Restaurante | "Tipografia com personalidade, cores quentes (#F56500), estrutura de menu com espaços reservados" |
+| Academia/CrossFit | "Cores intensas vermelho (#DC2626) e preto (#1A202C), fontes bold, seções dinâmicas com placeholders" |
 | Psicologia | "Tons suaves verde água (#81E6D9) e lavanda (#D6BCFA), muito branco, sensação de calma" |
 | E-commerce Moda | "Visual editorial, grid de produtos clean, tipografia moderna com cinza (#2D3748)" |
-| Construtora | "Azul (#3182CE) e laranja (#FF8C00), fotos de projetos, sensação de solidez e confiança" |
+| Construtora | "Azul (#3182CE) e laranja (#FF8C00), layout com seções de cases e espaços reservados, sensação de solidez e confiança" |
 | Games/Indie Dev | "Dark mode com neon (#00FF88, #FF00FF), tipografia futurista, animações sutis, estética cyberpunk ou fantasia" |
 
 # Personalização por Página Comprada

@@ -301,11 +301,11 @@ LTV/CAC: 30x
 
 ### Produtos Complementares
 ```
-├─ Logo + Identidade Visual (R$ 300)
-├─ Fotos profissionais (R$ 500)
-├─ Vídeo institucional (R$ 800)
-├─ Gestão de redes sociais (R$ 600/mês)
-└─ Consultoria de marketing (R$ 150/hora)
+├─ Logo + Identidade Visual (R$ 300) — sob consulta (parceiro)
+├─ Fotos profissionais (R$ 500) — sob consulta (parceiro)
+├─ Vídeo institucional (R$ 800) — sob consulta (parceiro)
+├─ Gestão de redes sociais (R$ 600/mês) — sob consulta (parceiro)
+└─ Consultoria de marketing (R$ 150/hora) — sob consulta (parceiro)
 ```
 
 ### Modelo SaaS (Futuro)
