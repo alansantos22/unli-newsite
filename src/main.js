@@ -35,4 +35,12 @@ const router = VueRouter.createRouter({
 app.use(router);
 app.use(store);
 
+// Microsoft Clarity - SPA page view tracking
+// O script do Clarity é carregado no index.html; aqui rastreamos trocas de rota
+router.afterEach((to) => {
+    if (typeof window.clarity === 'function') {
+        window.clarity('set', 'pageUrl', to.fullPath);
+    }
+});
+
 app.mount('#app');
