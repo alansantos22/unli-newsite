@@ -15,6 +15,7 @@
         :api-base-url="apiBaseUrl"
         @proceed-to-wizard="handleChatComplete"
         @skip-to-form="goToQuickCheckout"
+        @checkout-redirect="handleChatCheckoutRedirect"
       />
     </template>
 
@@ -277,6 +278,22 @@ export default {
       // Avançar para o configurador
       this.currentPhase = 'configurator';
       sessionStorage.setItem('unli_configurator_phase', 'configurator');
+    },
+    
+    handleChatCheckoutRedirect(payload) {
+      console.log('🛒 [ConfiguradorPage] Checkout via chat SDR:', payload);
+      
+      // Ativar loading de processamento
+      this.isProcessingPayment = true;
+      
+      if (payload && payload.init_point) {
+        console.log('🚀 [ConfiguradorPage] Redirecionando para Mercado Pago via chat:', payload.init_point);
+        window.location.href = payload.init_point;
+      } else {
+        console.error('❌ [ConfiguradorPage] Payload sem init_point:', payload);
+        this.isProcessingPayment = false;
+        alert('❌ Erro ao redirecionar para o pagamento. Por favor, tente novamente.');
+      }
     },
     
     mapExtractedDataToConfigurator(extractedData) {

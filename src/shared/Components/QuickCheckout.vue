@@ -100,7 +100,7 @@
                     <div class="option-info">
                       <span class="option-title">PIX à Vista</span>
                       <span class="option-price">{{ formatCurrency(pricing.cashPrice) }}</span>
-                      <span class="option-badge">15% OFF Extra</span>
+                      <span class="option-badge">Sem acréscimos</span>
                     </div>
                   </div>
                 </label>
@@ -196,27 +196,6 @@
             <div class="summary-divider"></div>
 
             <div class="summary-totals">
-              <div class="total-row subtotal">
-                <span>Subtotal (anual)</span>
-                <span>{{ formatCurrency(pricing.subtotal) }}</span>
-              </div>
-              
-              <div class="total-row discount">
-                <span>
-                  <i class="fas fa-tag"></i>
-                  Promoção 30% OFF
-                </span>
-                <span class="discount-value">-{{ formatCurrency(pricing.promoDiscount) }}</span>
-              </div>
-
-              <div v-if="paymentMethod === 'cash'" class="total-row discount">
-                <span>
-                  <i class="fas fa-bolt"></i>
-                  Desconto PIX 15%
-                </span>
-                <span class="discount-value">-{{ formatCurrency(pricing.pixDiscount) }}</span>
-              </div>
-
               <div class="total-row final">
                 <span>Total</span>
                 <span class="final-price">
@@ -360,34 +339,27 @@ export default {
         pagesTotal += pagePrice;
       });
       
-      // Subtotal
+      // Subtotal (preços do pricing.json JÁ TEM a promoção aplicada)
       const subtotal = basePrice + pagesTotal;
       
-      // Promoção 30% OFF
-      const promoPercent = this.localPricing.promoDiscountPercent;
-      const promoDiscount = subtotal * (promoPercent / 100);
-      const afterPromo = subtotal - promoDiscount;
+      // NOTA: NÃO aplicar 30% de desconto - os preços já são promocionais!
+      // À vista (PIX) = preço base (subtotal)
+      // Parcelado (12x) = preço base + 15% (taxa do cartão)
       
-      // PIX 15% extra
-      const cashPercent = config?.pricing_rules?.cash_discount_percent || this.localPricing.cashDiscountPercent;
-      const pixDiscount = afterPromo * (cashPercent / 100);
-      const cashPrice = afterPromo - pixDiscount;
+      const cashPrice = subtotal; // PIX = preço base
       
-      // Parcelado (15% markup)
+      // Parcelado: acréscimo de 15% para cobrir taxa do gateway
       const installmentPercent = config?.pricing_rules?.installments_12_markup_percent || this.localPricing.installmentMarkupPercent;
-      const installmentTotal = afterPromo * (1 + installmentPercent / 100);
+      const installmentTotal = subtotal * (1 + installmentPercent / 100);
       const installmentPrice = installmentTotal / 12;
       
       return {
         basePrice,
         pagesTotal,
-        subtotal,
-        promoDiscount,
-        afterPromo,
-        pixDiscount,
-        cashPrice,
-        installmentTotal,
-        installmentPrice
+        subtotal, // Preço base (já com promoção do pricing.json)
+        cashPrice, // PIX = preço base
+        installmentTotal, // Cartão = base + 15%
+        installmentPrice // Valor da parcela
       };
     }
   },

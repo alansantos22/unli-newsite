@@ -227,6 +227,96 @@
         </div>
       </div>
     </transition>
+
+    <!-- Modal de Checkout Direto (quando finished=true via chat) -->
+    <transition name="modal-fade">
+      <div v-if="showCheckoutModal" class="extraction-modal-overlay">
+        <div class="extraction-modal glass-panel checkout-modal">
+          <!-- Loading: Processando pedido -->
+          <div v-if="isProcessingCheckout" class="extraction-loading">
+            <div class="loading-animation">
+              <div class="pulse-ring"></div>
+              <div class="brain-icon">💳</div>
+            </div>
+            <h3>Processando seu pedido...</h3>
+            <p>Estamos preparando o checkout seguro</p>
+            <div class="progress-bar-extraction">
+              <div class="progress-fill" :style="{ width: checkoutProgress + '%' }"></div>
+            </div>
+          </div>
+
+          <!-- Formulário de contato + resumo -->
+          <div v-else class="checkout-modal-content">
+            <div class="success-icon">🚀</div>
+            <h3>Finalizar Pedido</h3>
+            <p>Preencha seus dados para prosseguir ao pagamento seguro</p>
+
+            <!-- Resumo do plano -->
+            <div class="extracted-summary">
+              <div class="summary-item" v-if="checkoutPlanData.packageLabel">
+                <i class="fas fa-box-open"></i>
+                <span>{{ checkoutPlanData.packageLabel }}</span>
+              </div>
+              <div class="summary-item" v-if="checkoutPlanData.pages && checkoutPlanData.pages.length">
+                <i class="fas fa-layer-group"></i>
+                <span>{{ checkoutPlanData.pages.length }} {{ checkoutPlanData.pages.length === 1 ? 'página' : 'páginas' }}</span>
+              </div>
+              <div class="summary-item">
+                <i class="fas fa-credit-card"></i>
+                <span>{{ checkoutPlanData.paymentLabel }}</span>
+              </div>
+            </div>
+
+            <!-- Formulário mínimo -->
+            <form @submit.prevent="submitDirectCheckout" class="checkout-mini-form">
+              <div class="mini-form-group">
+                <input
+                  type="text"
+                  v-model="checkoutForm.name"
+                  placeholder="Seu nome completo *"
+                  required
+                  :class="{ 'has-error': checkoutErrors.name }"
+                />
+                <span v-if="checkoutErrors.name" class="mini-error">{{ checkoutErrors.name }}</span>
+              </div>
+              <div class="mini-form-group">
+                <input
+                  type="email"
+                  v-model="checkoutForm.email"
+                  placeholder="Seu melhor e-mail *"
+                  required
+                  :class="{ 'has-error': checkoutErrors.email }"
+                />
+                <span v-if="checkoutErrors.email" class="mini-error">{{ checkoutErrors.email }}</span>
+              </div>
+              <div class="mini-form-group">
+                <input
+                  type="tel"
+                  v-model="checkoutForm.whatsapp"
+                  @input="formatCheckoutWhatsApp"
+                  placeholder="WhatsApp (00) 00000-0000 *"
+                  maxlength="15"
+                  required
+                  :class="{ 'has-error': checkoutErrors.whatsapp }"
+                />
+                <span v-if="checkoutErrors.whatsapp" class="mini-error">{{ checkoutErrors.whatsapp }}</span>
+              </div>
+
+              <div class="modal-actions">
+                <button type="submit" class="btn-primary" :disabled="isProcessingCheckout">
+                  <i class="fas fa-lock"></i>
+                  Ir para pagamento seguro
+                </button>
+                <button type="button" class="btn-secondary" @click="closeCheckoutModal">
+                  <i class="fas fa-arrow-left"></i>
+                  Voltar ao chat
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -293,7 +383,26 @@ export default {
       typingDelay: { min: 1500, max: 2500 },
       
       // WhatsApp para projetos customizados
-      whatsappCustomDev: '5511999999999' // Substituir pelo número real
+      whatsappCustomDev: '5511999999999', // Substituir pelo número real
+      
+      // Checkout direto via chat
+      showCheckoutModal: false,
+      isProcessingCheckout: false,
+      checkoutProgress: 0,
+      checkoutForm: {
+        name: '',
+        email: '',
+        whatsapp: ''
+      },
+      checkoutErrors: {},
+      // Dados do plano selecionado no chat (preenchido quando finished=true)
+      checkoutPlanData: {
+        type: null,          // 'site_complete' ou 'landing'
+        pages: [],           // ['about', 'services', ...]
+        paymentMethod: null, // 'parcelado' ou 'pix_avista'
+        packageLabel: '',
+        paymentLabel: ''
+      }
     }
   },
 
@@ -430,6 +539,15 @@ export default {
         // Verificar se conversa finalizou
         if (data.finished) {
           this.finished = true;
+          
+          // Se tem plano sugerido com método de pagamento, abrir checkout direto
+          if (data.suggestedPlan && data.suggestedPlan.paymentMethod) {
+            this.openDirectCheckout(data.suggestedPlan);
+          }
+        } else {
+          // Fallback: detectar mensagem de fechamento mesmo sem finished=true
+          // (às vezes o Gemini esquece de marcar)
+          this.detectClosingMessageFallback(data);
         }
         
         this.scrollToBottom();
@@ -663,6 +781,236 @@ export default {
       this.currentStage = 'ABERTURA';
       this.finished = false;
       localStorage.removeItem('unli_sdr_conversation');
+    },
+    
+    // ==================
+    // CHECKOUT DIRETO
+    // ==================
+    
+    detectClosingMessageFallback(data) {
+      const message = (data.response || '').toLowerCase();
+      const closingPhrases = [
+        'vou te direcionar',
+        'direcionar agora',
+        'finalizar o pedido',
+        'finalizar seu pedido',
+        'prosseguir para o pagamento',
+        'fechar o pedido',
+        'concluir o pedido',
+      ];
+      
+      const isClosing = closingPhrases.some(phrase => message.includes(phrase));
+      const hasPrice = /r\$\s*[\d.,]+/.test(message);
+      const hasPlan = data.suggestedPlan && data.suggestedPlan.pages && data.suggestedPlan.pages.length > 0;
+      
+      if (isClosing && hasPrice && hasPlan) {
+        console.warn('⚠️ [SDRChat] Fallback: Mensagem de fechamento detectada sem finished=true. Forçando checkout.');
+        this.finished = true;
+        this.currentStage = 'FECHAMENTO';
+        
+        // Tentar inferir paymentMethod se não veio
+        if (!data.suggestedPlan.paymentMethod) {
+          if (message.includes('pix') || message.includes('à vista') || message.includes('a vista')) {
+            data.suggestedPlan.paymentMethod = 'pix_avista';
+          } else if (message.includes('mensal') || message.includes('mensais') || message.includes('parcel') || message.includes('cartão') || message.includes('12x')) {
+            data.suggestedPlan.paymentMethod = 'parcelado';
+          }
+        }
+        
+        if (data.suggestedPlan.paymentMethod) {
+          this.openDirectCheckout(data.suggestedPlan);
+        }
+      }
+    },
+    
+    openDirectCheckout(suggestedPlan) {
+      console.log('🛒 [SDRChat] Abrindo checkout direto com plano:', suggestedPlan);
+      
+      // Mapear dados do plano
+      const pages = suggestedPlan.pages || [];
+      const paymentMethod = suggestedPlan.paymentMethod; // 'parcelado' ou 'pix_avista'
+      const type = suggestedPlan.type || 'site_complete';
+      
+      // Determinar label do pacote
+      let packageLabel = 'Personalizado';
+      const pageCount = pages.length;
+      if (pageCount <= 3) packageLabel = 'Essencial';
+      else if (pageCount <= 5) packageLabel = 'Autoridade';
+      else if (pageCount >= 6) packageLabel = 'Ecossistema Digital';
+      
+      // Label de pagamento
+      const paymentLabel = paymentMethod === 'pix_avista'
+        ? 'PIX à Vista (15% OFF extra)'
+        : '12x no Cartão';
+      
+      this.checkoutPlanData = {
+        type,
+        pages,
+        paymentMethod,
+        packageLabel,
+        paymentLabel
+      };
+      
+      // Limpar form e erros
+      this.checkoutForm = { name: '', email: '', whatsapp: '' };
+      this.checkoutErrors = {};
+      
+      // Mostrar modal após breve delay para o usuário ler a mensagem de fechamento
+      setTimeout(() => {
+        this.showCheckoutModal = true;
+      }, 2000);
+    },
+    
+    closeCheckoutModal() {
+      this.showCheckoutModal = false;
+      this.isProcessingCheckout = false;
+      this.checkoutProgress = 0;
+      // Reativar chat para continuar conversando se quiser
+      this.finished = false;
+    },
+    
+    formatCheckoutWhatsApp() {
+      let value = this.checkoutForm.whatsapp.replace(/\D/g, '');
+      if (value.length > 11) value = value.slice(0, 11);
+      
+      if (value.length > 6) {
+        value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
+      } else if (value.length > 2) {
+        value = `(${value.slice(0, 2)}) ${value.slice(2)}`;
+      } else if (value.length > 0) {
+        value = `(${value}`;
+      }
+      
+      this.checkoutForm.whatsapp = value;
+    },
+    
+    validateCheckoutForm() {
+      this.checkoutErrors = {};
+      let isValid = true;
+      
+      if (!this.checkoutForm.name || this.checkoutForm.name.trim().length < 3) {
+        this.checkoutErrors.name = 'Digite seu nome completo';
+        isValid = false;
+      }
+      
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!this.checkoutForm.email || !emailRegex.test(this.checkoutForm.email)) {
+        this.checkoutErrors.email = 'Digite um e-mail válido';
+        isValid = false;
+      }
+      
+      const phoneDigits = this.checkoutForm.whatsapp.replace(/\D/g, '');
+      if (phoneDigits.length < 10) {
+        this.checkoutErrors.whatsapp = 'Digite um WhatsApp válido';
+        isValid = false;
+      }
+      
+      return isValid;
+    },
+    
+    async submitDirectCheckout() {
+      if (!this.validateCheckoutForm()) return;
+      
+      this.isProcessingCheckout = true;
+      this.checkoutProgress = 0;
+      
+      // Animação de progresso
+      const progressInterval = setInterval(() => {
+        if (this.checkoutProgress < 85) {
+          this.checkoutProgress += Math.random() * 12;
+        }
+      }, 400);
+      
+      try {
+        // 1. Montar dados do pedido (igual ao QuickCheckout)
+        const pagesAsObject = {};
+        this.checkoutPlanData.pages.forEach(page => {
+          pagesAsObject[page] = 1;
+        });
+        
+        const paymentMethod = this.checkoutPlanData.paymentMethod === 'pix_avista'
+          ? 'avista'
+          : 'prazo';
+        
+        const orderData = {
+          product: this.checkoutPlanData.type || 'site_complete',
+          pages: pagesAsObject,
+          content: [],
+          custom_pages: [],
+          video_basic_quantity: 0,
+          video_pro_quantity: 0,
+          briefing: {
+            customer_name: this.checkoutForm.name.trim(),
+            email: this.checkoutForm.email.trim(),
+            whatsapp: this.checkoutForm.whatsapp
+          },
+          payment_method: paymentMethod
+        };
+        
+        console.log('📦 [SDRChat→Checkout] Criando pedido:', orderData);
+        
+        // 2. Criar pedido no backend (recalcula preço do zero)
+        const orderResponse = await fetch('/api/order_create.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orderData)
+        });
+        
+        const orderResult = await orderResponse.json();
+        console.log('📦 [SDRChat→Checkout] Resultado do pedido:', orderResult);
+        
+        if (!orderResult.ok) {
+          throw new Error(orderResult.error || 'Erro ao criar pedido');
+        }
+        
+        this.checkoutProgress = 60;
+        
+        // 3. Criar preferência Mercado Pago
+        const preferenceData = {
+          order_id: orderResult.order_id,
+          payer_name: this.checkoutForm.name.trim(),
+          payer_email: this.checkoutForm.email.trim(),
+          payment_type: paymentMethod
+        };
+        
+        console.log('💳 [SDRChat→Checkout] Criando preferência MP:', preferenceData);
+        
+        const prefResponse = await fetch('/api/create_preference.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(preferenceData)
+        });
+        
+        const prefResult = await prefResponse.json();
+        console.log('💳 [SDRChat→Checkout] Resultado da preferência:', prefResult);
+        
+        clearInterval(progressInterval);
+        this.checkoutProgress = 100;
+        
+        if (prefResult.success && prefResult.init_point) {
+          // 4. Emitir evento para o pai redirecionar (ou redirecionar direto)
+          console.log('🚀 [SDRChat→Checkout] Redirecionando para:', prefResult.init_point);
+          
+          this.$emit('checkout-redirect', {
+            init_point: prefResult.init_point,
+            order_id: orderResult.order_id,
+            payment_method: paymentMethod,
+            pricing: orderResult.pricing
+          });
+          
+          // Redirecionar direto para Mercado Pago
+          window.location.href = prefResult.init_point;
+        } else {
+          throw new Error(prefResult.message || 'Erro ao criar link de pagamento');
+        }
+        
+      } catch (error) {
+        console.error('❌ [SDRChat→Checkout] Erro:', error);
+        clearInterval(progressInterval);
+        this.isProcessingCheckout = false;
+        this.checkoutProgress = 0;
+        alert(`Erro ao processar pagamento: ${error.message}\n\nPor favor, tente novamente ou entre em contato.`);
+      }
     }
   }
 }
@@ -1248,7 +1596,7 @@ $text-muted: rgba(255, 255, 255, 0.5);
 }
 
 // ==================
-// EXTRACTION MODAL
+// EXTRACTION MODAL & CHECKOUT MODAL
 // ==================
 .extraction-modal-overlay {
   position: fixed;
@@ -1267,6 +1615,214 @@ $text-muted: rgba(255, 255, 255, 0.5);
   width: 100%;
   padding: 40px 30px;
   text-align: center;
+}
+
+// Checkout modal overrides
+.checkout-modal {
+  max-width: 480px;
+  
+  .checkout-modal-content {
+    .success-icon {
+      font-size: 52px;
+      margin-bottom: 20px;
+      animation: float 2s ease-in-out infinite;
+    }
+    
+    h3 {
+      font-size: 26px;
+      font-weight: 700;
+      color: $text-primary;
+      margin: 0 0 12px;
+      letter-spacing: -0.5px;
+    }
+    
+    p {
+      font-size: 15px;
+      color: $text-secondary;
+      margin: 0 0 24px;
+      line-height: 1.5;
+    }
+    
+    // Resumo do plano - card destacado
+    .extracted-summary {
+      background: linear-gradient(135deg, rgba($primary, 0.15), rgba($secondary, 0.1));
+      border: 1px solid rgba($primary, 0.3);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 28px;
+      text-align: left;
+      box-shadow: 0 4px 16px rgba($primary, 0.15);
+      
+      .summary-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 10px 0;
+        color: $text-primary;
+        font-size: 15px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        
+        i {
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: $primary-light;
+          font-size: 16px;
+          background: rgba($primary, 0.2);
+          border-radius: 8px;
+          flex-shrink: 0;
+        }
+        
+        span {
+          color: $text-primary;
+          font-weight: 600;
+          flex: 1;
+        }
+        
+        &:not(:last-child) {
+          border-bottom: 1px solid rgba($glass-border, 0.5);
+        }
+        
+        // Highlight para pagamento
+        &:last-child {
+          margin-top: 4px;
+          padding-top: 14px;
+          
+          i {
+            background: rgba($secondary, 0.25);
+            color: $secondary;
+          }
+          
+          span {
+            color: $secondary;
+            font-weight: 700;
+            font-size: 16px;
+          }
+        }
+      }
+    }
+  }
+  
+  .checkout-mini-form {
+    margin-top: 16px;
+    
+    .mini-form-group {
+      margin-bottom: 14px;
+      text-align: left;
+      
+      input {
+        width: 100%;
+        padding: 14px 18px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid $glass-border;
+        border-radius: 12px;
+        color: $text-primary;
+        font-size: 15px;
+        font-weight: 500;
+        font-family: inherit;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+        
+        &::placeholder {
+          color: rgba($text-muted, 0.8);
+          font-weight: 400;
+        }
+        
+        &:focus {
+          outline: none;
+          border-color: $primary;
+          background: rgba(255, 255, 255, 0.15);
+          box-shadow: 0 0 0 4px rgba($primary, 0.2);
+        }
+        
+        &.has-error {
+          border-color: #EF4444;
+          background: rgba(239, 68, 68, 0.1);
+        }
+      }
+      
+      .mini-error {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        color: #EF4444;
+        margin-top: 6px;
+        padding-left: 6px;
+      }
+    }
+    
+    .modal-actions {
+      margin-top: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      
+      button {
+        width: 100%;
+      }
+      
+      .btn-primary, button[type="submit"] {
+        padding: 16px 28px;
+        background: linear-gradient(135deg, $primary, $secondary);
+        border: none;
+        border-radius: 14px;
+        color: white;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        box-shadow: 0 4px 16px rgba($primary, 0.3);
+        
+        &:hover:not(:disabled) {
+          transform: translateY(-3px);
+          box-shadow: 0 8px 24px rgba($primary, 0.4);
+        }
+        
+        &:active:not(:disabled) {
+          transform: translateY(-1px);
+        }
+        
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        
+        i {
+          font-size: 18px;
+        }
+      }
+      
+      .btn-secondary, button[type="button"] {
+        padding: 14px 24px;
+        background: transparent;
+        border: 2px solid $glass-border;
+        border-radius: 14px;
+        color: $text-secondary;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        
+        &:hover {
+          background: $glass-bg;
+          border-color: rgba($primary, 0.4);
+          color: $text-primary;
+          transform: translateY(-1px);
+        }
+      }
+    }
+  }
 }
 
 .extraction-loading {
@@ -1373,12 +1929,47 @@ $text-muted: rgba(255, 255, 255, 0.5);
     gap: 12px;
     
     .btn-primary {
-      padding: 14px 24px;
+      padding: 16px 28px;
       background: linear-gradient(135deg, $primary, $secondary);
       border: none;
-      border-radius: 12px;
+      border-radius: 14px;
       color: white;
-      font-size: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 4px 16px rgba($primary, 0.3);
+      
+      &:hover:not(:disabled) {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba($primary, 0.4);
+      }
+      
+      &:active:not(:disabled) {
+        transform: translateY(-1px);
+      }
+      
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      
+      i {
+        font-size: 18px;
+      }
+    }
+    
+    .btn-secondary {
+      padding: 14px 24px;
+      background: transparent;
+      border: 2px solid $glass-border;
+      border-radius: 14px;
+      color: $text-secondary;
+      font-size: 15px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s ease;
@@ -1388,28 +1979,10 @@ $text-muted: rgba(255, 255, 255, 0.5);
       gap: 8px;
       
       &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba($primary, 0.3);
-      }
-    }
-    
-    .btn-secondary {
-      padding: 12px 20px;
-      background: transparent;
-      border: 1px solid $glass-border;
-      border-radius: 12px;
-      color: $text-secondary;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      
-      &:hover {
         background: $glass-bg;
+        border-color: rgba($primary, 0.4);
         color: $text-primary;
+        transform: translateY(-1px);
       }
     }
   }

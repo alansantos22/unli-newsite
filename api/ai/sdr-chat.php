@@ -95,8 +95,10 @@ try {
     // Processar resposta JSON do Gemini
     $parsedResponse = parseSDRResponse($rawResponse);
     
-    // Validar e corrigir o stage baseado no conteúdo da mensagem
-    $correctedStage = validateAndCorrectStage($parsedResponse);
+    // Validar e corrigir o stage E finished baseado no conteúdo da mensagem
+    $stageAndFinished = validateAndCorrectStageAndFinished($parsedResponse);
+    $correctedStage = $stageAndFinished['stage'];
+    $correctedFinished = $stageAndFinished['finished'];
     
     echo json_encode([
         'success' => true,
@@ -104,7 +106,7 @@ try {
         'stage' => $correctedStage,
         'clientData' => $parsedResponse['clientData'] ?? null,
         'suggestedPlan' => $parsedResponse['suggestedPlan'] ?? null,
-        'finished' => $parsedResponse['finished'] ?? false
+        'finished' => $correctedFinished
     ], JSON_UNESCAPED_UNICODE);
     
 } catch (Exception $e) {
@@ -138,11 +140,11 @@ function injectDynamicData(string $prompt): string {
     
     // Informações da promoção
     $promocaoInfo = <<<PROMO
-**Promoção "Iniciando 2026 Online":**
-- 30% de desconto JÁ APLICADO em todos os planos
+**Sobre os Preços:**
+- Todos os valores já incluem a Promoção "Iniciando 2026 Online"
 - Válida para novos clientes
-- Combinável com desconto PIX (15% adicional)
-- Total de até 45% OFF para pagamento à vista no PIX
+- À vista no PIX: preço sem acréscimos
+- Parcelado 12x: acréscimo de 15% (taxa do gateway)
 PROMO;
     
     // Substituir placeholders
@@ -161,25 +163,25 @@ function formatPricingTable(array $pricing): string {
         return "Preços competitivos de mercado. Consulte valores específicos.";
     }
     
-    $tabela = "## ATENÇÃO: TODOS OS VALORES SÃO ANUAIS (já com 30% de desconto aplicado)\n\n";
+    $tabela = "## TABELA DE PREÇOS (valores anuais com promoção já aplicada)\n\n";
     $tabela .= "## Produtos Base\n";
     
-    // Preço base do site completo (já com desconto)
+    // Preço base do site completo
     $siteBasePrice = 0;
     if (isset($pricing['products'])) {
         foreach ($pricing['products'] as $key => $product) {
             $preco = $product['base_price'] ?? 0;
-            $precoComDesconto = round($preco * 0.7); // 30% OFF - VALOR ANUAL
-            $precoMensal = round($precoComDesconto / 12, 2);
-            $tabela .= "- **{$product['name']}**: R$ {$precoComDesconto}/ano (R$ {$precoMensal}/mês)\n";
+            // Preços já estão com promoção aplicada - não calcular desconto
+            $precoMensal = round($preco / 12, 2);
+            $tabela .= "- **{$product['name']}**: R$ {$preco}/ano (R$ {$precoMensal}/mês no PIX)\n";
             
             if ($key === 'site_complete') {
-                $siteBasePrice = $precoComDesconto;
+                $siteBasePrice = $preco;
             }
         }
     }
     
-    $tabela .= "\n## Páginas Adicionais (valores ANUAIS com 30% OFF)\n";
+    $tabela .= "\n## Páginas Adicionais (valores anuais)\n";
     
     // Array para guardar preços das páginas (anuais)
     $pagesPrices = [];
@@ -187,17 +189,17 @@ function formatPricingTable(array $pricing): string {
     if (isset($pricing['page_addons'])) {
         foreach ($pricing['page_addons'] as $key => $addon) {
             $preco = $addon['price'] ?? 0;
-            $precoComDesconto = round($preco * 0.7); // 30% OFF - VALOR ANUAL
-            $pagesPrices[$key] = $precoComDesconto;
-            $precoMensal = round($precoComDesconto / 12, 2);
-            $tabela .= "- {$addon['name']} ({$key}): +R$ {$precoComDesconto}/ano (+R$ {$precoMensal}/mês)\n";
+            // Preços já estão com promoção aplicada
+            $pagesPrices[$key] = $preco;
+            $precoMensal = round($preco / 12, 2);
+            $tabela .= "- {$addon['name']} ({$key}): +R$ {$preco}/ano (+R$ {$precoMensal}/mês no PIX)\n";
         }
     }
     
-    $tabela .= "\n## Pacotes Recomendados (VALORES ANUAIS CALCULADOS)\n";
-    $tabela .= "**LÓGICA DE PAGAMENTO (igual ao pricing.php):**\n";
-    $tabela .= "- À vista PIX = Valor anual (sem alteração)\n";
-    $tabela .= "- Parcelado 12x = (Valor anual × 1.15) ÷ 12\n\n";
+    $tabela .= "\n## Pacotes Recomendados (valores anuais)\n";
+    $tabela .= "**LÓGICA DE PAGAMENTO:**\n";
+    $tabela .= "- À vista PIX = Valor anual (preço base, sem acréscimos)\n";
+    $tabela .= "- Parcelado 12x = (Valor anual × 1.15) ÷ 12 (acréscimo de 15% para cobrir taxa do cartão)\n\n";
     
     if (isset($pricing['predefined_packages'])) {
         foreach ($pricing['predefined_packages'] as $key => $package) {
@@ -362,32 +364,73 @@ function callGeminiSDR(string $apiKey, array $contents): string {
 }
 
 /**
- * Valida e corrige o stage baseado no conteúdo real da mensagem.
- * O Gemini frequentemente erra o stage — esta função é a camada de segurança.
+ * Valida e corrige o stage E o finished baseado no conteúdo real da mensagem.
+ * O Gemini frequentemente erra o stage e esquece de marcar finished=true.
+ * Esta função é a camada de segurança.
+ * 
+ * @return array ['stage' => string, 'finished' => bool]
  */
-function validateAndCorrectStage(array $parsedResponse): string {
+function validateAndCorrectStageAndFinished(array $parsedResponse): array {
     $stage = $parsedResponse['stage'] ?? 'EXPLORACAO';
     $message = $parsedResponse['message'] ?? '';
     $finished = $parsedResponse['finished'] ?? false;
     $suggestedPlan = $parsedResponse['suggestedPlan'] ?? null;
     $messageLower = mb_strtolower($message, 'UTF-8');
     
-    // ====== REGRA 1: FECHAMENTO ======
-    // Se finished=true, é FECHAMENTO independente do que o Gemini disse
+    // ====== REGRA 0: DETECTAR FECHAMENTO PELA MENSAGEM ======
+    // Frases que indicam claramente que é uma mensagem de fechamento/encerramento
+    $closingPatterns = [
+        'vou te direcionar',
+        'direcionar agora',
+        'finalizar o pedido',
+        'finalizar seu pedido',
+        'direcionar para finalizar',
+        'vamos finalizar',
+        'fechar o pedido',
+        'concluir o pedido',
+        'prosseguir para o pagamento',
+        'prosseguir com o pagamento',
+        'encaminhar para o pagamento',
+        'qualquer dúvida, é só chamar',
+        'qualquer duvida, e so chamar',
+    ];
+    
+    $isClosingMessage = false;
+    foreach ($closingPatterns as $pattern) {
+        if (mb_strpos($messageLower, $pattern) !== false) {
+            $isClosingMessage = true;
+            break;
+        }
+    }
+    
+    // Se é mensagem de fechamento E tem preço E tem suggestedPlan com paymentMethod
+    // → forçar finished=true e stage=FECHAMENTO
+    $hasPrice = preg_match('/R\$\s*[\d.,]+/', $message);
+    $hasPaymentMethod = !empty($suggestedPlan['paymentMethod']);
+    
+    if ($isClosingMessage && $hasPrice && $hasPaymentMethod) {
+        error_log('🔧 [validateStage] Forçando FECHAMENTO + finished=true (mensagem de fechamento detectada)');
+        return ['stage' => 'FECHAMENTO', 'finished' => true];
+    }
+    
+    // Se é mensagem de fechamento E já falou preço antes (stage=PRECO) → forçar
+    if ($isClosingMessage && ($stage === 'PRECO' || $stage === 'FECHAMENTO' || $hasPrice)) {
+        error_log('🔧 [validateStage] Forçando FECHAMENTO + finished=true (fechamento após preço)');
+        return ['stage' => 'FECHAMENTO', 'finished' => true];
+    }
+    
+    // ====== REGRA 1: FECHAMENTO (Gemini mandou finished=true) ======
     if ($finished) {
-        return 'FECHAMENTO';
+        return ['stage' => 'FECHAMENTO', 'finished' => true];
     }
     
     // ====== REGRA 2: PRECO ======
-    // Se menciona valores em R$, é PRECO
-    $hasPrice = preg_match('/R\$\s*[\d.,]+/', $message);
-    $hasPriceTerms = preg_match('/(à vista|parcel|pagamento|pix|12x|valor anual|por mês|por ano)/iu', $messageLower);
+    $hasPriceTerms = preg_match('/(à vista|parcel|pagamento|pix|12x|valor anual|por mês|por ano|mensais|mensal)/iu', $messageLower);
     if ($hasPrice && $hasPriceTerms) {
-        return 'PRECO';
+        return ['stage' => 'PRECO', 'finished' => false];
     }
     
     // ====== REGRA 3: PROPOSTA ======
-    // Se menciona um plano/pacote específico ou lista páginas/funcionalidades
     $planPatterns = [
         'ecossistema digital',
         'autoridade online',
@@ -407,7 +450,6 @@ function validateAndCorrectStage(array $parsedResponse): string {
         }
     }
     
-    // Detectar lista de páginas/funcionalidades sendo sugeridas
     $pagePatterns = [
         'página sobre',
         'página de serviço',
@@ -427,27 +469,30 @@ function validateAndCorrectStage(array $parsedResponse): string {
         }
     }
     
-    // Se tem plano sugerido OU lista 2+ páginas OU suggestedPlan existe = PROPOSTA
     $hasStructureProposal = ($hasPlan || $pageCount >= 2 || !empty($suggestedPlan));
-    
-    // Termos que reforçam ser uma proposta
     $proposalTerms = preg_match('/(ideal para voc[êe]|inclui|recomendo|estrutura|baseado no|pacote|configuração)/iu', $messageLower);
     
     if ($hasStructureProposal || ($hasPlan && $proposalTerms)) {
-        // Só corrige para PROPOSTA se não está em estágio mais avançado
         if ($stage === 'EXPLORACAO' || $stage === 'ABERTURA') {
-            return 'PROPOSTA';
+            return ['stage' => 'PROPOSTA', 'finished' => false];
         }
     }
     
     // ====== REGRA 4: Não regredir ======
-    // Se o Gemini mandou um stage válido e mais avançado, manter
     $validStages = ['ABERTURA', 'EXPLORACAO', 'PROPOSTA', 'PRECO', 'FECHAMENTO'];
     if (in_array($stage, $validStages)) {
-        return $stage;
+        return ['stage' => $stage, 'finished' => $finished];
     }
     
-    return 'EXPLORACAO';
+    return ['stage' => 'EXPLORACAO', 'finished' => false];
+}
+
+/**
+ * Wrapper de compatibilidade (caso algo ainda chame a função antiga)
+ */
+function validateAndCorrectStage(array $parsedResponse): string {
+    $result = validateAndCorrectStageAndFinished($parsedResponse);
+    return $result['stage'];
 }
 
 /**
