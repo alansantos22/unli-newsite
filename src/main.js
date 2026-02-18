@@ -1,11 +1,13 @@
 import * as Vue from 'vue';
 import * as VueRouter from 'vue-router';
+import VueGtag from 'vue-gtag-next';
 
 // Font Awesome Icons
 import '@fortawesome/fontawesome-free/css/all.css';
 
 import App from './App.vue'
 import routes from './router';
+import { config, pageView } from './plugins/analytics';
 
 //Stores
 import store from './core/store/store'
@@ -32,12 +34,16 @@ const router = VueRouter.createRouter({
     },
 });
 
+app.use(VueGtag, config);
 app.use(router);
 app.use(store);
 
-// Microsoft Clarity - SPA page view tracking
-// O script do Clarity é carregado no index.html; aqui rastreamos trocas de rota
+// SPA page view tracking — Google Analytics + Microsoft Clarity
 router.afterEach((to) => {
+    // Google Analytics
+    pageView(to.name || to.path, to.fullPath);
+
+    // Microsoft Clarity
     if (typeof window.clarity === 'function') {
         window.clarity('set', 'pageUrl', to.fullPath);
     }
