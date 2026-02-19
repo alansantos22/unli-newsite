@@ -127,13 +127,35 @@ function normalize_selection(array $input, array $cfg): array {
         }
     }
     
+    // Validar service addons (como atendimento com especialista)
+    $serviceAddonsIn = $input['service_addons'] ?? [];
+    $serviceAddons = [];
+    
+    // Se é array indexado ['specialist_onboarding'], converter para objeto
+    if (is_array($serviceAddonsIn) && array_keys($serviceAddonsIn) === range(0, count($serviceAddonsIn) - 1)) {
+        $serviceAddonsAsObject = [];
+        foreach ($serviceAddonsIn as $item) {
+            if (is_string($item)) {
+                $serviceAddonsAsObject[$item] = true;
+            }
+        }
+        $serviceAddonsIn = $serviceAddonsAsObject;
+    }
+    
+    // Validar cada service addon contra a configuração
+    $serviceAddonsConfig = $cfg['service_addons'] ?? [];
+    foreach ($serviceAddonsConfig as $key => $_) {
+        $serviceAddons[$key] = !empty($serviceAddonsIn[$key]);
+    }
+    
     return [
         'product' => $product,
         'pages' => $pages,
         'content' => $content,
         'custom_pages' => $customPages,
         'video_basic_quantity' => $videoBasicQty,
-        'video_pro_quantity' => $videoProQty
+        'video_pro_quantity' => $videoProQty,
+        'service_addons' => $serviceAddons
     ];
 }
 
@@ -283,6 +305,31 @@ function compute_price(array $selection, array $cfg): array {
         }
     }
     error_log('📝 [compute_price] Total Páginas Custom: ' . $customTotal);
+    
+    // Service Addons (Atendimento com Especialista, etc.)
+    $serviceAddonsConfig = $cfg['service_addons'] ?? [];
+    $serviceTotal = 0;
+    $breakdown['service_addons'] = [];
+    
+    if (!empty($selection['service_addons'])) {
+        foreach ($selection['service_addons'] as $key => $enabled) {
+            if (!$enabled || !isset($serviceAddonsConfig[$key])) continue;
+            
+            $servicePrice = floatval($serviceAddonsConfig[$key]['price']);
+            $subtotal += $servicePrice;
+            $serviceTotal += $servicePrice;
+            
+            error_log("🎯 [compute_price] Service Addon '$key': $servicePrice");
+            
+            $breakdown['service_addons'][] = [
+                'key' => $key,
+                'name' => $serviceAddonsConfig[$key]['name'],
+                'price' => $servicePrice
+            ];
+        }
+    }
+    error_log('🎯 [compute_price] Total Service Addons: ' . $serviceTotal);
+    
     error_log('💰 [compute_price] SUBTOTAL: ' . $subtotal);
     
     // Cálculos finais

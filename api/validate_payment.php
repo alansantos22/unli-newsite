@@ -215,17 +215,22 @@ try {
                     $baseUrl = defined('SITE_BASE_URL') ? SITE_BASE_URL : 'https://unli.com.br';
                     $magicLink = $baseUrl . '/setup?token=' . $orderData['onboarding_token'];
                     
+                    // Verificar se comprou addon de especialista
+                    $hasSpecialistOnboarding = $orderData['has_specialist_onboarding'] ?? false;
+                    
                     $emailSent = sendOnboardingEmail(
                         $orderData['customer_email'],
                         $orderData['customer_name'],
                         $magicLink,
                         $orderId,
-                        $orderData['plan_name'] ?? 'Site Vitrine'
+                        $orderData['plan_name'] ?? 'Site Vitrine',
+                        $hasSpecialistOnboarding
                     );
                     
                     debugLog('Envio do Magic Link', [
                         'email' => $orderData['customer_email'],
                         'magic_link' => $magicLink,
+                        'has_specialist' => $hasSpecialistOnboarding,
                         'sent' => $emailSent
                     ]);
                 } else {
@@ -562,6 +567,12 @@ function getOrderDataForTicket($orderId) {
         // Extrair nome do plano do order_details
         $planName = $orderDetails['product'] ?? $orderDetails['plan'] ?? 'Site Vitrine';
         
+        // Verificar se comprou addon de especialista
+        $hasSpecialistOnboarding = false;
+        if (isset($orderDetails['selection']['service_addons']['specialist_onboarding'])) {
+            $hasSpecialistOnboarding = (bool) $orderDetails['selection']['service_addons']['specialist_onboarding'];
+        }
+        
         // Montar dados para o ticket (mapeando colunas do banco para nomes esperados)
         return [
             'order_id' => $orderId,
@@ -574,6 +585,7 @@ function getOrderDataForTicket($orderId) {
             'onboarding_token' => $row['onboarding_token'] ?? null,
             'selection' => $orderDetails['selection'] ?? null,
             'briefing' => $orderDetails['briefing'] ?? null,
+            'has_specialist_onboarding' => $hasSpecialistOnboarding,
             'created_at' => $row['created_at']
         ];
         

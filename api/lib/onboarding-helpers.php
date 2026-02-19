@@ -30,9 +30,10 @@ function isValidTokenFormat($token) {
  * @param string $magicLink The unique onboarding URL
  * @param int $orderId Order ID
  * @param string $planName Plan name
+ * @param bool $hasSpecialistOnboarding Whether customer bought specialist onboarding addon
  * @return bool Success status
  */
-function sendOnboardingEmail($email, $name, $magicLink, $orderId, $planName = 'Site Vitrine') {
+function sendOnboardingEmail($email, $name, $magicLink, $orderId, $planName = 'Site Vitrine', $hasSpecialistOnboarding = false) {
     // Load email template (api/emails/)
     $templatePath = __DIR__ . '/../emails/onboarding-magic-link.html';
     
@@ -43,10 +44,36 @@ function sendOnboardingEmail($email, $name, $magicLink, $orderId, $planName = 'S
     
     $template = file_get_contents($templatePath);
     
+    // Gerar seção de especialista se aplicável
+    $specialistSection = '';
+    if ($hasSpecialistOnboarding) {
+        $whatsappNumber = '5511999999999'; // Substituir pelo número real
+        $whatsappLink = "https://wa.me/{$whatsappNumber}?text=" . urlencode("Olá! Comprei o site com Atendimento com Especialista. Meu pedido é #{$orderId}. Gostaria de começar o onboarding personalizado.");
+        
+        $specialistSection = '
+                            <div style="background: linear-gradient(135deg, #d4af37, #f4e4b0); border-radius: 12px; padding: 25px; margin: 25px 0; text-align: center; border: 2px solid #d4af37;">
+                                <div style="font-size: 40px; margin-bottom: 10px;">👨‍💼</div>
+                                <h3 style="margin: 0 0 10px 0; color: #1a1a2e; font-size: 20px;">Atendimento com Especialista Incluso!</h3>
+                                <p style="margin: 0 0 20px 0; color: #333; font-size: 15px;">
+                                    Você adquiriu o <strong>Atendimento com Especialista</strong>! Isso significa que você pode fazer todo o onboarding do seu site com um de nossos especialistas humanos.
+                                </p>
+                                <p style="margin: 0 0 15px 0; color: #333; font-size: 14px;">
+                                    <strong>📋 Seu código do pedido:</strong> #' . $orderId . '<br>
+                                    <strong>🔗 Link do seu formulário:</strong> <a href="' . $magicLink . '" style="color: #0066CC;">' . $magicLink . '</a>
+                                </p>
+                                <a href="' . $whatsappLink . '" style="display: inline-block; background: #25D366; color: white; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-size: 16px; font-weight: 700; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);">
+                                    💬 Falar com Especialista no WhatsApp
+                                </a>
+                                <p style="margin: 15px 0 0 0; color: #666; font-size: 13px;">
+                                    Informe seu código do pedido ao entrar em contato
+                                </p>
+                            </div>';
+    }
+    
     // Replace placeholders
     $emailBody = str_replace(
-        ['{{CUSTOMER_NAME}}', '{{ORDER_ID}}', '{{PLAN_NAME}}', '{{ONBOARDING_LINK}}'],
-        [$name, $orderId, $planName, $magicLink],
+        ['{{CUSTOMER_NAME}}', '{{ORDER_ID}}', '{{PLAN_NAME}}', '{{ONBOARDING_LINK}}', '{{SPECIALIST_SECTION}}'],
+        [$name, $orderId, $planName, $magicLink, $specialistSection],
         $template
     );
     

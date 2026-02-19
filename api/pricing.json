@@ -84,6 +84,15 @@
       "allowed_uploads": ["application/pdf"]
     }
   },
+  "service_addons": {
+    "specialist_onboarding": {
+      "name": "Atendimento com Especialista",
+      "price": 169,
+      "description": "Onboarding personalizado com atendente humano ao invés do assistente virtual. Ideal para quem prefere uma experiência mais pessoal.",
+      "isNew": true,
+      "isPremium": true
+    }
+  },
   "custom_pages": {
     "base_price": 134,
     "description": "Páginas personalizadas com conteúdo exclusivo",

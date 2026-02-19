@@ -401,7 +401,8 @@ export default {
         pages: [],           // ['about', 'services', ...]
         paymentMethod: null, // 'parcelado' ou 'pix_avista'
         packageLabel: '',
-        paymentLabel: ''
+        paymentLabel: '',
+        specialistOnboarding: false // se comprou addon de especialista
       }
     }
   },
@@ -848,7 +849,8 @@ export default {
         pages,
         paymentMethod,
         packageLabel,
-        paymentLabel
+        paymentLabel,
+        specialistOnboarding: suggestedPlan.specialistOnboarding || false
       };
       
       // Limpar form e erros
@@ -939,6 +941,9 @@ export default {
           custom_pages: [],
           video_basic_quantity: 0,
           video_pro_quantity: 0,
+          service_addons: {
+            specialist_onboarding: this.checkoutPlanData.specialistOnboarding || false
+          },
           briefing: {
             customer_name: this.checkoutForm.name.trim(),
             email: this.checkoutForm.email.trim(),

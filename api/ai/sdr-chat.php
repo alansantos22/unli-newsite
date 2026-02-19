@@ -163,7 +163,10 @@ function formatPricingTable(array $pricing): string {
         return "Preços competitivos de mercado. Consulte valores específicos.";
     }
     
-    $tabela = "## TABELA DE PREÇOS (valores anuais com promoção já aplicada)\n\n";
+    $tabela = "## TABELA DE PREÇOS OFICIAL (USE ESTES VALORES EXATOS — NÃO CALCULE NADA)\n\n";
+    $tabela .= "Todos os valores abaixo já incluem a promoção \"Iniciando 2026 Online\" (30% OFF).\n";
+    $tabela .= "**REGRA:** Leia e use os valores exatos desta tabela. NUNCA faça contas.\n\n";
+    
     $tabela .= "## Produtos Base\n";
     
     // Preço base do site completo
@@ -171,9 +174,11 @@ function formatPricingTable(array $pricing): string {
     if (isset($pricing['products'])) {
         foreach ($pricing['products'] as $key => $product) {
             $preco = $product['base_price'] ?? 0;
-            // Preços já estão com promoção aplicada - não calcular desconto
-            $precoMensal = round($preco / 12, 2);
-            $tabela .= "- **{$product['name']}**: R$ {$preco}/ano (R$ {$precoMensal}/mês no PIX)\n";
+            $precoMensalPix = round($preco / 12, 2);
+            $precoMensalCartao = round(($preco * 1.15) / 12, 2);
+            $tabela .= "- **{$product['name']}**:\n";
+            $tabela .= "  - À vista PIX: R$ {$preco} (pagamento único anual)\n";
+            $tabela .= "  - Mensal no cartão: R$ {$precoMensalCartao}/mês\n";
             
             if ($key === 'site_complete') {
                 $siteBasePrice = $preco;
@@ -181,7 +186,7 @@ function formatPricingTable(array $pricing): string {
         }
     }
     
-    $tabela .= "\n## Páginas Adicionais (valores anuais)\n";
+    $tabela .= "\n## Páginas Adicionais (valores pré-calculados)\n";
     
     // Array para guardar preços das páginas (anuais)
     $pagesPrices = [];
@@ -189,17 +194,17 @@ function formatPricingTable(array $pricing): string {
     if (isset($pricing['page_addons'])) {
         foreach ($pricing['page_addons'] as $key => $addon) {
             $preco = $addon['price'] ?? 0;
-            // Preços já estão com promoção aplicada
             $pagesPrices[$key] = $preco;
-            $precoMensal = round($preco / 12, 2);
-            $tabela .= "- {$addon['name']} ({$key}): +R$ {$preco}/ano (+R$ {$precoMensal}/mês no PIX)\n";
+            $precoMensalPix = round($preco / 12, 2);
+            $precoMensalCartao = round(($preco * 1.15) / 12, 2);
+            $tabela .= "- **{$addon['name']}** ({$key}):\n";
+            $tabela .= "  - Anual: +R$ {$preco}\n";
+            $tabela .= "  - Mensal PIX: +R$ {$precoMensalPix}/mês\n";
+            $tabela .= "  - Mensal cartão: +R$ {$precoMensalCartao}/mês\n";
         }
     }
     
-    $tabela .= "\n## Pacotes Recomendados (valores anuais)\n";
-    $tabela .= "**LÓGICA DE PAGAMENTO:**\n";
-    $tabela .= "- À vista PIX = Valor anual (preço base, sem acréscimos)\n";
-    $tabela .= "- Parcelado 12x = (Valor anual × 1.15) ÷ 12 (acréscimo de 15% para cobrir taxa do cartão)\n\n";
+    $tabela .= "\n## Pacotes Recomendados (VALORES FINAIS — USE EXATAMENTE ESTES)\n\n";
     
     if (isset($pricing['predefined_packages'])) {
         foreach ($pricing['predefined_packages'] as $key => $package) {
@@ -211,21 +216,50 @@ function formatPricingTable(array $pricing): string {
                 }
             }
             
-            $packageAvista = $packageTotalAnual; // À vista = valor normal
-            $packageParcelado = round(($packageTotalAnual * 1.15) / 12, 2); // Parcelado com 15% markup
+            $packageAvista = $packageTotalAnual;
+            $packageParcelado = round(($packageTotalAnual * 1.15) / 12, 2);
+            $packageTotalParcelado = round($packageParcelado * 12, 2);
+            $economiaAvista = round($packageTotalParcelado - $packageAvista, 2);
             
             $tabela .= "- **{$package['name']}** ({$package['icon']})\n";
             $tabela .= "  - À VISTA PIX: R$ {$packageAvista} (pagamento único)\n";
-            $tabela .= "  - PARCELADO 12x: R$ {$packageParcelado}/mês (total R$ " . round($packageParcelado * 12, 2) . ")\n";
+            $tabela .= "  - PARCELADO 12x CARTÃO: R$ {$packageParcelado}/mês (total R$ {$packageTotalParcelado})\n";
+            $tabela .= "  - Economia à vista: R$ {$economiaAvista}\n";
             $tabela .= "  - Páginas: " . implode(', ', $package['pages'] ?? []) . "\n";
             $tabela .= "  - Ideal para: {$package['ideal_for']}\n\n";
         }
     }
     
-    $tabela .= "## Instruções de Cálculo (SEGUIR ESTA LÓGICA):\n";
-    $tabela .= "1. À vista PIX = Valor anual (sem desconto adicional)\n";
-    $tabela .= "2. Parcelado 12x = (Valor anual × 1.15) ÷ 12\n";
-    $tabela .= "3. NUNCA mencione 'desconto de 15% no PIX' - à vista é o preço normal!\n";
+    // Add-ons de conteúdo com valores pré-calculados
+    if (isset($pricing['content_addons'])) {
+        $tabela .= "## Add-ons de Conteúdo (valores unitários)\n";
+        foreach ($pricing['content_addons'] as $key => $addon) {
+            $precoUnit = $addon['price_per_unit'] ?? $addon['price'] ?? 0;
+            $tabela .= "- **{$addon['name']}**: R$ {$precoUnit}";
+            if (isset($addon['supports_quantity']) && $addon['supports_quantity']) {
+                $tabela .= " por unidade (máx {$addon['max_quantity']})";
+            }
+            $tabela .= "\n";
+        }
+        $tabela .= "\n";
+    }
+    
+    // Add-ons de serviço
+    if (isset($pricing['service_addons'])) {
+        $tabela .= "## Add-ons de Serviço\n";
+        foreach ($pricing['service_addons'] as $key => $addon) {
+            $preco = $addon['price'] ?? 0;
+            $tabela .= "- **{$addon['name']}**: +R$ {$preco}\n";
+        }
+        $tabela .= "\n";
+    }
+    
+    $tabela .= "## REGRAS DE USO DESTA TABELA:\n";
+    $tabela .= "1. NUNCA faça cálculos matemáticos. Use APENAS os valores acima.\n";
+    $tabela .= "2. À vista PIX = valor anual listado (preço normal, sem acréscimo).\n";
+    $tabela .= "3. Parcelado cartão = valor mensal listado (já inclui taxa de 15% do gateway).\n";
+    $tabela .= "4. NUNCA mencione 'desconto de 15% no PIX' — à vista é o preço normal.\n";
+    $tabela .= "5. Se o cliente pedir combinação customizada de páginas, some os valores ANUAIS das páginas + produto base e use os valores MENSAIS NO CARTÃO correspondentes da tabela acima.\n";
     
     return $tabela;
 }
