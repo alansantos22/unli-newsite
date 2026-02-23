@@ -466,7 +466,7 @@ Ao submeter formulário de orçamento personalizado
 - [ ] Implementar upload de arquivos (vídeo/PDF)
 
 ### 3. Gateway de Pagamento
-- [ ] Escolher gateway (Stripe, Pagar.me, MercadoPago, etc.)
+- [ ] Escolher gateway (Stripe, Pagar.me, etc.)
 - [ ] Configurar checkout com 2 opções:
   - Parcelado (12x com acréscimo)
   - À vista (com desconto)

@@ -295,7 +295,7 @@ Lucro Líquido Estimado: R$ 70.000/mês (62% margem)
 - **Email:** SendGrid ou Mailgun
 
 ### Pagamentos
-- **Gateway:** Stripe ou Mercado Pago
+- **Gateway:** Stripe ou Pagar.me
 - **Checkout:** Hosted ou custom
 
 ### Marketing

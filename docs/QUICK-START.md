@@ -192,10 +192,10 @@ Arquivo: `api/webhook-payment.php`
 
 ### 5.2 Configurar URL no Gateway
 
-**Mercado Pago:**
-- Painel → Integrações → Webhooks
+**Pagar.me:**
+- Painel → Configurações → Webhooks
 - URL: `https://seu-dominio.com/api/webhook-payment.php`
-- Eventos: `payment`
+- Eventos: `order.paid`
 
 **Stripe:**
 - Dashboard → Developers → Webhooks

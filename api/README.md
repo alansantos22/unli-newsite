@@ -21,7 +21,7 @@
   ├── config.php              # GET - Catálogo de produtos
   ├── price.php               # POST - Calcular preço
   ├── order_create.php        # POST - Criar pedido
-  ├── create_preference.php   # POST - Criar pagamento Mercado Pago
+  ├── create_preference.php   # POST - Criar pagamento Pagar.me
   ├── validate_payment.php    # POST - Validar pagamento após sucesso
   ├── pricing.json            # Configuração oficial (source of truth)
   ├── lib/
@@ -170,13 +170,13 @@ fetch('/api/price.php', {
 
 ---
 
-## 🔧 Integração com Mercado Pago
+## 🔧 Integração com Pagar.me
 
-O pagamento é feito via **Checkout Pro** (redirect):
+O pagamento é feito via **Checkout Pagar.me**:
 
 1. Frontend chama `POST /api/create_preference.php` com order_id
-2. PHP cria preferência no Mercado Pago com valor do servidor
-3. Cliente é redirecionado para Mercado Pago
+2. PHP cria preferência no Pagar.me com valor do servidor
+3. Cliente é redirecionado para Pagar.me
 4. Após pagamento, cliente volta para `/pagamento-sucesso`
 5. Frontend chama `POST /api/validate_payment.php` para validar
 6. PHP atualiza status do pedido no banco

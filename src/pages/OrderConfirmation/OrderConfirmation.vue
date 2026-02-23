@@ -7,7 +7,7 @@
           <div class="spinner"></div>
         </div>
         <h2>Processando seu pedido...</h2>
-        <p class="loading-message">Estamos confirmando seu pagamento com o Mercado Pago</p>
+        <p class="loading-message">Estamos confirmando seu pagamento</p>
         <div class="loading-info">
           <div class="info-item">
             <span class="icon">⏱️</span>
@@ -118,7 +118,7 @@
           <div class="clock-icon">⏳</div>
         </div>
         <h1>Pagamento em Análise</h1>
-        <p class="subtitle">Aguardando confirmação do Mercado Pago</p>
+        <p class="subtitle">Aguardando confirmação do pagamento</p>
 
         <div class="info-card">
           <div class="detail-row">
@@ -133,7 +133,7 @@
 
         <div class="pending-info-box">
           <h3>⏱️ O que está acontecendo?</h3>
-          <p>Seu pagamento está sendo processado pelo Mercado Pago. Isso pode acontecer por alguns motivos:</p>
+          <p>Seu pagamento está sendo processado. Isso pode acontecer por alguns motivos:</p>
           <ul>
             <li>Pagamento via boleto ou Pix aguardando compensação</li>
             <li>Análise de segurança em andamento</li>
@@ -172,7 +172,7 @@
             <li><strong>Saldo insuficiente</strong> na conta</li>
             <li><strong>Dados incorretos</strong> do cartão</li>
             <li><strong>Limite de crédito</strong> excedido</li>
-            <li><strong>Problema temporário</strong> no Mercado Pago</li>
+            <li><strong>Problema temporário</strong> no processamento</li>
           </ul>
         </div>
 

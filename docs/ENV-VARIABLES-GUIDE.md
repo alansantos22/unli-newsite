@@ -36,7 +36,7 @@ Abra o arquivo `.env` e configure:
 
 ```env
 # TESTE (Desenvolvimento)
-VUE_APP_MERCADOPAGO_PUBLIC_KEY=TEST-fbfd5955-b86c-46e4-a7c1-f9adfb039d4a
+VUE_APP_PAGARME_PUBLIC_KEY=pk_test_...
 VUE_APP_DEBUG_MODE=true
 NODE_ENV=development
 ```
@@ -49,7 +49,7 @@ NODE_ENV=development
 
 | Variável | Descrição | Exemplo |
 |----------|-----------|---------|
-| `VUE_APP_MERCADOPAGO_PUBLIC_KEY` | Public Key do Mercado Pago | `TEST-abc123...` |
+| `VUE_APP_PAGARME_PUBLIC_KEY` | Public Key do Pagar.me | `pk_test_...` |
 | `VUE_APP_DEBUG_MODE` | Ativar logs detalhados | `true` / `false` |
 | `VUE_APP_API_BASE_URL` | URL base da API (opcional) | `/api` |
 | `NODE_ENV` | Ambiente de execução | `development` / `production` |
@@ -61,8 +61,8 @@ NODE_ENV=development
 As credenciais do backend ficam em: `api/config.secure.php`
 
 ```php
-define('MP_ACCESS_TOKEN', 'TEST-...');  // Nunca expor no frontend!
-define('MP_PUBLIC_KEY', 'TEST-...');    // OK expor (vai pro .env)
+define('PAGARME_API_KEY', 'sk_test_...');  // Nunca expor no frontend!
+define('PAGARME_PUBLIC_KEY', 'pk_test_...');    // OK expor (vai pro .env)
 ```
 
 ---
@@ -73,7 +73,7 @@ define('MP_PUBLIC_KEY', 'TEST-...');    // OK expor (vai pro .env)
 
 ```javascript
 // Acessar variável de ambiente
-const publicKey = process.env.VUE_APP_MERCADOPAGO_PUBLIC_KEY
+const publicKey = process.env.VUE_APP_PAGARME_PUBLIC_KEY
 const debug = process.env.VUE_APP_DEBUG_MODE === 'true'
 
 // Validação
@@ -90,7 +90,7 @@ define('SECURE_CONFIG_ACCESS', true);
 require_once 'config.secure.php';
 
 // Usar as constantes
-$token = MP_ACCESS_TOKEN;
+$token = PAGARME_API_KEY;
 ```
 
 ---
@@ -101,7 +101,7 @@ $token = MP_ACCESS_TOKEN;
 
 ```env
 # .env (local)
-VUE_APP_MERCADOPAGO_PUBLIC_KEY=TEST-fbfd5955-b86c-46e4-a7c1-f9adfb039d4a
+VUE_APP_PAGARME_PUBLIC_KEY=pk_test_...
 VUE_APP_DEBUG_MODE=true
 NODE_ENV=development
 ```
@@ -110,7 +110,7 @@ NODE_ENV=development
 
 ```env
 # .env (servidor)
-VUE_APP_MERCADOPAGO_PUBLIC_KEY=APP_USR-47d5fd7b-7d0d-4e1e-8408-84548c817127
+VUE_APP_PAGARME_PUBLIC_KEY=pk_live_...
 VUE_APP_DEBUG_MODE=false
 NODE_ENV=production
 ```
@@ -157,8 +157,8 @@ git status
 
 ```javascript
 // No console do navegador (F12)
-console.log('Public Key:', process.env.VUE_APP_MERCADOPAGO_PUBLIC_KEY)
-// Deve mostrar: TEST-fbfd5955-b86c-46e4-a7c1-f9adfb039d4a
+console.log('Public Key:', process.env.VUE_APP_PAGARME_PUBLIC_KEY)
+// Deve mostrar: pk_test_...
 ```
 
 ---
@@ -269,7 +269,7 @@ Antes de fazer commit/deploy:
 ## 🔗 Referências
 
 - **Vue.js Environment Variables:** https://cli.vuejs.org/guide/mode-and-env.html
-- **Mercado Pago Credentials:** https://www.mercadopago.com.br/developers/panel/credentials
+- **Pagar.me Credentials:** https://dash.pagar.me/
 - **Segurança Best Practices:** https://owasp.org/www-project-top-ten/
 
 ---

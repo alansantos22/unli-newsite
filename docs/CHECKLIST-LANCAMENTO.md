@@ -151,7 +151,7 @@
 
 ### 4. Gateway de Pagamento
 
-- [ ] **Stripe/Mercado Pago**
+- [ ] **Stripe/Pagar.me**
   - API Keys configuradas
   - Webhook endpoint
   - Teste de checkout

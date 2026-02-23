@@ -1,9 +1,9 @@
-# 🔒 Sistema de Configuração Segura - Mercado Pago
+# 🔒 Sistema de Configuração Segura - Pagar.me
 
 ## 📋 Arquivos Criados
 
 ### 1. **api/config.secure.php** (Arquivo Principal - NÃO COMMITADO)
-Contém suas credenciais reais do Mercado Pago. Este arquivo é **BLOQUEADO** pelo .gitignore.
+Contém suas credenciais reais do Pagar.me. Este arquivo é **BLOQUEADO** pelo .gitignore.
 
 ### 2. **api/config.example.php** (Template Público)
 Template que pode ser commitado no Git. Desenvolvedores copiam este arquivo para criar o `config.secure.php`.
@@ -27,18 +27,18 @@ chmod 600 config.secure.php
 ```
 > ⚠️ Permissão 600 = Apenas o dono do arquivo pode ler/escrever
 
-### **Passo 3: Obter Credenciais do Mercado Pago**
-1. Acesse: https://www.mercadopago.com.br/developers/panel/credentials
-2. Copie seu **Access Token** (APP-XXXX...)
-3. Copie sua **Public Key** (APP-XXXX...)
+### **Passo 3: Obter Credenciais do Pagar.me**
+1. Acesse: https://dash.pagar.me/
+2. Copie sua **API Key** (sk_...)
+3. Copie sua **Public Key** (pk_...)
 
 ### **Passo 4: Editar config.secure.php**
 Abra `api/config.secure.php` e substitua:
 
 ```php
 // 🔑 SUAS CREDENCIAIS REAIS
-define('MP_ACCESS_TOKEN', 'APP-1234...'); // Cole seu Access Token
-define('MP_PUBLIC_KEY', 'APP-5678...'); // Cole sua Public Key
+define('PAGARME_API_KEY', 'sk_live_...'); // Cole sua API Key
+define('PAGARME_PUBLIC_KEY', 'pk_live_...'); // Cole sua Public Key
 ```
 
 ### **Passo 5: Verificar Segurança**
@@ -106,7 +106,7 @@ if (isProduction() && !isSecureConnection()) {
                    ▼
 ┌──────────────────────────────────────────────┐
 │  config.secure.php (Protegido)              │
-│  - Credenciais do Mercado Pago              │
+│  - Credenciais do Pagar.me                  │
 │  - Configurações sensíveis                   │
 │  - Validações de segurança                   │
 └──────────────────────────────────────────────┘
@@ -157,7 +157,7 @@ Se credenciais não configuradas, retorna:
 ### **Desenvolvimento (DEBUG_MODE = true)**
 ```php
 define('DEBUG_MODE', true);
-define('MP_ACCESS_TOKEN', 'TEST-...');  // Credenciais de teste
+define('PAGARME_API_KEY', 'sk_test_...');  // Credenciais de teste
 ```
 - Logs detalhados no console
 - Permite HTTP (não força HTTPS)
@@ -166,7 +166,7 @@ define('MP_ACCESS_TOKEN', 'TEST-...');  // Credenciais de teste
 ### **Produção (DEBUG_MODE = false)**
 ```php
 define('DEBUG_MODE', false);
-define('MP_ACCESS_TOKEN', 'APP-...');  // Credenciais reais
+define('PAGARME_API_KEY', 'sk_live_...');  // Credenciais reais
 ```
 - Sem logs sensíveis
 - **Força HTTPS** obrigatoriamente
@@ -229,7 +229,7 @@ nano config.secure.php  # Edite as credenciais
 ```
 
 ### **Erro: "Credenciais não configuradas"**
-Você precisa substituir os placeholders (APP-XXXX...) pelos tokens reais do Mercado Pago.
+Você precisa substituir os placeholders pelos tokens reais do Pagar.me.
 
 ### **Erro: "Use HTTPS em produção"**
 Configure SSL no seu servidor ou desative temporariamente:
@@ -253,11 +253,11 @@ Após carregar `config.secure.php`, você tem acesso a:
 
 | Constante | Descrição | Exemplo |
 |-----------|-----------|---------|
-| `MP_ACCESS_TOKEN` | Token de autenticação (backend) | `APP-123...` |
-| `MP_PUBLIC_KEY` | Chave pública (frontend) | `APP-456...` |
+| `PAGARME_API_KEY` | Chave de API (backend) | `sk_live_...` |
+| `PAGARME_PUBLIC_KEY` | Chave pública (frontend) | `pk_live_...` |
 | `DEBUG_MODE` | Modo debug (true/false) | `true` |
-| `MP_API_URL` | URL da API | `https://api...` |
-| `MP_TIMEOUT` | Timeout de requisição (s) | `30` |
+| `PAGARME_API_URL` | URL da API | `https://api.pagar.me/core/v5` |
+| `PAGARME_TIMEOUT` | Timeout de requisição (s) | `30` |
 | `SSL_VERIFY_PEER` | Verificar SSL (true/false) | `true` |
 
 ---
@@ -265,8 +265,8 @@ Após carregar `config.secure.php`, você tem acesso a:
 ## 🎓 Boas Práticas
 
 ### ✅ **FAZER:**
-- Usar credenciais de teste (`TEST-...`) em desenvolvimento
-- Usar credenciais de produção (`APP-...`) apenas no servidor
+- Usar credenciais de teste (`sk_test_...`) em desenvolvimento
+- Usar credenciais de produção (`sk_live_...`) apenas no servidor
 - Fazer backup manual do `config.secure.php` em local seguro (não Git!)
 - Rotacionar credenciais periodicamente
 
@@ -280,8 +280,8 @@ Após carregar `config.secure.php`, você tem acesso a:
 
 ## 🔗 Links Úteis
 
-- **Credenciais Mercado Pago:** https://www.mercadopago.com.br/developers/panel/credentials
-- **Documentação API:** https://www.mercadopago.com.br/developers/pt/docs
+- **Credenciais Pagar.me:** https://dash.pagar.me/
+- **Documentação API:** https://docs.pagar.me/
 - **Gerar String Aleatória:** `openssl rand -base64 32`
 
 ---

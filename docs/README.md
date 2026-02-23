@@ -165,7 +165,7 @@ Animações ativadas quando elemento entra no viewport.
 
 ### TODO: Integrações Futuras
 - [ ] Integração com backend para envio de formulário
-- [ ] Gateway de pagamento (Stripe/Mercado Pago)
+- [ ] Gateway de pagamento (Stripe/Pagar.me)
 - [ ] Google Analytics / Facebook Pixel
 - [ ] Chat WhatsApp flutuante
 - [ ] Calculadora de preço (próxima fase)

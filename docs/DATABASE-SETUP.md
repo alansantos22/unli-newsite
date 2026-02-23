@@ -49,16 +49,16 @@ Quando o pagamento é processado:
 
 **Status atualizado:**
 - `payment_status`: `pending` (se processando) ou `paid` (se aprovado imediatamente)
-- `payment_id`: ID da transação no Mercado Pago
+- `payment_id`: ID da transação no Pagar.me
 
 ### 3️⃣ **Confirmação via Webhook** (Status: `paid`)
 
-Quando o Mercado Pago confirma o pagamento:
+Quando o Pagar.me confirma o pagamento:
 
-**Arquivo:** `api/webhook_mercadopago.php`
+**Arquivo:** `api/webhook_pagarme.php`
 
 ```
-✅ Recebe notificação do Mercado Pago
+✅ Recebe notificação do Pagar.me
 ✅ Atualiza payment_status para 'paid'
 ✅ Envia e-mail com magic link para onboarding
 ```
@@ -87,7 +87,7 @@ CREATE TABLE unli_orders (
   -- Status de Pagamento
   payment_status ENUM('pending', 'paid', 'failed', 'refunded'),
   payment_method VARCHAR(50),
-  payment_id VARCHAR(255),      -- ID do Mercado Pago
+  payment_id VARCHAR(255),      -- ID do Pagar.me
   
   -- Sistema de Onboarding
   onboarding_token VARCHAR(64) UNIQUE,
@@ -166,8 +166,8 @@ Se preferir, pode importar o SQL manualmente:
    - `get_order_by_id()` - Busca pedido
    - `update_onboarding_status()` - Atualiza onboarding
 
-3. **`api/webhook_mercadopago.php`**
-   - Recebe notificações do Mercado Pago
+3. **`api/webhook_pagarme.php`**
+   - Recebe notificações do Pagar.me
    - Atualiza status automaticamente
    - Log de todas as transações
 
@@ -263,7 +263,7 @@ Se houver problemas:
 
 ## 🎯 Próximos Passos
 
-1. ✅ Configurar URL do webhook no Mercado Pago
+1. ✅ Configurar URL do webhook no Pagar.me
 2. ⏳ Implementar envio de e-mail com PHPMailer
 3. ⏳ Criar painel administrativo para visualizar pedidos
 4. ⏳ Configurar backup automático do banco

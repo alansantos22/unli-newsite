@@ -107,7 +107,7 @@ api/
 1. **Fazer commit (apenas arquivos permitidos):**
    ```bash
    git add .
-   git commit -m "Deploy: Configuração de teste Mercado Pago"
+   git commit -m "Deploy: Configuração de teste Pagar.me"
    git push origin main
    ```
 
@@ -182,7 +182,7 @@ Deve carregar a página Vue.js normalmente.
 ### **Importante:**
 - ⚠️ Esses cartões **NÃO COBRAM DE VERDADE**
 - ⚠️ São apenas para testes
-- ⚠️ Não aparecem no painel do Mercado Pago (ambiente TESTE separado)
+- ⚠️ Não aparecem no painel do Pagar.me (ambiente TESTE separado)
 
 ---
 
@@ -212,9 +212,9 @@ Abra F12 e veja os logs coloridos:
 
 ## 📊 Verificar Transações de Teste
 
-Acesse o painel do Mercado Pago (ambiente de teste):
+Acesse o painel do Pagar.me (ambiente de teste):
 ```
-https://www.mercadopago.com.br/developers/panel/app/5978504079023879/test-accounts
+https://dash.pagar.me/
 ```
 
 Lá você verá todas as transações de teste realizadas.
@@ -250,14 +250,14 @@ Edite `api/config.secure.php` e `.env`:
 
 ```php
 // Backend
-define('MP_ACCESS_TOKEN', 'APP_USR-5978504079023879-012208-4b77eebae63f65d8a33a90b2730fab0d-487474845');
-define('MP_PUBLIC_KEY', 'APP_USR-47d5fd7b-7d0d-4e1e-8408-84548c817127');
+define('PAGARME_API_KEY', 'sk_live_...');
+define('PAGARME_PUBLIC_KEY', 'pk_live_...');
 define('DEBUG_MODE', false); // Desligar debug
 ```
 
 ```env
 # Frontend (.env)
-VUE_APP_MERCADOPAGO_PUBLIC_KEY=APP_USR-47d5fd7b-7d0d-4e1e-8408-84548c817127
+VUE_APP_PAGARME_PUBLIC_KEY=pk_live_...
 VUE_APP_DEBUG_MODE=false
 NODE_ENV=production
 ```

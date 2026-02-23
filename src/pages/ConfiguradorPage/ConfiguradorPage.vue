@@ -286,11 +286,12 @@ export default {
       // Ativar loading de processamento
       this.isProcessingPayment = true;
       
-      if (payload && payload.init_point) {
-        console.log('🚀 [ConfiguradorPage] Redirecionando para Mercado Pago via chat:', payload.init_point);
-        window.location.href = payload.init_point;
+      if (payload && (payload.payment_url || payload.init_point)) {
+        const checkoutUrl = payload.payment_url || payload.init_point;
+        console.log('🚀 [ConfiguradorPage] Redirecionando para Pagar.me via chat:', checkoutUrl);
+        window.location.href = checkoutUrl;
       } else {
-        console.error('❌ [ConfiguradorPage] Payload sem init_point:', payload);
+        console.error('❌ [ConfiguradorPage] Payload sem payment_url:', payload);
         this.isProcessingPayment = false;
         alert('❌ Erro ao redirecionar para o pagamento. Por favor, tente novamente.');
       }
@@ -328,10 +329,11 @@ export default {
       // Mostrar loading durante o processamento
       this.isProcessingPayment = true;
       
-      // Verificar se há init_point para redirecionamento
-      if (orderPayload && orderPayload.init_point) {
-        console.log('🚀 [ConfiguradorPage] Redirecionando para Checkout Pro:', orderPayload.init_point);
-        window.location.href = orderPayload.init_point;
+      // Verificar se há payment_url ou init_point para redirecionamento
+      if (orderPayload && (orderPayload.payment_url || orderPayload.init_point)) {
+        const checkoutUrl = orderPayload.payment_url || orderPayload.init_point;
+        console.log('🚀 [ConfiguradorPage] Redirecionando para Pagar.me:', checkoutUrl);
+        window.location.href = checkoutUrl;
       } else if (orderPayload && orderPayload.preference_error) {
         // Erro específico na criação da preferência
         console.error('❌ [ConfiguradorPage] Erro na preferência:', orderPayload.error_message);
@@ -339,7 +341,7 @@ export default {
         alert(`❌ Erro ao processar pagamento:\n\n${orderPayload.error_message}\n\nPedido criado: ${orderPayload.order_id}\nPor favor, tente novamente ou entre em contato.`);
       } else if (orderPayload && orderPayload.order_id) {
         // Pedido criado mas sem preferência (caso não esperado)
-        console.warn('⚠️ [ConfiguradorPage] Pedido criado mas sem init_point. ID:', orderPayload.order_id);
+        console.warn('⚠️ [ConfiguradorPage] Pedido criado mas sem payment_url. ID:', orderPayload.order_id);
         this.isProcessingPayment = false;
         alert(`⚠️ Pedido criado com sucesso mas falha no redirecionamento.\n\nID do Pedido: ${orderPayload.order_id}\n\nPor favor, entre em contato para continuar o pagamento.`);
       } else {

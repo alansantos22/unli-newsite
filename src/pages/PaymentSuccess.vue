@@ -177,25 +177,40 @@ export default {
       try {
         const urlParams = new URLSearchParams(window.location.search)
         
-        // Capturar parâmetros da URL
+        // Capturar parâmetros da URL (compatível Pagar.me + legado MP)
         const orderData = {
           order_id: urlParams.get('order_id') || this.extractOrderIdFromReference(urlParams.get('external_reference')),
-          collection_id: urlParams.get('collection_id'),
           payment_id: urlParams.get('payment_id') || urlParams.get('collection_id'),
+          pagarme_order_id: urlParams.get('pagarme_order_id'),
           status: urlParams.get('status') || urlParams.get('collection_status'),
-          payment_type: urlParams.get('payment_type'),
-          merchant_order_id: urlParams.get('merchant_order_id'),
-          preference_id: urlParams.get('preference_id')
+          payment_type: urlParams.get('payment_type')
         }
 
         console.log('📦 PaymentSuccess - Dados da URL:', orderData)
 
-        // Se temos um payment_id, VALIDAR no servidor
-        if (orderData.payment_id) {
+        // Determinar o ID para validação
+        let validationId = orderData.pagarme_order_id || orderData.payment_id
+        
+        // Se não temos um ID de pagamento direto, buscar do JSON salvo
+        if (!validationId && orderData.order_id) {
+          try {
+            const orderResponse = await fetch(`/api/orders/${orderData.order_id}.json`)
+            if (orderResponse.ok) {
+              const savedOrder = await orderResponse.json()
+              validationId = savedOrder.pagarme_order_id
+              console.log('💳 Pagar.me order ID encontrado no JSON:', validationId)
+            }
+          } catch (e) {
+            console.warn('⚠️ Não foi possível buscar JSON da ordem')
+          }
+        }
+
+        // Se temos um ID para validar, consultar servidor
+        if (validationId) {
           this.isValidating = true
           
           try {
-            const validationResult = await this.validatePaymentOnServer(orderData.payment_id)
+            const validationResult = await this.validatePaymentOnServer(validationId, orderData.order_id)
             
             console.log('✅ Resultado da validação:', validationResult)
             
@@ -246,8 +261,8 @@ export default {
       }
     },
     
-    async validatePaymentOnServer(paymentId) {
-      console.log('🔍 Validando pagamento no servidor:', paymentId)
+    async validatePaymentOnServer(paymentId, internalOrderId = null) {
+      console.log('🔍 Validando pagamento no servidor:', { paymentId, internalOrderId })
       
       const response = await fetch('/api/validate_payment.php', {
         method: 'POST',
@@ -255,7 +270,8 @@ export default {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          payment_id: paymentId
+          payment_id: paymentId,
+          internal_order_id: internalOrderId
         })
       })
       
@@ -297,7 +313,7 @@ export default {
         'pix': 'PIX',
         'bank_transfer': 'Transferência Bancária',
         'ticket': 'Boleto',
-        'account_money': 'Saldo Mercado Pago'
+        'account_money': 'Saldo Digital'
       }
       return typeMap[paymentType] || paymentType || 'Não informado'
     },
@@ -309,9 +325,23 @@ export default {
     
     async retryValidation() {
       const urlParams = new URLSearchParams(window.location.search)
-      const paymentId = urlParams.get('payment_id') || urlParams.get('collection_id')
+      const paymentId = urlParams.get('payment_id') || urlParams.get('pagarme_order_id') || urlParams.get('collection_id')
+      const orderId = urlParams.get('order_id')
       
-      if (!paymentId) {
+      let validationId = paymentId
+      
+      // Se não temos ID de pagamento, tentar buscar do JSON
+      if (!validationId && orderId) {
+        try {
+          const orderResponse = await fetch(`/api/orders/${orderId}.json`)
+          if (orderResponse.ok) {
+            const savedOrder = await orderResponse.json()
+            validationId = savedOrder.pagarme_order_id
+          }
+        } catch (e) { /* ignore */ }
+      }
+      
+      if (!validationId) {
         alert('Não foi possível encontrar o ID do pagamento para verificar.')
         return
       }
@@ -319,7 +349,7 @@ export default {
       this.isValidating = true
       
       try {
-        const result = await this.validatePaymentOnServer(paymentId)
+        const result = await this.validatePaymentOnServer(validationId, orderId)
         
         if (result.success && result.approved) {
           this.orderData.status = 'approved'

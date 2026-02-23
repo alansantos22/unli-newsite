@@ -14,8 +14,8 @@
  * 
  * 3. Edite config.secure.php e substitua os valores de exemplo
  * 
- * 4. Obtenha suas credenciais em:
- *    https://www.mercadopago.com.br/developers/panel/credentials
+ * 4. Obtenha suas credenciais do gateway de pagamento (Pagar.me)
+ *    https://dash.pagar.me/
  * 
  * 5. Verifique se config.secure.php está no .gitignore
  * 
@@ -30,24 +30,23 @@ if (!defined('SECURE_CONFIG_ACCESS')) {
 }
 
 // ============================================
-// CREDENCIAIS MERCADO PAGO
+// CREDENCIAIS GATEWAY DE PAGAMENTO (Pagar.me)
 // ============================================
 
-// 🔑 Access Token (Backend)
-// Obtenha em: Developers > Credenciais > Access Token
-define('MP_ACCESS_TOKEN', 'APP-XXXXXXXXXXXX-XXXXXX-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX-XXXXXXXX');
+// 🔑 API Key (Backend)
+// Obtenha em: Dashboard Pagar.me > Configurações > API Keys
+define('PAGARME_API_KEY', 'SUA_API_KEY_PAGARME_AQUI');
 
 // 🔓 Public Key (Frontend)
-// Obtenha em: Developers > Credenciais > Public Key
-define('MP_PUBLIC_KEY', 'APP-XXXXXXXXXXXX');
+define('PAGARME_PUBLIC_KEY', 'SUA_PUBLIC_KEY_PAGARME_AQUI');
 
 // ============================================
 // PARA TESTES (Ambiente de Desenvolvimento)
 // ============================================
 // Descomente estas linhas para usar credenciais de teste:
 
-// define('MP_ACCESS_TOKEN', 'TEST-XXXXXXXXXXXX-XXXXXX-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX-XXXXXXXX');
-// define('MP_PUBLIC_KEY', 'TEST-XXXXXXXXXXXX');
+// define('PAGARME_API_KEY', 'TEST-SUA_API_KEY_PAGARME_AQUI');
+// define('PAGARME_PUBLIC_KEY', 'TEST-SUA_PUBLIC_KEY_PAGARME_AQUI');
 
 // ============================================
 // CONFIGURAÇÕES GERAIS
@@ -57,14 +56,14 @@ define('MP_PUBLIC_KEY', 'APP-XXXXXXXXXXXX');
 define('DEBUG_MODE', true);
 
 // URL da API
-define('MP_API_URL', 'https://api.mercadopago.com/v1/payments');
+define('PAGARME_API_URL', 'https://api.pagar.me/core/v5');
 
 // Timeouts
-define('MP_TIMEOUT', 30);
-define('MP_CONNECT_TIMEOUT', 10);
+define('PAGARME_TIMEOUT', 30);
+define('PAGARME_CONNECT_TIMEOUT', 10);
 
 // Webhook Secret (gere com: openssl rand -base64 32)
-define('MP_WEBHOOK_SECRET', 'GERE_UMA_STRING_ALEATORIA_COMPLEXA_AQUI');
+define('PAGARME_WEBHOOK_SECRET', 'GERE_UMA_STRING_ALEATORIA_COMPLEXA_AQUI');
 
 // ============================================
 // SSL (Segurança)
@@ -100,13 +99,13 @@ define('SSL_VERIFY_HOST', 2);
 // ============================================
 
 function validateCredentials() {
-    $placeholders = ['APP-XXXXXXXXXXXX', 'TEST-XXXXXXXXXXXX'];
+    $placeholders = ['SUA_API_KEY_PAGARME_AQUI', 'SUA_PUBLIC_KEY_PAGARME_AQUI'];
     
     foreach ($placeholders as $placeholder) {
-        if (strpos(MP_ACCESS_TOKEN, $placeholder) !== false) {
+        if (strpos(PAGARME_API_KEY, $placeholder) !== false) {
             return false;
         }
-        if (strpos(MP_PUBLIC_KEY, $placeholder) !== false) {
+        if (strpos(PAGARME_PUBLIC_KEY, $placeholder) !== false) {
             return false;
         }
     }
@@ -115,7 +114,7 @@ function validateCredentials() {
 }
 
 function isProduction() {
-    return !DEBUG_MODE && strpos(MP_ACCESS_TOKEN, 'TEST-') === false;
+    return !DEBUG_MODE && strpos(PAGARME_API_KEY, 'TEST-') === false;
 }
 
 function isSecureConnection() {

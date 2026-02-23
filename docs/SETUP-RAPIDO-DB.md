@@ -86,7 +86,7 @@ Precisa adicionar uma nova coluna? Simples:
 ## 📞 Próximos Passos
 
 1. ✅ Testar criação de pedidos
-2. ✅ Configurar webhook do Mercado Pago
+2. ✅ Configurar webhook do Pagar.me
 3. ✅ Testar fluxo completo de pagamento
 
 **Documentação completa:** `docs/DATABASE-SETUP.md`

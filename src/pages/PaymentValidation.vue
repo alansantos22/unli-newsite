@@ -148,9 +148,9 @@ const completeProgress = () => {
   progress.value = 100
 }
 
-const validatePayment = async (paymentId) => {
+const validatePayment = async (paymentId, internalOrderId = null) => {
   try {
-    console.log('🔍 Validando pagamento:', paymentId)
+    console.log('🔍 Validando pagamento:', { paymentId, internalOrderId })
     
     const response = await fetch('/api/validate_payment.php', {
       method: 'POST',
@@ -158,7 +158,8 @@ const validatePayment = async (paymentId) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        payment_id: paymentId
+        payment_id: paymentId,
+        internal_order_id: internalOrderId
       })
     })
 
@@ -224,13 +225,16 @@ const validatePayment = async (paymentId) => {
 }
 
 const tryAgain = () => {
-  const paymentId = route.query.collection_id || route.query.payment_id
+  // Pagar.me: order_id está na URL como parâmetro que nós definimos
+  const orderId = route.query.order_id
+  // Fallback: legado Mercado Pago
+  const paymentId = route.query.collection_id || route.query.payment_id || orderId
   
   if (paymentId) {
     isValidating.value = true
     validationStatus.value = 'loading'
     startProgressAnimation()
-    setTimeout(() => validatePayment(paymentId), 1000)
+    setTimeout(() => validatePayment(paymentId, orderId), 1000)
   } else {
     router.push('/configurador')
   }
@@ -265,28 +269,57 @@ const formatStatus = (status) => {
 }
 
 onMounted(() => {
-  // Verificar se temos um payment ID na URL
-  const paymentId = route.query.collection_id || route.query.payment_id
+  // Pagar.me: O order_id interno vem na success_url que definimos
+  // Precisamos buscar o pagarme_order_id (or_XXXXX) para validar
+  const orderId = route.query.order_id // Nosso ID interno (ORD-XXXXX)
+  
+  // Fallback: legado Mercado Pago ou ID do Pagar.me direto
+  const paymentId = route.query.collection_id || route.query.payment_id || orderId
   
   console.log('💳 PaymentValidation iniciado:', {
     query: route.query,
+    orderId,
     paymentId
   })
   
-  if (!paymentId) {
-    // Acesso inválido - sem payment ID
+  if (!paymentId && !orderId) {
+    // Acesso inválido - sem identificador
     isValidating.value = false
     validationStatus.value = 'invalid'
     return
   }
   
-  // Iniciar animação de progresso
-  startProgressAnimation()
-  
-  // Aguardar um pouco para dar sensação de validação
-  setTimeout(() => {
-    validatePayment(paymentId)
-  }, 2000)
+  // Se temos o order_id interno, buscar o pagarme_order_id do JSON salvo
+  if (orderId && !route.query.payment_id) {
+    // Buscar pagarme_order_id via API
+    fetch(`/api/orders/${orderId}.json`)
+      .then(r => r.ok ? r.json() : null)
+      .then(order => {
+        const pagarmeId = order?.pagarme_order_id
+        if (pagarmeId) {
+          console.log('💳 Pagar.me order ID encontrado:', pagarmeId)
+          startProgressAnimation()
+          setTimeout(() => validatePayment(pagarmeId, orderId), 2000)
+        } else {
+          // Sem pagarme_order_id salvo - enviar order_id mesmo
+          // validate_payment.php vai tentar localizar
+          console.log('💳 Sem pagarme_order_id, tentando com order_id interno')
+          startProgressAnimation()
+          setTimeout(() => validatePayment(orderId, orderId), 2000)
+        }
+      })
+      .catch(() => {
+        // Fallback: tentar validar com o que temos
+        startProgressAnimation()
+        setTimeout(() => validatePayment(orderId, orderId), 2000)
+      })
+  } else {
+    // Tem um payment_id direto (legado ou Pagar.me)
+    startProgressAnimation()
+    setTimeout(() => {
+      validatePayment(paymentId, orderId)
+    }, 2000)
+  }
 })
 </script>
 

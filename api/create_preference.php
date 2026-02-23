@@ -1,9 +1,13 @@
 <?php
 /**
  * ============================================
- * MERCADO PAGO - CHECKOUT PRO MVP SEGURO
- * Criação de Preferências de Pagamento
+ * GATEWAY DE PAGAMENTO - CHECKOUT PAGAR.ME
+ * Criação de Pedidos com Checkout Redirect
  * ============================================
+ * 
+ * Integração com Pagar.me API V5
+ * Cria pedido no Pagar.me e retorna URL de checkout
+ * para redirecionamento do cliente.
  */
 
 // ============================================
@@ -94,7 +98,7 @@ debugLog('Dados recebidos para criação de preferência', $data);
 // ============================================
 
 // GARANTIR CONSISTÊNCIA: Usar exatamente os mesmos dados da ordem criada
-// Isso evita discrepâncias entre o que foi salvo e o que vai para o Mercado Pago
+// Isso evita discrepâncias entre o que foi salvo e o que vai para o gateway
 
 $orderId = $data['order_id'];
 
@@ -182,15 +186,10 @@ try {
     ]);
     
     $externalReference = "UNLI-" . $orderId . "-" . time();
-    
-    // Separar Nome e Sobrenome
-    $parts = explode(' ', trim($payerName), 2);
-    $firstName = $parts[0];
-    $lastName = isset($parts[1]) ? $parts[1] : 'Cliente'; 
 
-    // === CORREÇÃO DE URL (Back URLs) ===
+    // === URL DE RETORNO (Success URL para Pagar.me) ===
     $domain = "https://unli.com.br"; 
-    $rawUrl = defined('MP_SUCCESS_URL') ? MP_SUCCESS_URL : '/sucesso'; 
+    $rawUrl = defined('PAGARME_SUCCESS_URL') ? PAGARME_SUCCESS_URL : '/pagamento/validar'; 
     
     // Se a URL não começar com http, adicionamos o domínio
     if (strpos($rawUrl, 'http') !== 0) {
@@ -199,83 +198,118 @@ try {
         $returnUrl = $rawUrl;
     }
 
-    // Adiciona o order_id como parâmetro
+    // Adiciona o order_id como parâmetro (interno)
     $separator = (strpos($returnUrl, '?') === false) ? '?' : '&';
     $finalReturnUrl = $returnUrl . $separator . "order_id=" . $orderId;
 
     debugLog("URL de Retorno Gerada: " . $finalReturnUrl);
 
-    // Montar preferência de pagamento
-    $preference = [
+    // ============================================
+    // MONTAR PAYLOAD PAGAR.ME (API V5 - Orders + Checkout)
+    // ============================================
+    // Valores em CENTAVOS (Pagar.me exige inteiro em centavos)
+    $amountInCents = (int) round($precoFinal * 100);
+    
+    // Configurar parcelas para cartão de crédito
+    $installmentsConfig = [];
+    if ($isParcelado && $maxParcelas > 1) {
+        // Permitir parcelamento de 1 até $maxParcelas
+        for ($i = 1; $i <= $maxParcelas; $i++) {
+            $installmentsConfig[] = [
+                "number" => $i,
+                "total" => $amountInCents
+            ];
+        }
+    } else {
+        $installmentsConfig[] = [
+            "number" => 1,
+            "total" => $amountInCents
+        ];
+    }
+    
+    $pagarmeOrder = [
         "items" => [
             [
-                "title" => $descricao,
-                "description" => "Site profissional desenvolvido pela UNLI",
+                "amount" => $amountInCents,
+                "description" => $descricao,
                 "quantity" => 1,
-                "currency_id" => "BRL",
-                "unit_price" => round($precoFinal, 2)
+                "code" => $orderId
             ]
         ],
-        "payer" => [
-            "name" => $firstName,
-            "surname" => $lastName,
-            "email" => $payerEmail
+        "customer" => [
+            "name" => $payerName,
+            "email" => $payerEmail,
+            "type" => "individual"
         ],
-        "back_urls" => [
-            "success" => $finalReturnUrl,
-            "failure" => $finalReturnUrl,
-            "pending" => $finalReturnUrl
+        "checkout" => [
+            "expires_in" => 7200, // 2 horas
+            "billing_address_editable" => false,
+            "customer_editable" => true,
+            "accepted_payment_methods" => ["credit_card", "pix", "boleto"],
+            "credit_card" => [
+                "installments" => $installmentsConfig,
+                "statement_descriptor" => "UNLI SITES"
+            ],
+            "pix" => [
+                "expires_in" => 3600 // PIX: 1 hora
+            ],
+            "boleto" => [
+                "due_at" => date('Y-m-d\TH:i:s\Z', strtotime('+3 days')),
+                "instructions" => "Pagamento referente ao site UNLI. Pedido: " . $orderId
+            ],
+            "success_url" => $finalReturnUrl,
+            "skip_checkout_success_page" => true
         ],
-        "auto_return" => "approved",
-        "external_reference" => $externalReference,
-        "payment_methods" => [
-            "installments" => $maxParcelas,
-            "default_installments" => 1
-        ],
-        "statement_descriptor" => "UNLI SITES"
+        "metadata" => [
+            "order_id" => $orderId,
+            "external_reference" => $externalReference,
+            "payment_type" => $paymentType
+        ]
     ];
 
-    debugLog('Preferência montada', $preference);
+    debugLog('Payload Pagar.me montado', $pagarmeOrder);
 
     // ============================================
-    // ENVIAR PARA MERCADO PAGO
+    // ENVIAR PARA PAGAR.ME API V5
     // ============================================
-    $response = createMercadoPagoPreference($preference);
+    $response = createPagarmeOrder($pagarmeOrder);
     
     if ($response['success']) {
-        debugLog('Preferência criada com sucesso', [
-            'preference_id' => $response['data']['id']
+        $pagarmeOrderId = $response['data']['id'];
+        $paymentUrl = $response['data']['checkouts'][0]['payment_url'] ?? null;
+        
+        debugLog('Pedido Pagar.me criado com sucesso', [
+            'pagarme_order_id' => $pagarmeOrderId,
+            'payment_url' => $paymentUrl
         ]);
         
+        // Salvar referência do Pagar.me no pedido local
         savePendingOrder($orderId, $externalReference, $precoFinal, $descricao, $payerEmail);
         
-        // IMPORTANTE: Em modo DEBUG/TESTE, usar sandbox_init_point
-        // Em produção, usar init_point
-        $checkoutUrl = DEBUG_MODE 
-            ? ($response['data']['sandbox_init_point'] ?? $response['data']['init_point'])
-            : $response['data']['init_point'];
-        
-        debugLog('URL de checkout selecionada', [
-            'debug_mode' => DEBUG_MODE,
-            'using_sandbox' => DEBUG_MODE,
-            'url' => $checkoutUrl
+        // Atualizar ordem local com ID do Pagar.me
+        update_order_status($orderId, 'awaiting_payment', [
+            'pagarme_order_id' => $pagarmeOrderId,
+            'payment_url' => $paymentUrl
         ]);
+        
+        if (!$paymentUrl) {
+            throw new Exception('Pagar.me não retornou URL de pagamento');
+        }
         
         echo json_encode([
             'success' => true,
-            'message' => 'Preferência criada com sucesso',
-            'preference_id' => $response['data']['id'],
-            'init_point' => $checkoutUrl, // Retorna a URL correta baseado no modo
-            'sandbox_init_point' => $response['data']['sandbox_init_point'] ?? null,
-            'production_init_point' => $response['data']['init_point'],
-            'is_sandbox' => DEBUG_MODE,
+            'message' => 'Link de pagamento criado com sucesso',
+            'pagarme_order_id' => $pagarmeOrderId,
+            'payment_url' => $paymentUrl,
+            // COMPATIBILIDADE: manter init_point para frontend existente
+            'init_point' => $paymentUrl,
             'external_reference' => $externalReference,
             'amount' => $precoFinal,
             'payment_type' => $paymentType
         ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         
     } else {
-        throw new Exception($response['message'] ?? 'Erro ao criar preferência');
+        throw new Exception($response['message'] ?? 'Erro ao criar pedido no Pagar.me');
     }
 
 } catch (Exception $e) {
@@ -289,10 +323,10 @@ try {
 }
 
 // ============================================
-// FUNÇÃO: CRIAR PREFERÊNCIA NO MERCADO PAGO
+// FUNÇÃO: CRIAR PEDIDO NO PAGAR.ME (API V5)
 // ============================================
-function createMercadoPagoPreference($preference) {
-    $url = "https://api.mercadopago.com/checkout/preferences";
+function createPagarmeOrder($orderPayload) {
+    $url = PAGARME_API_URL . '/orders';
     
     $ch = curl_init($url);
     
@@ -300,18 +334,27 @@ function createMercadoPagoPreference($preference) {
         return ['success' => false, 'message' => 'Erro interno: cURL não disponível'];
     }
     
+    // Autenticação Basic: Secret Key como usuário, senha vazia
+    $authHeader = 'Basic ' . base64_encode(PAGARME_SECRET_KEY . ':');
+    
     $headers = [
-        'Authorization: Bearer ' . MP_ACCESS_TOKEN,
-        'Content-Type: application/json'
+        'Content-Type: application/json',
+        'Authorization: ' . $authHeader
     ];
+    
+    $timeout = defined('PAGARME_TIMEOUT') ? PAGARME_TIMEOUT : 30;
+    $connectTimeout = defined('PAGARME_CONNECT_TIMEOUT') ? PAGARME_CONNECT_TIMEOUT : 10;
     
     curl_setopt_array($ch, [
         CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => json_encode($preference),
+        CURLOPT_POSTFIELDS => json_encode($orderPayload),
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER => $headers,
-        CURLOPT_TIMEOUT => 30,
-        CURLOPT_SSL_VERIFYPEER => false 
+        CURLOPT_TIMEOUT => $timeout,
+        CURLOPT_CONNECTTIMEOUT => $connectTimeout,
+        CURLOPT_SSL_VERIFYPEER => defined('SSL_VERIFY_PEER') ? SSL_VERIFY_PEER : true,
+        CURLOPT_SSL_VERIFYHOST => defined('SSL_VERIFY_HOST') ? SSL_VERIFY_HOST : 2,
+        CURLOPT_USERAGENT => 'UNLI-Checkout/2.0-Pagarme'
     ]);
     
     $response = curl_exec($ch);
@@ -320,8 +363,14 @@ function createMercadoPagoPreference($preference) {
     
     curl_close($ch);
     
+    debugLog('Pagar.me API Response', [
+        'http_code' => $httpCode,
+        'curl_error' => $curlError,
+        'response_preview' => substr($response, 0, 1000)
+    ]);
+    
     if ($curlError) {
-        return ['success' => false, 'message' => "Erro de conexão: $curlError"];
+        return ['success' => false, 'message' => "Erro de conexão com Pagar.me: $curlError"];
     }
     
     $responseData = json_decode($response, true);
@@ -329,9 +378,21 @@ function createMercadoPagoPreference($preference) {
     if (($httpCode === 200 || $httpCode === 201) && isset($responseData['id'])) {
         return ['success' => true, 'data' => $responseData];
     } else {
-        $msg = $responseData['message'] ?? 'Erro desconhecido do Mercado Pago';
-        debugLog('Erro MP Detalhado', $responseData);
-        return ['success' => false, 'message' => "Erro MP ($httpCode): $msg"];
+        // Extrair mensagem de erro detalhada do Pagar.me
+        $errorMsg = 'Erro desconhecido do Pagar.me';
+        if (isset($responseData['message'])) {
+            $errorMsg = $responseData['message'];
+        } elseif (isset($responseData['errors'])) {
+            $errors = array_map(function($e) { return $e['message'] ?? $e['description'] ?? json_encode($e); }, $responseData['errors']);
+            $errorMsg = implode('; ', $errors);
+        }
+        
+        debugLog('Erro Pagar.me Detalhado', [
+            'http_code' => $httpCode,
+            'response' => $responseData
+        ]);
+        
+        return ['success' => false, 'message' => "Erro Pagar.me ($httpCode): $errorMsg"];
     }
 }
 

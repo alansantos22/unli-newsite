@@ -39,7 +39,7 @@ A cada venda confirmada (pagamento aprovado), o sistema **automaticamente cria u
 ```
 1. Cliente faz a compra
          ↓
-2. Pagamento é processado (Mercado Pago)
+2. Pagamento é processado (Pagar.me)
          ↓
 3. Pagamento APROVADO?
          ├─ SIM → 🎫 Cria ticket no Fila Chamados
@@ -171,7 +171,7 @@ Isso criará um ticket de teste real no Fila Chamados.
 
 Faça uma compra de teste no sistema e verifique:
 
-1. ✅ Pagamento aprovado no Mercado Pago
+1. ✅ Pagamento aprovado no Pagar.me
 2. ✅ Ticket criado no Fila Chamados
 3. ✅ Email de notificação recebido pela equipe
 

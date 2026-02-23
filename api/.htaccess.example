@@ -15,7 +15,7 @@
 </FilesMatch>
 
 # Permitir acesso apenas a endpoints públicos específicos
-<FilesMatch "^(order_create|payment_create|process_payment|webhook-payment|webhook_mercadopago|price)\.php$">
+<FilesMatch "^(order_create|payment_create|process_payment|webhook-payment|webhook_pagarme|price)\.php$">
     Order allow,deny
     Allow from all
 </FilesMatch>

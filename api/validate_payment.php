@@ -1,16 +1,19 @@
 <?php
 /**
  * ============================================
- * MERCADO PAGO - VALIDAÇÃO DE PAGAMENTO
+ * VALIDAÇÃO DE PAGAMENTO - PAGAR.ME
  * MVP Seguro - Double Check Server-Side
  * ============================================
  * 
- * Este script valida se um payment_id é realmente
- * válido consultando direto no servidor do MP.
+ * Este script valida se um pagamento é realmente
+ * válido consultando direto na API do Pagar.me V5.
  * 
  * Impede que usuários forjem URLs de sucesso.
  * 
- * @version 1.0.0 - MVP Seguro
+ * Aceita tanto order_id (or_XXXX do Pagar.me) quanto
+ * order_id interno (ORD-XXXXXXXX) via metadata.
+ * 
+ * @version 2.0.0 - Pagar.me V5
  */
 
 // ============================================
@@ -60,16 +63,23 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $input = file_get_contents('php://input');
 $data = json_decode($input, true);
 
-if (!$data || !isset($data['payment_id'])) {
+// Aceitar tanto payment_id (legado) quanto order_id (Pagar.me) ou pagarme_order_id
+$paymentId = null;
+$internalOrderId = null;
+
+if ($data) {
+    $paymentId = $data['payment_id'] ?? $data['pagarme_order_id'] ?? $data['order_id'] ?? null;
+    $internalOrderId = $data['internal_order_id'] ?? null;
+}
+
+if (!$paymentId) {
     http_response_code(400);
     echo json_encode([
         'success' => false,
-        'message' => 'Payment ID é obrigatório'
+        'message' => 'Payment ID ou Order ID é obrigatório'
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
-
-$paymentId = $data['payment_id'];
 
 // ============================================
 // FUNÇÃO: DEBUG LOG
@@ -88,13 +98,13 @@ function debugLog($message, $data = null) {
 }
 
 // ============================================
-// VALIDAR PAGAMENTO NO MERCADO PAGO
+// VALIDAR PAGAMENTO NO GATEWAY
 // ============================================
 try {
     debugLog('Validando pagamento', ['payment_id' => $paymentId]);
     
-    // Consultar pagamento na API do Mercado Pago
-    $paymentDetails = getPaymentDetails($paymentId);
+    // Consultar pagamento na API do Pagar.me V5
+    $paymentDetails = getPagarmeOrderDetails($paymentId);
     
     if (!$paymentDetails) {
         debugLog('Pagamento não encontrado ou erro na API', ['payment_id' => $paymentId]);
@@ -110,22 +120,50 @@ try {
     
     debugLog('Detalhes do pagamento obtidos', $paymentDetails);
     
-    // Extrair informações do pagamento
+    // Extrair informações do pagamento (formato Pagar.me V5)
     $status = $paymentDetails['status'] ?? 'unknown';
-    $statusDetail = $paymentDetails['status_detail'] ?? '';
-    $amount = $paymentDetails['transaction_amount'] ?? 0;
-    $externalReference = $paymentDetails['external_reference'] ?? '';
-    $paymentMethod = $paymentDetails['payment_method_id'] ?? '';
-    $payerEmail = $paymentDetails['payer']['email'] ?? '';
+    $statusDetail = '';
+    $amount = 0;
+    $paymentMethod = '';
+    $payerEmail = '';
     
-    // Extrair order_id do external_reference (UNLI-{ORDER_ID}-{TIMESTAMP})
-    $orderId = extractOrderId($externalReference);
+    // Pagar.me retorna amount em centavos nos charges
+    if (isset($paymentDetails['charges']) && !empty($paymentDetails['charges'])) {
+        $lastCharge = end($paymentDetails['charges']);
+        $amount = ($lastCharge['amount'] ?? 0) / 100; // Converter centavos para reais
+        $statusDetail = $lastCharge['last_transaction']['status'] ?? '';
+        $paymentMethod = $lastCharge['payment_method'] ?? '';
+        $payerEmail = $paymentDetails['customer']['email'] ?? '';
+    } else {
+        // Fallback: usar amount dos items
+        if (isset($paymentDetails['items'])) {
+            foreach ($paymentDetails['items'] as $item) {
+                $amount += ($item['amount'] ?? 0) * ($item['quantity'] ?? 1);
+            }
+            $amount = $amount / 100;
+        }
+        $payerEmail = $paymentDetails['customer']['email'] ?? '';
+    }
     
-    // Regras de Ouro da Validação
-    $isApproved = ($status === 'approved');
+    // Extrair order_id interno do metadata ou external_reference
+    $orderId = null;
+    if (isset($paymentDetails['metadata']['order_id'])) {
+        $orderId = $paymentDetails['metadata']['order_id'];
+    } elseif (isset($paymentDetails['metadata']['external_reference'])) {
+        $orderId = extractOrderId($paymentDetails['metadata']['external_reference']);
+    } elseif ($internalOrderId) {
+        $orderId = $internalOrderId;
+    }
+    
+    // ID do Pagar.me (or_XXXXXXXX)
+    $pagarmeOrderId = $paymentDetails['id'] ?? $paymentId;
+    
+    // Regras de Ouro da Validação (Pagar.me status)
+    $isApproved = ($status === 'paid');
     
     debugLog('Resultado da validação', [
         'payment_id' => $paymentId,
+        'pagarme_order_id' => $pagarmeOrderId,
         'order_id' => $orderId,
         'status' => $status,
         'amount' => $amount,
@@ -136,12 +174,13 @@ try {
     // 🔥 CRÍTICO: ATUALIZAR STATUS NO BANCO
     // ============================================
     
-    // Mapear status do MP para status interno
+    // Mapear status do Pagar.me para status interno
     $statusMap = [
-        'approved' => 'paid',
+        'paid' => 'paid',
         'pending' => 'pending',
-        'in_process' => 'pending',
-        'rejected' => 'failed',
+        'processing' => 'pending',
+        'failed' => 'failed',
+        'canceled' => 'failed',
         'cancelled' => 'failed',
         'refunded' => 'refunded',
         'charged_back' => 'refunded'
@@ -172,7 +211,7 @@ try {
         $updateResult = updatePaymentStatusFromValidation(
             $orderId,
             $internalStatus,
-            $paymentId,
+            $pagarmeOrderId,
             $paymentMethod,
             $amount
         );
@@ -194,7 +233,7 @@ try {
             
             if ($orderData) {
                 // Adicionar dados do pagamento ao orderData
-                $orderData['payment_id'] = $paymentId;
+                $orderData['payment_id'] = $pagarmeOrderId;
                 $orderData['amount'] = $amount;
                 $orderData['payment_method'] = $paymentMethod;
                 $orderData['payer_email'] = $payerEmail;
@@ -260,7 +299,8 @@ try {
                 ? 'Pagamento já confirmado anteriormente' 
                 : 'Pagamento confirmado com sucesso',
             'payment_data' => [
-                'payment_id' => $paymentId,
+                'payment_id' => $pagarmeOrderId,
+                'pagarme_order_id' => $pagarmeOrderId,
                 'order_id' => $orderId,
                 'amount' => $amount,
                 'payment_method' => $paymentMethod,
@@ -281,12 +321,13 @@ try {
         
         switch ($status) {
             case 'pending':
-            case 'in_process':
+            case 'processing':
                 $errorMessage = 'Pagamento ainda está sendo processado';
                 break;
-            case 'rejected':
+            case 'failed':
                 $errorMessage = 'Pagamento foi rejeitado: ' . $statusDetail;
                 break;
+            case 'canceled':
             case 'cancelled':
                 $errorMessage = 'Pagamento foi cancelado';
                 break;
@@ -300,7 +341,8 @@ try {
             'approved' => false,
             'message' => $errorMessage,
             'payment_data' => [
-                'payment_id' => $paymentId,
+                'payment_id' => $pagarmeOrderId,
+                'pagarme_order_id' => $pagarmeOrderId,
                 'order_id' => $orderId,
                 'status' => $status,
                 'status_detail' => $statusDetail
@@ -323,26 +365,28 @@ try {
 }
 
 // ============================================
-// FUNÇÃO: BUSCAR DETALHES DO PAGAMENTO
+// FUNÇÃO: BUSCAR DETALHES DO PEDIDO NO PAGAR.ME
 // ============================================
-function getPaymentDetails($paymentId) {
-    $url = "https://api.mercadopago.com/v1/payments/" . $paymentId;
+function getPagarmeOrderDetails($orderId) {
+    $url = PAGARME_API_URL . '/orders/' . $orderId;
     
-    debugLog('Consultando API do Mercado Pago', ['url' => $url]);
+    debugLog('Consultando API Pagar.me', ['url' => $url, 'order_id' => $orderId]);
+    
+    $authHeader = 'Basic ' . base64_encode(PAGARME_SECRET_KEY . ':');
     
     $ch = curl_init();
     curl_setopt_array($ch, [
         CURLOPT_URL => $url,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER => [
-            'Authorization: Bearer ' . MP_ACCESS_TOKEN,
+            'Authorization: ' . $authHeader,
             'Content-Type: application/json'
         ],
-        CURLOPT_TIMEOUT => 30,
-        CURLOPT_CONNECTTIMEOUT => 10,
-        CURLOPT_SSL_VERIFYPEER => SSL_VERIFY_PEER,
-        CURLOPT_SSL_VERIFYHOST => SSL_VERIFY_HOST,
-        CURLOPT_USERAGENT => 'UNLI-Validation/1.0'
+        CURLOPT_TIMEOUT => defined('PAGARME_TIMEOUT') ? PAGARME_TIMEOUT : 30,
+        CURLOPT_CONNECTTIMEOUT => defined('PAGARME_CONNECT_TIMEOUT') ? PAGARME_CONNECT_TIMEOUT : 10,
+        CURLOPT_SSL_VERIFYPEER => defined('SSL_VERIFY_PEER') ? SSL_VERIFY_PEER : true,
+        CURLOPT_SSL_VERIFYHOST => defined('SSL_VERIFY_HOST') ? SSL_VERIFY_HOST : 2,
+        CURLOPT_USERAGENT => 'UNLI-Validation/2.0-Pagarme'
     ]);
     
     $response = curl_exec($ch);
@@ -352,18 +396,18 @@ function getPaymentDetails($paymentId) {
     curl_close($ch);
     
     if ($curlError) {
-        debugLog('Erro cURL na validação', [
+        debugLog('Erro cURL na validação Pagar.me', [
             'error' => $curlError,
-            'payment_id' => $paymentId
+            'order_id' => $orderId
         ]);
         return false;
     }
     
     if ($httpCode !== 200) {
-        debugLog('API retornou erro', [
+        debugLog('Pagar.me API retornou erro', [
             'http_code' => $httpCode,
-            'response' => $response,
-            'payment_id' => $paymentId
+            'response' => substr($response, 0, 500),
+            'order_id' => $orderId
         ]);
         return false;
     }
@@ -371,12 +415,17 @@ function getPaymentDetails($paymentId) {
     $responseData = json_decode($response, true);
     
     if (!$responseData || json_last_error() !== JSON_ERROR_NONE) {
-        debugLog('Resposta inválida da API', [
-            'response' => $response,
+        debugLog('Resposta inválida da API Pagar.me', [
+            'response' => substr($response, 0, 500),
             'json_error' => json_last_error_msg()
         ]);
         return false;
     }
+    
+    debugLog('Pagar.me order details obtidos', [
+        'order_id' => $responseData['id'] ?? 'unknown',
+        'status' => $responseData['status'] ?? 'unknown'
+    ]);
     
     return $responseData;
 }

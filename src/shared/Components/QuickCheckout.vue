@@ -146,7 +146,7 @@
 
             <p class="checkout-note">
               <i class="fas fa-info-circle"></i>
-              Você será redirecionado para o Mercado Pago para finalizar o pagamento.
+              Você será redirecionado para o gateway de pagamento seguro para finalizar.
             </p>
           </form>
         </div>
@@ -467,7 +467,7 @@ export default {
           throw new Error(orderResult.error || 'Erro ao criar pedido');
         }
         
-        // Criar preferência Mercado Pago
+        // Criar link de pagamento no Pagar.me
         const preferenceData = {
           order_id: orderResult.order_id,
           payer_name: this.formData.name,
@@ -475,7 +475,7 @@ export default {
           payment_type: this.paymentMethod === 'cash' ? 'avista' : 'prazo'
         };
         
-        console.log('💳 [QuickCheckout] Criando preferência:', preferenceData);
+        console.log('💳 [QuickCheckout] Criando link Pagar.me:', preferenceData);
         
         const prefResponse = await fetch('/api/create_preference.php', {
           method: 'POST',
@@ -484,12 +484,15 @@ export default {
         });
         
         const prefResult = await prefResponse.json();
-        console.log('💳 [QuickCheckout] Resultado da preferência:', prefResult);
+        console.log('💳 [QuickCheckout] Resultado Pagar.me:', prefResult);
         
-        if (prefResult.success && prefResult.init_point) {
-          // Redirecionar para Mercado Pago
-          console.log('🚀 [QuickCheckout] Redirecionando para:', prefResult.init_point);
-          window.location.href = prefResult.init_point;
+        // payment_url = Pagar.me | init_point = compatibilidade
+        const checkoutUrl = prefResult.payment_url || prefResult.init_point;
+        
+        if (prefResult.success && checkoutUrl) {
+          // Redirecionar para checkout do Pagar.me
+          console.log('🚀 [QuickCheckout] Redirecionando para:', checkoutUrl);
+          window.location.href = checkoutUrl;
         } else {
           throw new Error(prefResult.message || 'Erro ao criar link de pagamento');
         }

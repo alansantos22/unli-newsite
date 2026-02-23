@@ -52,7 +52,7 @@ export default {
       progressSteps: [
         { progress: 20, text: 'Validando dados...' },
         { progress: 40, text: 'Criando preferência de pagamento...' },
-        { progress: 60, text: 'Conectando com Mercado Pago...' },
+        { progress: 60, text: 'Conectando com gateway de pagamento...' },
         { progress: 80, text: 'Preparando redirecionamento...' },
         { progress: 100, text: 'Redirecionando...' }
       ],

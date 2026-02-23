@@ -49,8 +49,8 @@ O **SDR IA Consultivo** é um sistema de vendas inteligente que atua como um con
              └────────────────┬───────────────┘
                               ▼
                     ┌──────────────────────┐
-                    │  Mercado Pago        │
-                    │  Checkout Pro        │
+                    │  Pagar.me             │
+                    │  Checkout              │
                     └──────────────────────┘
 ```
 

@@ -98,7 +98,7 @@ CREATE TABLE `orders` (
 ### 1. Após Pagamento Confirmado
 
 ```php
-// Webhook do gateway de pagamento (Mercado Pago, Stripe, etc.)
+// Webhook do gateway de pagamento (Pagar.me, Stripe, etc.)
 $orderId = createOrder([
     'customer_name' => $customerName,
     'email' => $email,

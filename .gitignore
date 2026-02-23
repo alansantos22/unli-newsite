@@ -25,7 +25,7 @@ pnpm-debug.log*
 *.sw?
 
 # ============================================
-# ARQUIVOS SENSÍVEIS - MERCADO PAGO
+# ARQUIVOS SENSÍVEIS - CONFIGURAÇÕES DE PAGAMENTO
 # ============================================
 # ⚠️ NUNCA FAÇA COMMIT DESTES ARQUIVOS!
 api/config.secure.php

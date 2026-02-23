@@ -970,7 +970,7 @@ export default {
         
         this.checkoutProgress = 60;
         
-        // 3. Criar preferência Mercado Pago
+        // 3. Criar link de pagamento no Pagar.me
         const preferenceData = {
           order_id: orderResult.order_id,
           payer_name: this.checkoutForm.name.trim(),
@@ -978,7 +978,7 @@ export default {
           payment_type: paymentMethod
         };
         
-        console.log('💳 [SDRChat→Checkout] Criando preferência MP:', preferenceData);
+        console.log('💳 [SDRChat→Checkout] Criando link Pagar.me:', preferenceData);
         
         const prefResponse = await fetch('/api/create_preference.php', {
           method: 'POST',
@@ -987,24 +987,28 @@ export default {
         });
         
         const prefResult = await prefResponse.json();
-        console.log('💳 [SDRChat→Checkout] Resultado da preferência:', prefResult);
+        console.log('💳 [SDRChat→Checkout] Resultado Pagar.me:', prefResult);
         
         clearInterval(progressInterval);
         this.checkoutProgress = 100;
         
-        if (prefResult.success && prefResult.init_point) {
+        // payment_url = Pagar.me | init_point = compatibilidade
+        const checkoutUrl = prefResult.payment_url || prefResult.init_point;
+        
+        if (prefResult.success && checkoutUrl) {
           // 4. Emitir evento para o pai redirecionar (ou redirecionar direto)
-          console.log('🚀 [SDRChat→Checkout] Redirecionando para:', prefResult.init_point);
+          console.log('🚀 [SDRChat→Checkout] Redirecionando para:', checkoutUrl);
           
           this.$emit('checkout-redirect', {
-            init_point: prefResult.init_point,
+            payment_url: checkoutUrl,
+            init_point: checkoutUrl, // compatibilidade
             order_id: orderResult.order_id,
             payment_method: paymentMethod,
             pricing: orderResult.pricing
           });
           
-          // Redirecionar direto para Mercado Pago
-          window.location.href = prefResult.init_point;
+          // Redirecionar para checkout do Pagar.me
+          window.location.href = checkoutUrl;
         } else {
           throw new Error(prefResult.message || 'Erro ao criar link de pagamento');
         }

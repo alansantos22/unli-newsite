@@ -346,7 +346,7 @@ async handleContract(data) {
     });
     
     const { checkoutUrl } = await response.json();
-    window.location.href = checkoutUrl; // Stripe/Mercado Pago
+    window.location.href = checkoutUrl; // Stripe/Pagar.me
   } catch (error) {
     console.error('Erro no checkout:', error);
   }

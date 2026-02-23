@@ -2228,8 +2228,8 @@ export default {
           // Sucesso: pedido criado no servidor
           console.log('✅ Pedido criado:', result.order_id);
           
-          // Criar preferência no Mercado Pago Checkout Pro
-          console.log('💳 Criando preferência Checkout Pro para pedido:', result.order_id);
+          // Criar link de pagamento no Pagar.me
+          console.log('💳 Criando link Pagar.me para pedido:', result.order_id);
           
           try {
             // === CONSISTÊNCIA: Dados serão carregados da ordem salva no servidor ===
@@ -2258,14 +2258,16 @@ export default {
             
             console.log('📦 [submitOrder] Resultado da preferência:', preferenceResult);
             
-            if (preferenceResult.success && preferenceResult.init_point) {
-              console.log('✅ Preferência criada, emitindo evento para redirecionamento:', preferenceResult.init_point);
+            if (preferenceResult.success && (preferenceResult.payment_url || preferenceResult.init_point)) {
+              const checkoutUrl = preferenceResult.payment_url || preferenceResult.init_point;
+              console.log('✅ Link Pagar.me criado, emitindo evento para redirecionamento:', checkoutUrl);
               
-              // ✅ CORREÇÃO: Emitir evento COM o init_point para o ConfiguradorPage fazer o redirecionamento
+              // Emitir evento COM o payment_url para o ConfiguradorPage fazer o redirecionamento
               this.$emit('order-submitted', {
                 ...result,
-                init_point: preferenceResult.init_point,
-                preference_id: preferenceResult.preference_id,
+                payment_url: checkoutUrl,
+                init_point: checkoutUrl, // compatibilidade
+                pagarme_order_id: preferenceResult.pagarme_order_id,
                 local_pricing: {
                   subtotal: this.subtotal,
                   cash_price: this.cashPrice,
@@ -2273,8 +2275,8 @@ export default {
                 }
               });
             } else {
-              console.error('🔴 Erro ao criar preferência:', preferenceResult);
-              // Emitir evento sem init_point em caso de erro na preferência
+              console.error('🔴 Erro ao criar link Pagar.me:', preferenceResult);
+              // Emitir evento sem payment_url em caso de erro
               this.$emit('order-submitted', {
                 ...result,
                 preference_error: true,
