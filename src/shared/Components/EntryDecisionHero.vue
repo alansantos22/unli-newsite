@@ -38,106 +38,48 @@
         Como você prefere começar?
       </p>
 
-      <!-- Opções de Decisão -->
-      <div class="decision-cards">
+      <!-- Quick Replies -->
+      <div class="quick-replies">
         <!-- Opção 1: Consultoria com IA -->
-        <div 
-          class="decision-card primary"
-          @click="selectOption('chat')"
-          :class="{ 'selected': selectedOption === 'chat' }"
+        <button 
+          class="quick-reply-btn primary"
+          @click="startChat"
         >
-          <div class="card-glow"></div>
-          <div class="card-content">
-            <div class="card-icon">
-              <i class="fas fa-comments"></i>
-            </div>
-            <div class="card-badge">
-              <i class="fas fa-sparkles"></i>
-              Recomendado
-            </div>
-            <h3 class="card-title">Quero ajuda para escolher</h3>
-            <p class="card-description">
-              Converse com nosso consultor virtual e descubra 
-              o site ideal para o seu negócio
-            </p>
-            <ul class="card-benefits">
-              <li>
-                <i class="fas fa-check"></i>
-                Consultoria gratuita instantânea
-              </li>
-              <li>
-                <i class="fas fa-check"></i>
-                Dicas personalizadas para seu nicho
-              </li>
-              <li>
-                <i class="fas fa-check"></i>
-                Orçamento montado automaticamente
-              </li>
-            </ul>
-            <div class="card-time">
-              <i class="fas fa-clock"></i>
-              ~3 minutos
-            </div>
+          <div class="qr-icon-wrap">
+            <i class="fas fa-comments"></i>
           </div>
-        </div>
+          <div class="qr-text">
+            <span class="qr-label">
+              Quero ajuda para escolher
+              <span class="qr-badge"><i class="fas fa-sparkles"></i> Recomendado</span>
+            </span>
+            <span class="qr-sub">Consultoria gratuita • ~3 min</span>
+          </div>
+          <i class="fas fa-chevron-right qr-arrow"></i>
+        </button>
 
         <!-- Opção 2: Self-Service -->
-        <div 
-          class="decision-card secondary"
-          @click="selectOption('form')"
-          :class="{ 'selected': selectedOption === 'form' }"
+        <button 
+          class="quick-reply-btn secondary"
+          @click="showPackageSelector = true"
         >
-          <div class="card-content">
-            <div class="card-icon">
-              <i class="fas fa-bolt"></i>
-            </div>
-            <h3 class="card-title">Já sei o que quero</h3>
-            <p class="card-description">
-              Escolha um pacote pronto e vá direto para o pagamento.
-              Simples e rápido!
-            </p>
-            <ul class="card-benefits">
-              <li>
-                <i class="fas fa-check"></i>
-                Pacotes prontos para seu perfil
-              </li>
-              <li>
-                <i class="fas fa-check"></i>
-                Checkout em 2 minutos
-              </li>
-              <li>
-                <i class="fas fa-check"></i>
-                Ideal para quem já decidiu
-              </li>
-            </ul>
-            <div class="card-time">
-              <i class="fas fa-clock"></i>
-              ~2 minutos
-            </div>
+          <div class="qr-icon-wrap secondary">
+            <i class="fas fa-bolt"></i>
           </div>
-        </div>
+          <div class="qr-text">
+            <span class="qr-label">Já sei o que quero</span>
+            <span class="qr-sub">Escolha um pacote e pague • ~2 min</span>
+          </div>
+          <i class="fas fa-chevron-right qr-arrow"></i>
+        </button>
       </div>
 
-      <div class="container-continueEPromo">
-        <!-- Botão de Continuar -->
-        <transition name="fade-slide">
-            <button 
-            v-if="selectedOption"
-            class="btn-continue"
-            @click="continueToSelected"
-            >
-            <span>Continuar</span>
-            <i class="fas fa-arrow-right"></i>
-            </button>
-        </transition>
-
-        <!-- Promoção Badge -->
-        <div class="promo-banner">
-            <div class="promo-icon">🎉</div>
-            <div class="promo-text">
-            <strong>Promoção "Iniciando 2026 Online"</strong>
-            <span>30% OFF em todos os planos + 15% OFF se pagar no pix</span>
-            </div>
+      <!-- Promoção Badge -->
+      <div class="promo-banner">
+        <div class="promo-icon">🎉</div>
+        <div class="promo-text">
+          <strong>Promoção "Iniciando 2026 Online"</strong>
+          <span>30% OFF em todos os planos + 15% OFF se pagar no pix</span>
         </div>
       </div>
     </div>
@@ -278,25 +220,15 @@ export default {
 
   data() {
     return {
-      selectedOption: null,
       showPackageSelector: false,
       selectedPackage: 'authority' // Pré-selecionar o mais vendido
     }
   },
 
   methods: {
-    selectOption(option) {
-      this.selectedOption = option;
-    },
-    
-    continueToSelected() {
-      if (this.selectedOption === 'chat') {
-        this.$emit('select-chat');
-        if (this.onSelectChat) this.onSelectChat();
-      } else if (this.selectedOption === 'form') {
-        // Mostrar seletor de pacotes
-        this.showPackageSelector = true;
-      }
+    startChat() {
+      this.$emit('select-chat');
+      if (this.onSelectChat) this.onSelectChat();
     },
     
     getPackageName(key) {
@@ -536,221 +468,144 @@ $text-muted: rgba(255, 255, 255, 0.5);
 }
 
 // ==================
-// DECISION CARDS
+// QUICK REPLIES
 // ==================
-.decision-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 24px;
-  margin-bottom: 32px;
+.quick-replies {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto 32px;
 }
 
-.decision-card {
-  position: relative;
+.quick-reply-btn {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 20px 22px;
   background: $glass-bg;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 2px solid $glass-border;
-  border-radius: 24px;
-  padding: 32px 24px;
+  border-radius: 20px;
   cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   text-align: left;
-  
-  &:hover {
-    transform: translateY(-8px);
-    border-color: rgba($primary, 0.4);
-    
-    .card-glow {
-      opacity: 1;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 0% 50%, rgba($primary, 0.12) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  &:hover, &:focus-visible {
+    border-color: rgba($primary, 0.5);
+    background: rgba($primary, 0.08);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba($primary, 0.2);
+    outline: none;
+
+    &::before { opacity: 1; }
+
+    .qr-arrow {
+      transform: translateX(4px);
+      color: $primary-light;
     }
   }
-  
-  &.selected {
-    border-color: $primary;
-    background: rgba($primary, 0.1);
-    
-    .card-glow {
-      opacity: 1;
-    }
-    
-    .card-icon {
-      background: linear-gradient(135deg, $primary, $secondary);
-      transform: scale(1.1);
-      
-      i { color: white; }
-    }
+
+  &:active {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba($primary, 0.15);
   }
-  
+
   &.primary {
-    .card-badge {
-      display: flex;
-    }
+    border-color: rgba($primary, 0.35);
+    animation: pulse-border 2.5s ease-in-out infinite;
   }
-  
+
   &.secondary {
-    .card-icon {
+    .qr-icon-wrap {
       background: rgba($secondary, 0.2);
-      
       i { color: $secondary; }
     }
-    
-    &.selected .card-icon {
-      background: linear-gradient(135deg, $secondary, darken($secondary, 10%));
-      
-      i { color: white; }
+
+    &:hover {
+      border-color: rgba($secondary, 0.5);
+      background: rgba($secondary, 0.08);
+      box-shadow: 0 8px 24px rgba($secondary, 0.15);
     }
   }
 }
 
-.card-glow {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    circle at 50% 0%,
-    rgba($primary, 0.15) 0%,
-    transparent 70%
-  );
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  pointer-events: none;
-}
-
-.card-content {
-  position: relative;
-  z-index: 1;
-}
-
-.card-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
+.qr-icon-wrap {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
   background: rgba($primary, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
-  transition: all 0.3s ease;
-  
+
   i {
-    font-size: 24px;
+    font-size: 20px;
     color: $primary-light;
-    transition: color 0.3s ease;
   }
 }
 
-.card-badge {
-  display: none;
-  align-items: center;
-  gap: 6px;
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  padding: 6px 12px;
-  background: linear-gradient(135deg, $accent, darken($accent, 10%));
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  color: $darker;
-  
-  i {
-    font-size: 10px;
-  }
+.qr-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.card-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: $text-primary;
-  margin: 0 0 12px;
-}
-
-.card-description {
-  font-size: 14px;
-  color: $text-secondary;
-  line-height: 1.6;
-  margin: 0 0 20px;
-}
-
-.card-benefits {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 20px;
-  
-  li {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    color: $text-secondary;
-    padding: 8px 0;
-    
-    i {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: rgba($secondary, 0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 8px;
-      color: $secondary;
-    }
-  }
-}
-
-.card-time {
+.qr-label {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: $text-muted;
-  
-  i {
-    font-size: 11px;
-  }
-}
-
-// ==================
-// CONTINUE BUTTON
-// ==================
-.btn-continue {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 40px;
-  background: linear-gradient(135deg, $primary, $secondary);
-  border: none;
-  border-radius: 16px;
-  color: white;
+  gap: 8px;
+  flex-wrap: wrap;
   font-size: 16px;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-bottom: 40px;
-  
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 30px rgba($primary, 0.4);
-    
-    i {
-      transform: translateX(4px);
-    }
-  }
-  
-  i {
-    transition: transform 0.3s ease;
-  }
+  color: $text-primary;
 }
 
-.container-continueEPromo{
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-    margin-bottom: 40px;
+.qr-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  background: linear-gradient(135deg, $accent, darken($accent, 10%));
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  color: $darker;
+
+  i { font-size: 9px; }
+}
+
+.qr-sub {
+  font-size: 12px;
+  color: $text-muted;
+}
+
+.qr-arrow {
+  flex-shrink: 0;
+  font-size: 13px;
+  color: rgba(255,255,255,0.3);
+  transition: all 0.25s ease;
+}
+
+@keyframes pulse-border {
+  0%, 100% { box-shadow: 0 0 0 0 rgba($primary, 0); }
+  50% { box-shadow: 0 0 0 4px rgba($primary, 0.15); }
 }
 
 // ==================
@@ -764,6 +619,7 @@ $text-muted: rgba(255, 255, 255, 0.5);
   background: rgba($accent, 0.1);
   border: 1px solid rgba($accent, 0.3);
   border-radius: 16px;
+  margin-bottom: 40px;
   
   .promo-icon {
     font-size: 28px;
@@ -840,7 +696,7 @@ $text-muted: rgba(255, 255, 255, 0.5);
 // ==================
 @media (max-width: 700px) {
   .entry-decision-hero {
-    padding: 60px 16px 80px;
+    padding: 120px 16px 80px;
   }
   
   .hero-logo .logo-ring {
@@ -855,12 +711,16 @@ $text-muted: rgba(255, 255, 255, 0.5);
     }
   }
   
-  .decision-cards {
-    grid-template-columns: 1fr;
+  .quick-replies {
+    max-width: 100%;
   }
-  
-  .decision-card {
-    padding: 24px 20px;
+
+  .quick-reply-btn {
+    padding: 16px 18px;
+  }
+
+  .qr-label {
+    font-size: 15px;
   }
   
   .promo-banner {

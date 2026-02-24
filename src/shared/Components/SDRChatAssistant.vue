@@ -1,4 +1,5 @@
 <template>
+  <transition name="chat-slide-up">
   <div class="sdr-chat-assistant">
     <!-- Fundo Animado -->
     <div class="ambient-background"></div>
@@ -24,16 +25,27 @@
           </div>
         </div>
 
-        <!-- Botão Pular para Formulário -->
-        <button 
-          v-if="!finished"
-          class="btn-skip-to-form"
-          @click="skipToForm"
-          title="Ir direto para o formulário"
-        >
-          <i class="fas fa-forward"></i>
-          <span class="btn-text">Pular para formulário</span>
-        </button>
+        <!-- Actions: Pular + Fechar -->
+        <div class="header-actions">
+          <button 
+            v-if="!finished"
+            class="btn-skip-to-form"
+            @click="skipToForm"
+            title="Ir direto para o formulário"
+          >
+            <i class="fas fa-forward"></i>
+            <span class="btn-text">Pular para formulário</span>
+          </button>
+
+          <button
+            class="btn-close-chat"
+            @click="closeChat"
+            title="Fechar e voltar"
+            aria-label="Fechar chat"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
       </div>
 
       <!-- Stage Indicator -->
@@ -68,26 +80,23 @@
             key="welcome"
             class="welcome-card glass-panel"
           >
-            <div class="welcome-icon">
-              <i class="fas fa-sparkles"></i>
-            </div>
             <h3>Olá! Sou o Assistente Unli</h3>
             <p>Vou te ajudar a encontrar o site ideal para o seu negócio. 
                Me conta: você já sabe o que precisa ou quer uma consultoria?</p>
             <div class="quick-actions">
               <button 
-                class="quick-action-btn" 
+                class="quick-reply-bubble primary" 
                 @click="sendQuickMessage('Quero ajuda para escolher o melhor site para mim')"
               >
                 <i class="fas fa-compass"></i>
-                Quero ajuda para escolher
+                <span>Quero ajuda para escolher</span>
               </button>
               <button 
-                class="quick-action-btn secondary" 
+                class="quick-reply-bubble" 
                 @click="sendQuickMessage('Já sei o que preciso')"
               >
                 <i class="fas fa-check-circle"></i>
-                Já sei o que preciso
+                <span>Já sei o que preciso</span>
               </button>
             </div>
           </div>
@@ -318,6 +327,7 @@
       </div>
     </transition>
   </div>
+  </transition>
 </template>
 
 <script>
@@ -431,6 +441,9 @@ export default {
   },
 
   mounted() {
+    // Lock body scroll (fullscreen takeover)
+    document.body.style.overflow = 'hidden';
+
     // Auto-focus no input
     this.$nextTick(() => {
       if (this.$refs.messageInput) {
@@ -440,6 +453,10 @@ export default {
     
     // Carregar conversa salva (se existir)
     this.loadSavedConversation();
+  },
+
+  beforeUnmount() {
+    document.body.style.overflow = '';
   },
 
   methods: {
@@ -473,6 +490,11 @@ export default {
       this.userInput = content;
       this.sendMessage();
     },
+
+    closeChat() {
+      this.$emit('close');
+    },
+
     
     handleEnterKey(event) {
       if (!event.shiftKey) {
@@ -1044,15 +1066,32 @@ $text-muted: rgba(255, 255, 255, 0.5);
 // BASE
 // ==================
 .sdr-chat-assistant {
-  position: relative;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 70px);
-  max-height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
   background: linear-gradient(135deg, $darker 0%, $dark 100%);
   overflow: hidden;
   font-family: 'Inter', -apple-system, sans-serif;
-  margin-top: 70px;
+}
+
+// Chat slide-up transition
+.chat-slide-up-enter-active {
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+}
+.chat-slide-up-leave-active {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+}
+.chat-slide-up-enter-from {
+  transform: translateY(100%);
+  opacity: 0;
+}
+.chat-slide-up-leave-to {
+  transform: translateY(100%);
+  opacity: 0;
 }
 
 .ambient-background {
@@ -1172,6 +1211,13 @@ $text-muted: rgba(255, 255, 255, 0.5);
     }
   }
   
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
   .btn-skip-to-form {
     display: flex;
     align-items: center;
@@ -1195,6 +1241,32 @@ $text-muted: rgba(255, 255, 255, 0.5);
       @media (max-width: 600px) {
         display: none;
       }
+    }
+  }
+
+  .btn-close-chat {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 50%;
+    color: $text-secondary;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    flex-shrink: 0;
+
+    &:hover {
+      background: rgba(255,255,255,0.14);
+      color: $text-primary;
+      transform: scale(1.08);
+    }
+
+    &:active {
+      transform: scale(0.96);
     }
   }
 }
@@ -1323,17 +1395,6 @@ $text-muted: rgba(255, 255, 255, 0.5);
   max-width: 500px;
   margin: 40px auto;
   
-  .welcome-icon {
-    font-size: 48px;
-    margin-bottom: 16px;
-    
-    i {
-      background: linear-gradient(135deg, $primary, $secondary);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-  }
-  
   h3 {
     font-size: 24px;
     font-weight: 600;
@@ -1351,39 +1412,50 @@ $text-muted: rgba(255, 255, 255, 0.5);
   .quick-actions {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
   }
   
-  .quick-action-btn {
-    display: flex;
+  // Quick-Reply bubbles – parecem bolhas de mensagem interativas
+  .quick-reply-bubble {
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
     gap: 10px;
-    padding: 14px 20px;
-    background: linear-gradient(135deg, $primary, darken($primary, 10%));
-    border: none;
-    border-radius: 12px;
-    color: white;
+    align-self: flex-start;
+    padding: 12px 18px;
+    background: rgba($primary, 0.12);
+    border: 1.5px solid rgba($primary, 0.35);
+    border-radius: 20px 20px 20px 4px;
+    color: $primary-light;
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.3s ease;
-    
-    &:hover {
+    transition: all 0.25s ease;
+    animation: bubble-pulse 2.5s ease-in-out infinite;
+
+    &:nth-child(2) { animation-delay: 0.4s; }
+
+    &:hover, &:focus-visible {
+      background: rgba($primary, 0.25);
+      border-color: $primary-light;
       transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba($primary, 0.3);
+      box-shadow: 0 6px 20px rgba($primary, 0.25);
+      outline: none;
+      animation: none;
     }
-    
-    &.secondary {
-      background: transparent;
-      border: 1px solid $glass-border;
-      color: $text-secondary;
-      
-      &:hover {
-        background: $glass-bg;
-        color: $text-primary;
-      }
+
+    &:active {
+      transform: translateY(0);
     }
+
+    i {
+      font-size: 15px;
+      color: $primary-light;
+    }
+  }
+
+  @keyframes bubble-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba($primary, 0); }
+    50% { box-shadow: 0 0 0 5px rgba($primary, 0.12); }
   }
 }
 

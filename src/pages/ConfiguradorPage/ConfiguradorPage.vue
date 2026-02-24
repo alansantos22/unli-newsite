@@ -16,6 +16,7 @@
         @proceed-to-wizard="handleChatComplete"
         @skip-to-form="goToQuickCheckout"
         @checkout-redirect="handleChatCheckoutRedirect"
+        @close="goBackToDecision"
       />
     </template>
 

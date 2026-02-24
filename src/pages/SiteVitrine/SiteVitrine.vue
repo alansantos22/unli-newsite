@@ -407,6 +407,10 @@
             </div>
           </div>
         </div>
+        <p class="pricing-scroll-hint">
+          <i class="fas fa-arrows-alt-h"></i>
+          Deslize para ver todos os planos
+        </p>
       </div>
     </section>
 
@@ -2690,6 +2694,308 @@ export default {
   }
   60% {
     transform: translateY(-3px);
+  }
+}
+
+// Hint de carrossel – oculto no desktop
+.pricing-scroll-hint {
+  display: none;
+}
+
+// ==========================================
+// MOBILE RESPONSIVE OVERRIDES (<= 768px)
+// ==========================================
+@media (max-width: 768px) {
+
+  // ----- Espaço seguro para botão WhatsApp flutuante -----
+  .site-vitrine-page {
+    padding-bottom: 96px;
+  }
+
+  // ----- Reduzir padding vertical em todas as seções -----
+  .benefits-section,
+  .includes-section,
+  .process-section,
+  .pricing-section,
+  .policies-section,
+  .faq-section,
+  .cta-section,
+  .contact-section,
+  .custom-site-section,
+  .upgrades-section {
+    padding-top: 60px;
+    padding-bottom: 60px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  // ----- Padding lateral consistente em todas as seções -----
+  .section-container {
+    padding: 0 4px;
+  }
+
+  .section-header {
+    padding: 0;
+    margin-bottom: 40px;
+
+    .section-title {
+      font-size: 1.75rem;
+      line-height: 1.35;
+    }
+
+    .section-description {
+      font-size: 1rem;
+    }
+  }
+
+  // ----- Hero Section -----
+  .hero-section {
+    padding: 96px 16px 56px;
+
+    .hero-container {
+      gap: 32px;
+    }
+
+    .hero-title {
+      font-size: 2.1rem;
+    }
+
+    .hero-description {
+      font-size: 1rem;
+      line-height: 1.75;
+    }
+
+    // Mais espaço entre botões e lista de benefícios
+    .hero-actions {
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 48px;
+
+      .btn-primary,
+      .btn-secondary {
+        width: 100%;
+        justify-content: center;
+        padding: 15px 20px;
+        font-size: 1rem;
+      }
+    }
+
+    // Trust items em coluna no mobile
+    .hero-trust {
+      flex-direction: column;
+      gap: 14px;
+      padding-top: 28px;
+
+      .trust-item {
+        font-size: 0.88rem;
+      }
+    }
+
+    // Mockup: âncora visual para o notebook não "flutuar"
+    .hero-visual {
+      .mockup-container {
+        max-width: 100%;
+        padding: 24px;
+        background: rgba($p-color, 0.05);
+        border: 1px solid rgba($p-color, 0.15);
+        border-radius: 20px;
+      }
+    }
+  }
+
+  // ----- Pricing: Carrossel horizontal com scroll-snap -----
+  .pricing-section {
+
+    .section-header {
+      .section-title,
+      .section-description {
+        color: $white;
+      }
+    }
+
+    .pricing-cards {
+      // Transforma grid em carrossel
+      display: flex;
+      flex-direction: row;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      gap: 16px;
+      padding: 8px 4px 28px;
+      margin-top: 32px;
+      max-width: 100%;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+    }
+
+    .pricing-card {
+      flex: 0 0 82vw;
+      max-width: 300px;
+      scroll-snap-align: center;
+      padding: 28px 20px;
+
+      // "Mais Popular" aparece primeiro
+      &.featured {
+        transform: none;
+        order: -1;
+
+        &:hover {
+          transform: translateY(-8px);
+        }
+      }
+
+      // Evita que outros cards afastem o featured
+      &:hover {
+        transform: translateY(-4px);
+      }
+    }
+
+    // Dica de carrossel visível apenas no mobile
+    .pricing-scroll-hint {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 16px;
+      color: rgba($white, 0.5);
+      font-size: 0.82rem;
+      letter-spacing: 0.04em;
+
+      i {
+        font-size: 1rem;
+        opacity: 0.7;
+      }
+    }
+  }
+
+  // ----- Includes: remover sticky que causava sobreposição -----
+  .includes-section {
+    .includes-visual {
+      position: static !important;
+      top: auto !important;
+    }
+
+    // Garante height: auto nos containers de include
+    .include-item {
+      height: auto;
+      overflow: visible;
+
+      .include-content {
+        height: auto;
+        overflow: visible;
+      }
+    }
+  }
+
+  // ----- Policy Cards (Garantia/Prazo): centralizar ícone -----
+  .policies-section {
+    .policies-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .policy-card {
+      text-align: center;
+      padding: 28px 20px;
+
+      .policy-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 20px;
+
+        i {
+          font-size: 2rem;
+        }
+      }
+
+      // Nota de texto alinhada à esquerda dentro do card centralizado
+      .policy-note {
+        text-align: left;
+      }
+    }
+  }
+
+  // ----- CTA: botões full-width -----
+  .cta-section {
+    .cta-description {
+      font-size: 1rem;
+    }
+
+    .cta-features {
+      flex-direction: column;
+      gap: 14px;
+      align-items: flex-start;
+    }
+
+    .cta-actions {
+      flex-direction: column;
+
+      .btn-primary.large,
+      .btn-secondary.large {
+        padding: 16px 24px;
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+
+  // ----- FAQ: padding interno menor -----
+  .faq-section {
+    .faq-item {
+      padding: 24px 18px;
+      margin: 12px 0;
+    }
+  }
+
+  // ----- Benefits: padding interno -----
+  .benefits-section {
+    .benefit-card {
+      padding: 28px 20px;
+    }
+  }
+
+  // ----- Processo: espaçamento -----
+  .process-section {
+    .timeline-item {
+      gap: 16px;
+
+      .timeline-content {
+        padding: 20px 16px;
+
+        .timeline-title {
+          font-size: 1.15rem;
+        }
+      }
+    }
+  }
+
+  // ----- WhatsApp flutuante: margem segura em telas pequenas -----
+  .whatsapp-float {
+    bottom: 20px !important;
+    right: 16px !important;
+    padding: 12px 16px;
+    font-size: 14px;
+
+    i {
+      font-size: 20px;
+    }
+  }
+}
+
+// Extra-small phones (<= 420px)
+@media (max-width: 420px) {
+  .pricing-section .pricing-card {
+    flex: 0 0 88vw;
+  }
+
+  .hero-section .hero-title {
+    font-size: 1.85rem;
+  }
+
+  .hero-section .hero-price-highlight .price-box .price-value {
+    font-size: 2.4rem;
   }
 }
 
