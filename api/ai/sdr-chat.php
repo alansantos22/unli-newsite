@@ -100,12 +100,95 @@ try {
     $correctedStage = $stageAndFinished['stage'];
     $correctedFinished = $stageAndFinished['finished'];
     
+    // ============================================================
+    // FONTE DE VERDADE: Computar preço real pelo backend sempre que
+    // houver um suggestedPlan com páginas definidas.
+    // A IA NÃO é confiável para calcular preços — ela apenas envia
+    // a seleção (páginas + forma de pagamento).
+    // ============================================================
+    $realPricing = null;
+    $suggestedPlan = $parsedResponse['suggestedPlan'] ?? null;
+    
+    if (!empty($suggestedPlan['pages'])) {
+        try {
+            require_once __DIR__ . '/../lib/pricing.php';
+            $cfg = load_pricing_config(__DIR__ . '/../pricing.json');
+            
+            // Montar seleção a partir do suggestedPlan da IA
+            $pagesMap = [];
+            foreach ($suggestedPlan['pages'] as $pageKey) {
+                if (is_string($pageKey)) {
+                    $pagesMap[$pageKey] = true;
+                }
+            }
+            
+            $selectionForPricing = [
+                'product'               => $suggestedPlan['type'] ?? 'site_complete',
+                'pages'                 => $pagesMap,
+                'content'               => [],
+                'custom_pages'          => [],
+                'video_basic_quantity'  => 0,
+                'video_pro_quantity'    => 0,
+                'pdf'                   => false,
+                'specialist_onboarding' => !empty($suggestedPlan['specialistOnboarding']),
+                'payment_method'        => ($suggestedPlan['paymentMethod'] ?? '') === 'pix_avista'
+                                            ? 'avista' : 'parcelado'
+            ];
+            
+            $normalizedSel = normalize_selection($selectionForPricing, $cfg);
+            $realPricing   = compute_price($normalizedSel, $cfg);
+            
+            // Remover estimatedPrice da IA (está errado)
+            unset($parsedResponse['suggestedPlan']['estimatedPrice']);
+            
+            // Substituir preços mensais errados na mensagem pela parcela real
+            $isParcelado = !in_array($suggestedPlan['paymentMethod'] ?? '', ['pix_avista', 'avista']);
+            $msg = $parsedResponse['message'];
+            
+            if ($isParcelado && isset($realPricing['parcela_12'])) {
+                $realLabel = 'R$ ' . number_format($realPricing['parcela_12'], 2, ',', '.');
+                // Normalizar bold markdown em volta de valores monetários (IA às vezes usa **R$ X**)
+                $msg = preg_replace('/\*{1,2}(R\$\s*[\d.,]+)\*{1,2}/u', '$1', $msg);
+                // Substituir QUALQUER padrão de preço mensal (mensais, /mês, por mês, mensalmente, ao mês)
+                $msg = preg_replace(
+                    '/R\$\s*[\d.,]+\s*(mensais?|por\s*m[eê]s|\/m[eê]s|mensalmente|ao\s*m[eê]s)/ui',
+                    $realLabel . '/mês',
+                    $msg
+                );
+                // Substituir também padrões numéricos tipo "132,05/mês" sem "R$" explícito
+                $msg = preg_replace(
+                    '/\b[\d]+[,.][\d]+\s*(mensais?|\/m[eê]s|por\s*m[eê]s)/ui',
+                    $realLabel . '/mês',
+                    $msg
+                );
+            } elseif (!$isParcelado && isset($realPricing['avista'])) {
+                $realLabel = 'R$ ' . number_format($realPricing['avista'], 2, ',', '.');
+                // Normalizar bold markdown
+                $msg = preg_replace('/\*{1,2}(R\$\s*[\d.,]+)\*{1,2}/u', '$1', $msg);
+                // Para pagamento à vista, substituir apenas valores com 4+ caracteres numéricos (ex: 1.378)
+                $msg = preg_replace(
+                    '/R\$\s*[\d.,]{4,}/u',
+                    $realLabel,
+                    $msg
+                );
+            }
+            
+            $parsedResponse['message'] = $msg;
+            
+            error_log('💰 [sdr-chat] Preço real computado: parcela=' . ($realPricing['parcela_12'] ?? '-') . ' avista=' . ($realPricing['avista'] ?? '-'));
+            
+        } catch (Exception $pricingEx) {
+            error_log('⚠️ [sdr-chat] Falha ao computar preço real: ' . $pricingEx->getMessage());
+        }
+    }
+    
     echo json_encode([
         'success' => true,
         'response' => $parsedResponse['message'],
         'stage' => $correctedStage,
         'clientData' => $parsedResponse['clientData'] ?? null,
         'suggestedPlan' => $parsedResponse['suggestedPlan'] ?? null,
+        'pricing' => $realPricing, // Preço real calculado pelo backend
         'finished' => $correctedFinished
     ], JSON_UNESCAPED_UNICODE);
     
@@ -140,17 +223,45 @@ function injectDynamicData(string $prompt): string {
     
     // Informações da promoção
     $promocaoInfo = <<<PROMO
-**Sobre os Preços:**
-- Todos os valores já incluem a Promoção "Iniciando 2026 Online"
+**Sobre os Preços e Modelo de Assinatura:**
+- Todos os valores já incluem a Promoção "Iniciando 2026 Online" (30% OFF)
 - Válida para novos clientes
-- À vista no PIX: preço sem acréscimos
-- Parcelado 12x: acréscimo de 15% (taxa do gateway)
+- O plano é uma **ASSINATURA ANUAL** — o cliente paga por 1 ano de hospedagem, suporte e manutenção
+- **À vista no PIX:** pagamento único anual, sem acréscimos
+- **Parcelado 12x cartão:** 12 parcelas mensais com acréscimo de 15% (taxa do gateway) — ainda é um plano anual, só dividido em parcelas
+- ⚠️ NUNCA mostre o valor total anual parcelado (ex: "total R$ X.XXX em 12 meses") — o cliente verá isso no checkout da Pagar.me
 PROMO;
+    
+    // Injetar preços de add-ons específicos (valores dinâmicos do pricing.json)
+    $precoEspecialista = "R$ " . ($pricing['service_addons']['specialist_onboarding']['price'] ?? 169);
+    
+    // Vídeos
+    $videoBasicPrice = $pricing['content_addons']['video_basic']['price_per_unit'] ?? 35;
+    $videoProPrice = $pricing['content_addons']['video_pro']['price_per_unit'] ?? 120;
+    $precosVideos = "- **Vídeo Básico** (até 50MB): R$ {$videoBasicPrice} por vídeo\n";
+    $precosVideos .= "- **Vídeo Pro** (até 1GB): R$ {$videoProPrice} por vídeo";
+    
+    // PDF
+    $pdfPrice = $pricing['content_addons']['pdf']['price'] ?? 15;
+    $precoPdf = "- **Suporte a PDFs**: R$ {$pdfPrice} por projeto";
+    
+    // Recursos customizados (custom_pages resources)
+    $recursosCustom = "";
+    if (isset($pricing['custom_pages']['resources'])) {
+        foreach ($pricing['custom_pages']['resources'] as $key => $resource) {
+            $resourcePrice = $resource['price'] ?? 0;
+            $recursosCustom .= "- **{$resource['name']}**: R$ {$resourcePrice} ({$resource['description']})\n";
+        }
+    }
     
     // Substituir placeholders
     $prompt = str_replace('{{DATA_ATUAL}}', $dataAtual, $prompt);
     $prompt = str_replace('{{TABELA_PRECOS}}', $tabelaPrecos, $prompt);
     $prompt = str_replace('{{PROMOCAO_INFO}}', $promocaoInfo, $prompt);
+    $prompt = str_replace('{{PRECO_ESPECIALISTA}}', $precoEspecialista, $prompt);
+    $prompt = str_replace('{{PRECOS_VIDEOS}}', $precosVideos, $prompt);
+    $prompt = str_replace('{{PRECO_PDF}}', $precoPdf, $prompt);
+    $prompt = str_replace('{{RECURSOS_CUSTOM}}', $recursosCustom, $prompt);
     
     return $prompt;
 }
@@ -222,9 +333,9 @@ function formatPricingTable(array $pricing): string {
             $economiaAvista = round($packageTotalParcelado - $packageAvista, 2);
             
             $tabela .= "- **{$package['name']}** ({$package['icon']})\n";
-            $tabela .= "  - À VISTA PIX: R$ {$packageAvista} (pagamento único)\n";
-            $tabela .= "  - PARCELADO 12x CARTÃO: R$ {$packageParcelado}/mês (total R$ {$packageTotalParcelado})\n";
-            $tabela .= "  - Economia à vista: R$ {$economiaAvista}\n";
+            $tabela .= "  - À VISTA PIX: R$ {$packageAvista} (pagamento único anual)\n";
+            $tabela .= "  - PARCELADO 12x CARTÃO: R$ {$packageParcelado}/mês (assinatura anual — 12 parcelas)\n";
+            $tabela .= "  - Economia à vista vs parcelado: R$ {$economiaAvista}\n";
             $tabela .= "  - Páginas: " . implode(', ', $package['pages'] ?? []) . "\n";
             $tabela .= "  - Ideal para: {$package['ideal_for']}\n\n";
         }
@@ -256,10 +367,11 @@ function formatPricingTable(array $pricing): string {
     
     $tabela .= "## REGRAS DE USO DESTA TABELA:\n";
     $tabela .= "1. NUNCA faça cálculos matemáticos. Use APENAS os valores acima.\n";
-    $tabela .= "2. À vista PIX = valor anual listado (preço normal, sem acréscimo).\n";
-    $tabela .= "3. Parcelado cartão = valor mensal listado (já inclui taxa de 15% do gateway).\n";
+    $tabela .= "2. À vista PIX = valor anual listado (pagamento único — não mencione que é 'anual' separadamente, já está implícito).\n";
+    $tabela .= "3. Parcelado cartão = valor mensal listado (12 parcelas que compõem a assinatura anual). SEMPRE diga que é 'assinatura anual de R$ X/mês'.\n";
     $tabela .= "4. NUNCA mencione 'desconto de 15% no PIX' — à vista é o preço normal.\n";
-    $tabela .= "5. Se o cliente pedir combinação customizada de páginas, some os valores ANUAIS das páginas + produto base e use os valores MENSAIS NO CARTÃO correspondentes da tabela acima.\n";
+    $tabela .= "5. NUNCA mostre o total anual parcelado (ex: 'total R$ X.XXX ao fim de 12 meses') — o cliente verá isso na plataforma de pagamento.\n";
+    $tabela .= "6. Se o cliente pedir combinação customizada de páginas, some os valores ANUAIS das páginas + produto base para obter o avista, e calcule PARCELADO = (avista * 1.15) / 12.\n";
     
     return $tabela;
 }

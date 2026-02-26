@@ -299,7 +299,7 @@
           </p>
         </div>
 
-        <div class="pricing-cards">
+        <div class="pricing-cards" ref="pricingCards">
           <!-- Plano Básico -->
           <div class="pricing-card" data-scroll>
             <div class="promo-badge-card">30% OFF</div>
@@ -831,9 +831,25 @@ export default {
   mounted() {
     this.initScrollAnimations();
     this.initSmoothScroll();
+    this.scrollPricingToFeatured();
   },
   methods: {
-    
+    // Scroll carrossel de preços até o card popular (meio) no mobile
+    scrollPricingToFeatured() {
+      this.$nextTick(() => {
+        if (window.innerWidth <= 768 && this.$refs.pricingCards) {
+          const grid = this.$refs.pricingCards;
+          const featured = grid.querySelector('.pricing-card.featured');
+          if (featured) {
+            const gridRect = grid.getBoundingClientRect();
+            const cardRect = featured.getBoundingClientRect();
+            const offset = cardRect.left - gridRect.left - (gridRect.width - cardRect.width) / 2 + grid.scrollLeft;
+            grid.scrollLeft = offset;
+          }
+        }
+      });
+    },
+
     initScrollAnimations() {
       const observerOptions = {
         threshold: 0.1,
@@ -2791,20 +2807,22 @@ export default {
       }
     }
 
-    // Mockup: âncora visual para o notebook não "flutuar"
+    // Mockup: esconder no mobile - ocupa muito espaço e distrai
     .hero-visual {
-      .mockup-container {
-        max-width: 100%;
-        padding: 24px;
-        background: rgba($p-color, 0.05);
-        border: 1px solid rgba($p-color, 0.15);
-        border-radius: 20px;
-      }
+      display: none;
     }
   }
 
   // ----- Pricing: Carrossel horizontal com scroll-snap -----
   .pricing-section {
+    // NÃO usar overflow: clip - corta os cards
+    // Deixar overflow padrão na section
+    
+    .section-container {
+      // Container precisa permitir que o carrossel escape
+      overflow: visible;
+      max-width: none;
+    }
 
     .section-header {
       .section-title,
@@ -2814,17 +2832,19 @@ export default {
     }
 
     .pricing-cards {
-      // Transforma grid em carrossel
+      // Carrossel escapa do container via margin negativo
       display: flex;
       flex-direction: row;
+      margin-left: calc(-50vw + 50%);
+      margin-right: calc(-50vw + 50%);
+      width: 100vw;
       overflow-x: auto;
       scroll-snap-type: x mandatory;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
-      gap: 16px;
-      padding: 8px 4px 28px;
+      gap: 12px;
+      padding: 16px 10vw 28px;
       margin-top: 32px;
-      max-width: 100%;
 
       &::-webkit-scrollbar {
         display: none;
@@ -2832,22 +2852,23 @@ export default {
     }
 
     .pricing-card {
-      flex: 0 0 82vw;
-      max-width: 300px;
+      // Card menor = peek dos vizinhos (100vw - padding - gap)
+      flex: 0 0 80vw;
+      max-width: 80vw;
       scroll-snap-align: center;
       padding: 28px 20px;
 
-      // "Mais Popular" aparece primeiro
+      // Featured fica visualmente destacado mas sem mudar ordem
       &.featured {
-        transform: none;
-        order: -1;
+        transform: scale(1.02);
+        box-shadow: 0 12px 40px rgba($p-color, 0.35), 0 0 0 2px $p-color;
+        z-index: 2;
 
         &:hover {
-          transform: translateY(-8px);
+          transform: scale(1.02) translateY(-4px);
         }
       }
 
-      // Evita que outros cards afastem o featured
       &:hover {
         transform: translateY(-4px);
       }

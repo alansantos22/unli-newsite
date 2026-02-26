@@ -77,6 +77,37 @@ function debugLog($message, $data = null) {
 }
 
 // ============================================
+// FUNÇÃO: FORMATAR TELEFONE PARA PAGAR.ME
+// ============================================
+function formatPhoneForPagarme($phone) {
+    // Remove tudo exceto números
+    $digits = preg_replace('/\D/', '', $phone);
+    
+    // Valores padrão para Brasil
+    $countryCode = '55';
+    $areaCode = '11';
+    $number = '';
+    
+    if (strlen($digits) >= 10) {
+        // Formato: (XX) XXXXX-XXXX ou similar
+        $areaCode = substr($digits, 0, 2);
+        $number = substr($digits, 2);
+    } elseif (strlen($digits) >= 8) {
+        // Apenas o número sem DDD
+        $number = $digits;
+    } else {
+        // Fallback
+        $number = $digits ?: '999999999';
+    }
+    
+    return [
+        'country_code' => $countryCode,
+        'area_code' => $areaCode,
+        'number' => $number
+    ];
+}
+
+// ============================================
 // VALIDAR DADOS OBRIGATÓRIOS
 // ============================================
 $requiredFields = ['order_id', 'payment_type', 'payer_email'];
@@ -239,26 +270,39 @@ try {
         "customer" => [
             "name" => $payerName,
             "email" => $payerEmail,
-            "type" => "individual"
+            "type" => "individual",
+            "phones" => [
+                "mobile_phone" => formatPhoneForPagarme($data['payer_phone'] ?? '')
+            ]
         ],
-        "checkout" => [
-            "expires_in" => 7200, // 2 horas
-            "billing_address_editable" => false,
-            "customer_editable" => true,
-            "accepted_payment_methods" => ["credit_card", "pix", "boleto"],
-            "credit_card" => [
-                "installments" => $installmentsConfig,
-                "statement_descriptor" => "UNLI SITES"
-            ],
-            "pix" => [
-                "expires_in" => 3600 // PIX: 1 hora
-            ],
-            "boleto" => [
-                "due_at" => date('Y-m-d\TH:i:s\Z', strtotime('+3 days')),
-                "instructions" => "Pagamento referente ao site UNLI. Pedido: " . $orderId
-            ],
-            "success_url" => $finalReturnUrl,
-            "skip_checkout_success_page" => true
+        "payments" => [
+            [
+                "payment_method" => "checkout",
+                "checkout" => array_merge(
+                    [
+                        "expires_in" => 7200,
+                        "billing_address_editable" => true,
+                        "customer_editable" => true,
+                        // Parcelado = só cartão; À vista = cartão, pix e boleto
+                        "accepted_payment_methods" => $isParcelado
+                            ? ["credit_card"]
+                            : ["credit_card", "pix", "boleto"],
+                        "credit_card" => [
+                            "installments" => $installmentsConfig,
+                            "statement_descriptor" => "UNLI"
+                        ],
+                        "success_url" => $finalReturnUrl
+                    ],
+                    // Adicionar pix e boleto apenas quando pagamento à vista
+                    !$isParcelado ? [
+                        "pix" => ["expires_in" => 3600],
+                        "boleto" => [
+                            "due_at" => date('Y-m-d', strtotime('+3 days')),
+                            "instructions" => "Pagamento site UNLI"
+                        ]
+                    ] : []
+                )
+            ]
         ],
         "metadata" => [
             "order_id" => $orderId,
@@ -276,11 +320,27 @@ try {
     
     if ($response['success']) {
         $pagarmeOrderId = $response['data']['id'];
-        $paymentUrl = $response['data']['checkouts'][0]['payment_url'] ?? null;
+        
+        // Extrair payment_url de diferentes locais possíveis na resposta
+        $paymentUrl = null;
+        
+        // Opção 1: checkouts array (checkout direto)
+        if (isset($response['data']['checkouts'][0]['payment_url'])) {
+            $paymentUrl = $response['data']['checkouts'][0]['payment_url'];
+        }
+        // Opção 2: charges com checkout (payment method checkout)
+        elseif (isset($response['data']['charges'][0]['last_transaction']['url'])) {
+            $paymentUrl = $response['data']['charges'][0]['last_transaction']['url'];
+        }
+        // Opção 3: charges com checkout payment_url
+        elseif (isset($response['data']['charges'][0]['checkout']['payment_url'])) {
+            $paymentUrl = $response['data']['charges'][0]['checkout']['payment_url'];
+        }
         
         debugLog('Pedido Pagar.me criado com sucesso', [
             'pagarme_order_id' => $pagarmeOrderId,
-            'payment_url' => $paymentUrl
+            'payment_url' => $paymentUrl,
+            'response_keys' => array_keys($response['data'])
         ]);
         
         // Salvar referência do Pagar.me no pedido local
@@ -293,7 +353,10 @@ try {
         ]);
         
         if (!$paymentUrl) {
-            throw new Exception('Pagar.me não retornou URL de pagamento');
+            // DEBUG: Log da resposta completa para diagnóstico
+            $responseDebug = json_encode($response['data'], JSON_UNESCAPED_UNICODE);
+            error_log('PAGARME_NO_URL: ' . $responseDebug);
+            throw new Exception('Pagar.me não retornou URL de pagamento. Response keys: ' . implode(', ', array_keys($response['data'])));
         }
         
         echo json_encode([
@@ -309,7 +372,9 @@ try {
         ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         
     } else {
-        throw new Exception($response['message'] ?? 'Erro ao criar pedido no Pagar.me');
+        // DEBUG: Adicionar resposta raw para diagnóstico
+        $debugInfo = isset($response['debug_response']) ? ' | Raw: ' . $response['debug_response'] : '';
+        throw new Exception(($response['message'] ?? 'Erro ao criar pedido no Pagar.me') . $debugInfo);
     }
 
 } catch (Exception $e) {
@@ -380,19 +445,39 @@ function createPagarmeOrder($orderPayload) {
     } else {
         // Extrair mensagem de erro detalhada do Pagar.me
         $errorMsg = 'Erro desconhecido do Pagar.me';
+        $errorDetails = [];
+        
         if (isset($responseData['message'])) {
             $errorMsg = $responseData['message'];
-        } elseif (isset($responseData['errors'])) {
-            $errors = array_map(function($e) { return $e['message'] ?? $e['description'] ?? json_encode($e); }, $responseData['errors']);
-            $errorMsg = implode('; ', $errors);
         }
         
-        debugLog('Erro Pagar.me Detalhado', [
-            'http_code' => $httpCode,
-            'response' => $responseData
-        ]);
+        if (isset($responseData['errors'])) {
+            foreach ($responseData['errors'] as $e) {
+                $errorDetails[] = $e['message'] ?? $e['description'] ?? json_encode($e);
+            }
+            if (!empty($errorDetails)) {
+                $errorMsg .= ' | Detalhes: ' . implode('; ', $errorDetails);
+            }
+        }
         
-        return ['success' => false, 'message' => "Erro Pagar.me ($httpCode): $errorMsg"];
+        // DEBUG: Incluir resposta raw para diagnóstico (remover em produção)
+        $rawResponse = json_encode($responseData, JSON_UNESCAPED_UNICODE);
+        if (strlen($rawResponse) > 500) {
+            $rawResponse = substr($rawResponse, 0, 500) . '...';
+        }
+        
+        // Log para debug
+        error_log('PAGARME_ERROR: ' . json_encode([
+            'http_code' => $httpCode,
+            'response' => $responseData,
+            'payload_sent' => $orderPayload
+        ], JSON_UNESCAPED_UNICODE));
+        
+        return [
+            'success' => false, 
+            'message' => "Erro Pagar.me ($httpCode): $errorMsg",
+            'debug_response' => $rawResponse
+        ];
     }
 }
 

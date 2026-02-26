@@ -117,9 +117,9 @@
             <span class="page-tag">Contato</span>
           </div>
           <div class="package-price">
-            <span class="price-from">De <s>R$ 926</s></span>
-            <span class="price-now">R$ 648</span>
-            <span class="price-pix">ou R$ 551 no PIX</span>
+            <span class="price-from">De <s>{{ essentialPricing.formattedOriginal }}/mês</s></span>
+            <span class="price-now">{{ essentialPricing.formattedMonthly }}/mês</span>
+            <span class="price-pix">ou {{ essentialPricing.formattedCash }} à vista</span>
           </div>
         </div>
 
@@ -141,9 +141,9 @@
             <span class="page-tag">Contato</span>
           </div>
           <div class="package-price">
-            <span class="price-from">De <s>R$ 1.174</s></span>
-            <span class="price-now">R$ 822</span>
-            <span class="price-pix">ou R$ 699 no PIX</span>
+            <span class="price-from">De <s>{{ authorityPricing.formattedOriginal }}/mês</s></span>
+            <span class="price-now">{{ authorityPricing.formattedMonthly }}/mês</span>
+            <span class="price-pix">ou {{ authorityPricing.formattedCash }} à vista</span>
           </div>
         </div>
 
@@ -166,9 +166,9 @@
             <span class="page-tag">Contato</span>
           </div>
           <div class="package-price">
-            <span class="price-from">De <s>R$ 1.972</s></span>
-            <span class="price-now">R$ 1.380</span>
-            <span class="price-pix">ou R$ 1.173 no PIX</span>
+            <span class="price-from">De <s>{{ enterprisePricing.formattedOriginal }}/mês</s></span>
+            <span class="price-now">{{ enterprisePricing.formattedMonthly }}/mês</span>
+            <span class="price-pix">ou {{ enterprisePricing.formattedCash }} à vista</span>
           </div>
         </div>
       </div>
@@ -215,13 +215,49 @@ export default {
     onSelectForm: {
       type: Function,
       default: null
+    },
+    // Configuração de preços carregada do servidor
+    pricingConfig: {
+      type: Object,
+      default: () => ({})
     }
   },
 
   data() {
     return {
       showPackageSelector: false,
-      selectedPackage: 'authority' // Pré-selecionar o mais vendido
+      selectedPackage: 'authority', // Pré-selecionar o mais vendido
+      // Fallback de preços caso pricingConfig não esteja disponível
+      fallbackPricing: {
+        basePrice: 619,
+        pages: {
+          about: 59,
+          services: 119,
+          portfolio: 159,
+          faq: 89,
+          contact: 129,
+          blog: 349,
+          showcase: 449
+        },
+        packages: {
+          essential: ['about', 'services', 'contact'],
+          authority: ['about', 'services', 'contact', 'portfolio', 'faq'],
+          enterprise: ['about', 'services', 'contact', 'portfolio', 'faq', 'blog', 'showcase']
+        }
+      }
+    }
+  },
+
+  computed: {
+    // Calcula preço de um pacote específico
+    essentialPricing() {
+      return this.calculatePackagePricing('essential');
+    },
+    authorityPricing() {
+      return this.calculatePackagePricing('authority');
+    },
+    enterprisePricing() {
+      return this.calculatePackagePricing('enterprise');
     }
   },
 
@@ -238,6 +274,63 @@ export default {
         enterprise: 'Ecossistema'
       };
       return names[key] || key;
+    },
+    
+    // Calcula os preços de um pacote específico
+    calculatePackagePricing(packageKey) {
+      const config = this.pricingConfig;
+      
+      // Base price do produto "site_complete"
+      const basePrice = config?.products?.site_complete?.base_price || this.fallbackPricing.basePrice;
+      
+      // Páginas do pacote
+      const packagePages = config?.predefined_packages?.[packageKey]?.pages 
+        || this.fallbackPricing.packages[packageKey] 
+        || [];
+      
+      // Calcular total das páginas
+      let pagesTotal = 0;
+      packagePages.forEach(page => {
+        const pagePrice = config?.page_addons?.[page]?.price || this.fallbackPricing.pages[page] || 0;
+        pagesTotal += pagePrice;
+      });
+      
+      // Subtotal anual (preços do JSON já são os finais)
+      const subtotal = basePrice + pagesTotal;
+      
+      // Preço à vista (PIX) = subtotal sem taxa
+      const cashPrice = subtotal;
+      
+      // Preço parcelado = subtotal + 15% (taxa do cartão)
+      const installmentTotal = subtotal * 1.15;
+      
+      // Valor mensal (12x)
+      const monthlyPrice = installmentTotal / 12;
+      
+      // "De" original (inflacionado 30% para ancoragem)
+      const originalMonthly = monthlyPrice * 1.3;
+      
+      return {
+        subtotal,
+        cashPrice,
+        installmentTotal,
+        monthlyPrice,
+        originalMonthly,
+        // Formatados para exibição
+        formattedOriginal: this.formatCurrency(originalMonthly),
+        formattedMonthly: this.formatCurrency(monthlyPrice),
+        formattedCash: this.formatCurrency(cashPrice)
+      };
+    },
+    
+    // Formata valor como moeda BRL
+    formatCurrency(value) {
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(value);
     },
     
     proceedToCheckout() {

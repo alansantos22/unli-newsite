@@ -66,6 +66,8 @@
 Options -Indexes
 
 # Protege arquivos sensíveis
+# NOTA: pricing.json está na pasta api/ e não deve ser acessível via URL
+# O frontend usa /api/config.php para obter preços
 <FilesMatch "\.(env|git|gitignore|md|json)$">
   Order allow,deny
   Deny from all

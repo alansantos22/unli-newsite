@@ -25,18 +25,8 @@
           </div>
         </div>
 
-        <!-- Actions: Pular + Fechar -->
+        <!-- Actions: Fechar -->
         <div class="header-actions">
-          <button 
-            v-if="!finished"
-            class="btn-skip-to-form"
-            @click="skipToForm"
-            title="Ir direto para o formulário"
-          >
-            <i class="fas fa-forward"></i>
-            <span class="btn-text">Pular para formulário</span>
-          </button>
-
           <button
             class="btn-close-chat"
             @click="closeChat"
@@ -156,18 +146,7 @@
         </button>
       </div>
       
-      <!-- Botão de Finalizar (aparece após 3 mensagens) -->
-      <transition name="fade">
-        <button 
-          v-if="canFinish && !finished && !needsCustomDev"
-          class="btn-finish-floating"
-          :disabled="isLoading || isExtracting"
-          @click="finishAndExtract"
-        >
-          <i class="fas fa-magic"></i> 
-          Pronto! Montar meu site
-        </button>
-      </transition>
+
       
       <!-- Botão WhatsApp para Desenvolvimento Customizado (e-commerce/apps) -->
       <transition name="fade">
@@ -565,7 +544,7 @@ export default {
           
           // Se tem plano sugerido com método de pagamento, abrir checkout direto
           if (data.suggestedPlan && data.suggestedPlan.paymentMethod) {
-            this.openDirectCheckout(data.suggestedPlan);
+            this.openDirectCheckout(data.suggestedPlan, data.pricing);
           }
         } else {
           // Fallback: detectar mensagem de fechamento mesmo sem finished=true
@@ -841,13 +820,13 @@ export default {
         }
         
         if (data.suggestedPlan.paymentMethod) {
-          this.openDirectCheckout(data.suggestedPlan);
+          this.openDirectCheckout(data.suggestedPlan, data.pricing);
         }
       }
     },
     
-    openDirectCheckout(suggestedPlan) {
-      console.log('🛒 [SDRChat] Abrindo checkout direto com plano:', suggestedPlan);
+    openDirectCheckout(suggestedPlan, pricing = null) {
+      console.log('🛒 [SDRChat] Abrindo checkout direto com plano:', suggestedPlan, '| Pricing backend:', pricing);
       
       // Mapear dados do plano
       const pages = suggestedPlan.pages || [];
@@ -861,10 +840,22 @@ export default {
       else if (pageCount <= 5) packageLabel = 'Autoridade';
       else if (pageCount >= 6) packageLabel = 'Ecossistema Digital';
       
-      // Label de pagamento
-      const paymentLabel = paymentMethod === 'pix_avista'
-        ? 'PIX à Vista (15% OFF extra)'
-        : '12x no Cartão';
+      // Label de pagamento: usar preço real do backend se disponível
+      let paymentLabel;
+      if (pricing) {
+        const isParcelado = paymentMethod !== 'pix_avista';
+        if (isParcelado && pricing.parcela_12) {
+          const parcela = pricing.parcela_12.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          paymentLabel = `12x de ${parcela} no Cartão`;
+        } else if (!isParcelado && pricing.avista) {
+          const avista = pricing.avista.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          paymentLabel = `PIX à Vista ${avista}`;
+        }
+      }
+      // Fallback genérico se backend não enviou pricing
+      if (!paymentLabel) {
+        paymentLabel = paymentMethod === 'pix_avista' ? 'PIX à Vista' : '12x no Cartão';
+      }
       
       this.checkoutPlanData = {
         type,
@@ -990,6 +981,19 @@ export default {
           throw new Error(orderResult.error || 'Erro ao criar pedido');
         }
         
+        // Atualizar paymentLabel com preço real calculado pelo backend
+        if (orderResult.pricing) {
+          const pricing = orderResult.pricing;
+          const isParcelado = paymentMethod === 'prazo';
+          if (isParcelado && pricing.parcela_12) {
+            const parcela = pricing.parcela_12.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            this.checkoutPlanData.paymentLabel = `12x de ${parcela} no Cartão`;
+          } else if (!isParcelado && pricing.avista) {
+            const avista = pricing.avista.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            this.checkoutPlanData.paymentLabel = `PIX à Vista ${avista}`;
+          }
+        }
+        
         this.checkoutProgress = 60;
         
         // 3. Criar link de pagamento no Pagar.me
@@ -997,6 +1001,7 @@ export default {
           order_id: orderResult.order_id,
           payer_name: this.checkoutForm.name.trim(),
           payer_email: this.checkoutForm.email.trim(),
+          payer_phone: this.checkoutForm.whatsapp.replace(/\D/g, ''), // Apenas números
           payment_type: paymentMethod
         };
         

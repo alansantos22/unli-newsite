@@ -1,5 +1,11 @@
 # 📊 APRESENTAÇÃO EXECUTIVA - SITE VITRINE
 
+> ⚠️ **DOCUMENTO DESATUALIZADO (DEPRECATED)**  
+> Este documento contém preços e estratégias de um modelo de negócio anterior.  
+> **Fonte atual de verdade:** [`api/pricing.json`](../api/pricing.json)  
+> **Análise atualizada:** [ANALISE-PRICING-VULNERABILITIES.md](./ANALISE-PRICING-VULNERABILITIES.md)  
+> Última atualização deste aviso: 25/02/2026
+
 ## 🎯 RESUMO EXECUTIVO
 
 ### O Produto

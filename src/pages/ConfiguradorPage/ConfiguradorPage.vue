@@ -3,6 +3,7 @@
     <!-- FASE 0: Tela de Decisão (Chat vs Form) -->
     <template v-if="currentPhase === 'decision'">
       <EntryDecisionHero
+        :pricing-config="pricingConfig"
         @select-chat="startChatFlow"
         @select-form="startQuickCheckout"
         @go-to-configurator="skipToConfigurator"
@@ -154,10 +155,25 @@ export default {
     
     async loadPricingConfig() {
       try {
-        const response = await fetch('/api/pricing.json');
+        // Usar endpoint PHP em vez de acessar pricing.json diretamente (segurança)
+        const response = await fetch('/api/config.php');
         if (response.ok) {
-          this.pricingConfig = await response.json();
-          console.log('💰 [ConfiguradorPage] Preços carregados:', this.pricingConfig);
+          const data = await response.json();
+          if (data.ok) {
+            this.pricingConfig = {
+              version: data.version,
+              currency: data.currency,
+              products: data.products,
+              page_addons: data.page_addons,
+              content_addons: data.content_addons,
+              pricing_rules: data.pricing_rules,
+              limits: data.limits
+            };
+            console.log('💰 [ConfiguradorPage] Preços carregados:', this.pricingConfig);
+          } else {
+            console.warn('⚠️ [ConfiguradorPage] Erro na resposta:', data.error);
+            this.loadFallbackPricing();
+          }
         } else {
           console.warn('⚠️ [ConfiguradorPage] Erro HTTP ao carregar preços:', response.status);
           this.loadFallbackPricing();
