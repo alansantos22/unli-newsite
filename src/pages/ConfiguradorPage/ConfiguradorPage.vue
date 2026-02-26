@@ -26,6 +26,7 @@
       <QuickCheckout
         :product="selectedPlan"
         :package-key="selectedPackage"
+        :specialist-onboarding="selectedSpecialist"
         :pricing-config="pricingConfig"
         @go-back="goBackToDecision"
       />
@@ -112,6 +113,7 @@ export default {
     return {
       selectedPlan: null,
       selectedPackage: 'essential', // Pacote padrão
+      selectedSpecialist: false,    // Opção de atendimento com especialista
       isProcessingPayment: false,
       // Controle de fases: 'decision' | 'chat' | 'checkout' | 'configurator'
       currentPhase: 'decision',
@@ -258,8 +260,11 @@ export default {
       if (payload && payload.package) {
         this.selectedPackage = payload.package;
       }
+      if (payload && payload.specialist !== undefined) {
+        this.selectedSpecialist = payload.specialist;
+      }
       
-      console.log('📦 [ConfiguradorPage] Produto:', this.selectedPlan, 'Pacote:', this.selectedPackage);
+      console.log('📦 [ConfiguradorPage] Produto:', this.selectedPlan, 'Pacote:', this.selectedPackage, 'Especialista:', this.selectedSpecialist);
       this.currentPhase = 'checkout';
       sessionStorage.setItem('unli_configurator_phase', 'checkout');
     },

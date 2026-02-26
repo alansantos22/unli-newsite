@@ -173,6 +173,26 @@
         </div>
       </div>
 
+      <!-- Toggle: Atendimento com Especialista -->
+      <div class="specialist-addon-toggle" :class="{ 'specialist-selected': withSpecialist }">
+        <label class="specialist-toggle-label">
+          <div class="specialist-toggle-info">
+            <div class="specialist-addon-header">
+              <i class="fas fa-user-tie"></i>
+              <span class="specialist-addon-title">Quero ser atendido por um especialista</span>
+              <span class="specialist-addon-price">+R$ {{ Math.ceil(169 / 12) }}/mês</span>
+            </div>
+            <p class="specialist-addon-desc">
+              Após a compra, nosso time entra em contato pelo WhatsApp para coletar as informações do seu site com você. Ao invés de preencher um formulário sozinho.
+            </p>
+          </div>
+          <div class="toggle-switch">
+            <input type="checkbox" v-model="withSpecialist" />
+            <span class="toggle-slider"></span>
+          </div>
+        </label>
+      </div>
+
       <!-- Botão de Checkout -->
       <button 
         class="btn-checkout-now"
@@ -227,6 +247,7 @@ export default {
     return {
       showPackageSelector: false,
       selectedPackage: 'authority', // Pré-selecionar o mais vendido
+      withSpecialist: false, // Adicionar atendimento com especialista
       // Fallback de preços caso pricingConfig não esteja disponível
       fallbackPricing: {
         basePrice: 619,
@@ -340,9 +361,9 @@ export default {
       const currentQuery = { ...this.$route?.query };
       currentQuery.package = this.selectedPackage;
       
-      // Emitir evento com pacote selecionado
-      this.$emit('select-form', { package: this.selectedPackage });
-      if (this.onSelectForm) this.onSelectForm({ package: this.selectedPackage });
+      // Emitir evento com pacote selecionado e opção de especialista
+      this.$emit('select-form', { package: this.selectedPackage, specialist: this.withSpecialist });
+      if (this.onSelectForm) this.onSelectForm({ package: this.selectedPackage, specialist: this.withSpecialist });
     },
     
     goToCustomConfigurator() {
@@ -1048,6 +1069,123 @@ $text-muted: rgba(255, 255, 255, 0.5);
     
     &:hover {
       text-decoration: underline;
+    }
+  }
+}
+
+// ==================
+// SPECIALIST TOGGLE
+// ==================
+.specialist-addon-toggle {
+  width: 100%;
+  margin: 0 0 16px 0;
+  border: 2px solid $glass-border;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: rgba($primary, 0.35);
+    background: rgba(255, 255, 255, 0.07);
+  }
+  
+  &.specialist-selected {
+    border-color: $primary;
+    background: rgba($primary, 0.1);
+    box-shadow: 0 0 0 4px rgba($primary, 0.1);
+  }
+  
+  .specialist-toggle-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 14px 16px;
+    cursor: pointer;
+    
+    .specialist-toggle-info {
+      flex: 1;
+      text-align: left;
+      
+      .specialist-addon-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 6px;
+        
+        i {
+          color: $primary-light;
+          font-size: 16px;
+        }
+        
+        .specialist-addon-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: $text-primary;
+        }
+        
+        .specialist-addon-price {
+          font-size: 12px;
+          font-weight: 700;
+          color: $secondary;
+          background: rgba($secondary, 0.15);
+          padding: 3px 9px;
+          border-radius: 20px;
+          white-space: nowrap;
+        }
+      }
+      
+      .specialist-addon-desc {
+        font-size: 12px;
+        color: $text-muted;
+        line-height: 1.5;
+        margin: 0;
+      }
+    }
+    
+    .toggle-switch {
+      position: relative;
+      flex-shrink: 0;
+      width: 48px;
+      height: 26px;
+      margin-top: 2px;
+      
+      input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        position: absolute;
+        
+        &:checked + .toggle-slider {
+          background: linear-gradient(135deg, $primary, darken($primary, 10%));
+          
+          &::before {
+            transform: translateX(22px);
+          }
+        }
+      }
+      
+      .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 26px;
+        transition: all 0.3s ease;
+        
+        &::before {
+          content: '';
+          position: absolute;
+          height: 20px;
+          width: 20px;
+          left: 3px;
+          bottom: 3px;
+          background: white;
+          border-radius: 50%;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+        }
+      }
     }
   }
 }

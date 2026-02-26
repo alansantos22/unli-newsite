@@ -290,6 +290,30 @@
                 <span v-if="checkoutErrors.whatsapp" class="mini-error">{{ checkoutErrors.whatsapp }}</span>
               </div>
 
+              <!-- Toggle Atendimento com Especialista -->
+              <div class="specialist-toggle-box" :class="{ 'selected': checkoutPlanData.specialistOnboarding }">
+                <label class="specialist-toggle-container">
+                  <div class="specialist-toggle-info">
+                    <div class="specialist-toggle-header">
+                      <i class="fas fa-user-tie"></i>
+                      <span class="specialist-toggle-title">Atendimento com Especialista</span>
+                      <span class="specialist-toggle-badge">+R$ {{ specialistPrice }}/mês</span>
+                    </div>
+                    <p class="specialist-toggle-description">
+                      Um atendente humano te acompanha no preenchimento das informações do site, ao invés de usar apenas o formulário online.
+                    </p>
+                  </div>
+                  <div class="toggle-switch">
+                    <input 
+                      type="checkbox" 
+                      v-model="checkoutPlanData.specialistOnboarding"
+                      @change="onSpecialistToggleChange"
+                    />
+                    <span class="toggle-slider"></span>
+                  </div>
+                </label>
+              </div>
+
               <div class="modal-actions">
                 <button type="submit" class="btn-primary" :disabled="isProcessingCheckout">
                   <i class="fas fa-lock"></i>
@@ -416,6 +440,11 @@ export default {
     stageProgress() {
       const currentIndex = this.stageOrder.indexOf(this.currentStage);
       return ((currentIndex + 1) / this.stageOrder.length) * 100;
+    },
+    
+    specialistPrice() {
+      // Valor mensal equivalente do atendimento com especialista (R$ 169 anuais / 12)
+      return Math.ceil(169 / 12);
     }
   },
 
@@ -882,6 +911,11 @@ export default {
       this.checkoutProgress = 0;
       // Reativar chat para continuar conversando se quiser
       this.finished = false;
+    },
+    
+    onSpecialistToggleChange() {
+      // Log para debug - o valor já foi atualizado pelo v-model
+      console.log('📋 [SDRChat] Specialist onboarding toggled:', this.checkoutPlanData.specialistOnboarding);
     },
     
     formatCheckoutWhatsApp() {
@@ -1837,6 +1871,121 @@ $text-muted: rgba(255, 255, 255, 0.5);
         color: #EF4444;
         margin-top: 6px;
         padding-left: 6px;
+      }
+    }
+    
+    // Toggle de Atendimento com Especialista
+    .specialist-toggle-box {
+      margin: 16px 0;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid $glass-border;
+      border-radius: 14px;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba($primary, 0.3);
+      }
+      
+      &.selected {
+        background: rgba($primary, 0.1);
+        border-color: $primary;
+        box-shadow: 0 0 0 4px rgba($primary, 0.1);
+      }
+      
+      .specialist-toggle-container {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        cursor: pointer;
+        
+        .specialist-toggle-info {
+          flex: 1;
+          text-align: left;
+          
+          .specialist-toggle-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+            
+            i {
+              color: $primary;
+              font-size: 18px;
+            }
+            
+            .specialist-toggle-title {
+              font-size: 15px;
+              font-weight: 600;
+              color: $text-primary;
+            }
+            
+            .specialist-toggle-badge {
+              font-size: 13px;
+              font-weight: 700;
+              color: $secondary;
+              background: rgba($secondary, 0.15);
+              padding: 4px 10px;
+              border-radius: 20px;
+            }
+          }
+          
+          .specialist-toggle-description {
+            font-size: 13px;
+            color: $text-muted;
+            line-height: 1.5;
+            margin: 0;
+          }
+        }
+        
+        .toggle-switch {
+          position: relative;
+          flex-shrink: 0;
+          width: 52px;
+          height: 28px;
+          
+          input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            
+            &:checked + .toggle-slider {
+              background: linear-gradient(135deg, $primary, $secondary);
+              
+              &::before {
+                transform: translateX(24px);
+              }
+            }
+          }
+          
+          .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 28px;
+            transition: all 0.3s ease;
+            
+            &::before {
+              content: '';
+              position: absolute;
+              height: 22px;
+              width: 22px;
+              left: 3px;
+              bottom: 3px;
+              background: white;
+              border-radius: 50%;
+              transition: all 0.3s ease;
+              box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            }
+          }
+        }
       }
     }
     

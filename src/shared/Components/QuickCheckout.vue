@@ -128,6 +128,31 @@
               </div>
             </div>
 
+            <!-- Atendimento com Especialista -->
+            <div class="form-section">
+              <h3 class="section-title">
+                <i class="fas fa-user-tie"></i>
+                Atendimento Pós-Compra
+              </h3>
+              <div class="specialist-toggle-card" :class="{ 'specialist-active': localSpecialist }">
+                <label class="specialist-toggle-label">
+                  <div class="specialist-info">
+                    <div class="specialist-header">
+                      <span class="specialist-title">Quero ser atendido por um especialista</span>
+                    <span class="specialist-badge">+R$ {{ pricing.specialistMonthlyBadge }}/mês</span>
+                    </div>
+                    <p class="specialist-desc">
+                      Nosso time entra em contato pelo WhatsApp para coletar as informações do seu site com você, ao invés de preencher um formulário sozinho.
+                    </p>
+                  </div>
+                  <div class="toggle-switch">
+                    <input type="checkbox" id="specialist-toggle-qc" v-model="localSpecialist" />
+                    <span class="toggle-slider"></span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
             <!-- Botão de Comprar -->
             <button 
               type="submit" 
@@ -190,6 +215,14 @@
                   {{ packageInfo.pages.length }} Páginas Adicionais
                 </span>
                 <span class="item-price">{{ formatCurrency(pricing.pagesTotal) }}</span>
+              </div>
+
+              <div v-if="localSpecialist" class="summary-item specialist-item">
+                <span class="item-name">
+                  <i class="fas fa-user-tie"></i>
+                  Atendimento com Especialista
+                </span>
+                <span class="item-price">+R$ {{ pricing.specialistMonthlyBadge }}/mês</span>
               </div>
             </div>
 
@@ -258,6 +291,11 @@ export default {
     pricingConfig: {
       type: Object,
       default: () => ({})
+    },
+    // Opção de atendimento com especialista (pré-selecionada pelo usuário)
+    specialistOnboarding: {
+      type: Boolean,
+      default: false
     }
   },
 
@@ -271,6 +309,7 @@ export default {
       errors: {},
       paymentMethod: 'cash', // 'cash' ou 'installment'
       isSubmitting: false,
+      localSpecialist: this.specialistOnboarding, // cópia editável localmente
       
       // Configuração local de preços (fallback)
       localPricing: {
@@ -342,21 +381,29 @@ export default {
       // Subtotal (preços do pricing.json JÁ TEM a promoção aplicada)
       const subtotal = basePrice + pagesTotal;
       
+      // Atendimento com especialista
+      const specialistBasePrice = this.pricingConfig?.service_addons?.specialist_onboarding?.price || 169;
+      const specialistMonthlyBadge = Math.ceil(specialistBasePrice / 12); // exibição no badge
+      const specialistPrice = this.localSpecialist ? specialistBasePrice : 0;
+      const subtotalFinal = subtotal + specialistPrice;
+      
       // NOTA: NÃO aplicar 30% de desconto - os preços já são promocionais!
       // À vista (PIX) = preço base (subtotal)
       // Parcelado (12x) = preço base + 15% (taxa do cartão)
       
-      const cashPrice = subtotal; // PIX = preço base
+      const cashPrice = subtotalFinal; // PIX = preço base
       
       // Parcelado: acréscimo de 15% para cobrir taxa do gateway
       const installmentPercent = config?.pricing_rules?.installments_12_markup_percent || this.localPricing.installmentMarkupPercent;
-      const installmentTotal = subtotal * (1 + installmentPercent / 100);
+      const installmentTotal = subtotalFinal * (1 + installmentPercent / 100);
       const installmentPrice = installmentTotal / 12;
       
       return {
         basePrice,
         pagesTotal,
-        subtotal, // Preço base (já com promoção do pricing.json)
+        subtotal,
+        specialistPrice,
+        specialistMonthlyBadge,
         cashPrice, // PIX = preço base
         installmentTotal, // Cartão = base + 15%
         installmentPrice // Valor da parcela
@@ -443,6 +490,9 @@ export default {
           custom_pages: [],
           video_basic_quantity: 0,
           video_pro_quantity: 0,
+          service_addons: {
+            specialist_onboarding: this.localSpecialist
+          },
           briefing: {
             customer_name: this.formData.name,
             email: this.formData.email,
@@ -1053,6 +1103,130 @@ $error: #EF4444;
     font-size: 12px;
     font-weight: 600;
     color: darken($accent, 10%);
+  }
+}
+
+// ==================
+// SPECIALIST TOGGLE
+// ==================
+.specialist-toggle-card {
+  border: 2px solid $gray-light;
+  border-radius: 12px;
+  background: #f9fafb;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: lighten($primary, 20%);
+    background: lighten($primary, 48%);
+  }
+  
+  &.specialist-active {
+    border-color: $primary;
+    background: lighten($primary, 46%);
+    box-shadow: 0 0 0 4px rgba($primary, 0.08);
+  }
+  
+  .specialist-toggle-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 14px 16px;
+    cursor: pointer;
+    
+    .specialist-info {
+      flex: 1;
+      
+      .specialist-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 6px;
+        
+        .specialist-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: $text-primary;
+        }
+        
+        .specialist-badge {
+          font-size: 12px;
+          font-weight: 700;
+          color: darken($primary, 10%);
+          background: lighten($primary, 40%);
+          padding: 3px 9px;
+          border-radius: 20px;
+          white-space: nowrap;
+        }
+      }
+      
+      .specialist-desc {
+        font-size: 12px;
+        color: $text-secondary;
+        line-height: 1.5;
+        margin: 0;
+      }
+    }
+    
+    .toggle-switch {
+      position: relative;
+      flex-shrink: 0;
+      width: 48px;
+      height: 26px;
+      margin-top: 2px;
+      
+      input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        position: absolute;
+        
+        &:checked + .toggle-slider {
+          background: $primary;
+          
+          &::before {
+            transform: translateX(22px);
+          }
+        }
+      }
+      
+      .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background: #d1d5db;
+        border-radius: 26px;
+        transition: all 0.3s ease;
+        
+        &::before {
+          content: '';
+          position: absolute;
+          height: 20px;
+          width: 20px;
+          left: 3px;
+          bottom: 3px;
+          background: white;
+          border-radius: 50%;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+      }
+    }
+  }
+}
+
+.specialist-item {
+  color: darken($primary, 5%);
+  
+  .item-name {
+    color: darken($primary, 5%);
+    
+    i { color: $primary; }
+  }
+  
+  .item-price {
+    color: darken($primary, 5%);
+    font-weight: 700;
   }
 }
 </style>
