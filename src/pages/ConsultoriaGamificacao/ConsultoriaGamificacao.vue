@@ -440,12 +440,12 @@
             <div class="pricing-value-container">
               <div class="pricing-value">
                 <span class="currency">R$</span>
-                <span class="amount">14.990</span>
+                <span class="amount">16.990</span>
               </div>
               <div class="pricing-period">à vista</div>
               <div class="pricing-savings">
                 <i class="fas fa-piggy-bank"></i>
-                Economize R$ 1.500
+                Economize R$ 2.000
               </div>
             </div>
             <div class="pricing-features">
@@ -497,12 +497,12 @@
             <div class="pricing-value-container">
               <div class="pricing-value">
                 <span class="currency">R$</span>
-                <span class="amount">1.599</span>
+                <span class="amount">1.899</span>
               </div>
               <div class="pricing-period">por mês</div>
               <div class="pricing-total">
                 <i class="fas fa-calculator"></i>
-                Total: R$ 15.990 (10x)
+                Total: R$ 18.990 (10x)
               </div>
             </div>
             <div class="pricing-features">
