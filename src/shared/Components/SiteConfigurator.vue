@@ -1298,12 +1298,18 @@ export default {
       if (debugMode) {
         console.warn('🔧 DEBUG MODE - API desabilitada (cálculos locais permitidos)');
       } else {
-        console.error('🚨 ERRO CRÍTICO: API offline em produção!');
-        console.error('🚨 Checkout será bloqueado por segurança');
-        console.error('🚨 Verifique: .htaccess, CORS, permissões de arquivos');
+        console.warn('🟡 API indisponível no mount. Retry automático será feito no checkout.');
+        console.warn('🟡 Verifique: .htaccess, CORS, permissões de arquivos');
         
-        // Mostrar notificação de sistema offline
-        this.systemError = '⚠️ Sistema temporariamente indisponível. Nosso servidor de validação está offline.';
+        // Agenda um retry silencioso após 5s
+        setTimeout(async () => {
+          const retryResult = await PricingService.checkServerAvailability(true);
+          if (retryResult) {
+            console.info('✅ API reconectada após retry automático');
+            this.serverAvailable = true;
+            this.systemError = '';
+          }
+        }, 5000);
       }
     }
   },
@@ -2329,10 +2335,15 @@ export default {
             this.$emit('order-submitted', mockPayload);
             console.info('🔧 DEBUG MODE: Pedido simulado localmente');
           } else {
-            // PRODUÇÃO: BLOQUEAR checkout se API estiver offline
-            console.error('🚨 ERRO CRÍTICO: API offline em produção!');
-            console.error('🚨 Checkout bloqueado por segurança');
-            throw new Error('Servidor de validação indisponível. Por favor, tente novamente em alguns instantes.');
+            // PRODUÇÃO: API offline após retry. Mostrar erro amigável sem bloquear totalmente.
+            console.error('🚨 API offline em produção após retry');
+            console.error('🚨 Checkout não pôde ser completado');
+            
+            // Mostrar mensagem ao usuário em vez de throw silencioso
+            this.systemError = '⚠️ Nosso servidor está temporariamente indisponível. Por favor, aguarde alguns segundos e tente novamente.';
+            
+            // Scroll para o topo para o usuário ver a mensagem
+            this.scrollToTop();
           }
         } else {
           // Erro no servidor
@@ -2342,8 +2353,12 @@ export default {
         console.error('🔴 Erro ao enviar pedido:', error);
         console.error('🔴 Falha no checkout, verifique os logs acima');
         
-        // Mostrar erro para o usuário
+        // Mostrar erro para o usuário na UI
+        this.systemError = '❌ Erro ao processar pedido: ' + (error.message || 'Erro desconhecido. Tente novamente.');
         console.error('❌ Erro ao processar pedido: ' + error.message);
+        
+        // Scroll para o topo para o usuário ver a mensagem
+        this.scrollToTop();
       } finally {
         this.isSubmitting = false;
       }

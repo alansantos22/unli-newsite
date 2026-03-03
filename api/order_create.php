@@ -9,14 +9,34 @@
  * Output: { order_id, pricing, ... }
  */
 
+// Capturar qualquer output indesejado (warnings/notices)
+ob_start();
+
+// Garantir que erros PHP não sejam exibidos como HTML na response
+ini_set('display_errors', '0');
+error_reporting(E_ALL); // Continua logando no error_log
+
+// Carregar configurações seguras (define DEBUG_MODE para CORS)
+if (!defined('SECURE_CONFIG_ACCESS')) {
+    define('SECURE_CONFIG_ACCESS', true);
+}
+$secureConfig = __DIR__ . '/config.secure.php';
+if (file_exists($secureConfig)) {
+    require_once $secureConfig;
+}
+
 // CORS - Configuração segura
 require_once __DIR__ . '/lib/cors.php';
+
+// Limpar qualquer output gerado durante includes
+ob_end_clean();
 
 header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/lib/pricing.php';
 require_once __DIR__ . '/lib/storage.php';
 require_once __DIR__ . '/lib/database.php';
+require_once __DIR__ . '/lib/conversation-logger.php';
 
 try {
     // Carregar configuração oficial
@@ -179,6 +199,29 @@ try {
         $response['onboarding_token'] = $dbResult['token'];
         $response['db_id'] = $dbResult['id'];
         error_log('🎫 [order_create] Token de onboarding incluído: ' . $dbResult['token']);
+    }
+    
+    // 🔥 Vincular conversa SDR ao pedido (se houver conversation_id)
+    $sdrConversationId = $body['conversation_id'] ?? null;
+    if ($sdrConversationId) {
+        $customerName = $briefing['customer_name'] ?? $briefing['company_name'] ?? '';
+        $customerEmail = $briefing['email'] ?? '';
+        $customerPhone = $briefing['whatsapp'] ?? $briefing['phone'] ?? '';
+        $dbOrderId = $dbResult ? $dbResult['id'] : null;
+        
+        $updated = sdr_update_client_data(
+            $sdrConversationId,
+            $customerName,
+            $customerEmail,
+            $customerPhone,
+            $dbOrderId
+        );
+        
+        if ($updated) {
+            error_log('✅ [order_create] Conversa SDR vinculada ao pedido: ' . $sdrConversationId);
+        } else {
+            error_log('⚠️ [order_create] Não foi possível vincular conversa SDR: ' . $sdrConversationId);
+        }
     }
     
     error_log('📤 [order_create] Enviando resposta JSON...');

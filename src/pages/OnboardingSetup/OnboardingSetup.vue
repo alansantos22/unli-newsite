@@ -316,6 +316,8 @@ export default {
         // Build context for consultant (including purchased pages/services)
         this.orderContext = {
           orderId: data.orderId,
+          onboardingToken: this.token,
+          customerName: this.customerName,
           planName: data.orderDetails?.planName || 'Site Vitrine',
           customerEmail: data.email,
           purchasedPages: this.purchasedPages,

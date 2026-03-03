@@ -66,10 +66,37 @@ if (!$input || !isset($input['messages'])) {
     exit;
 }
 
+// Carregar logger de conversas
+require_once __DIR__ . '/../lib/conversation-logger.php';
+
 // Extrair contexto do pedido (páginas/serviços comprados)
 $orderContext = $input['orderContext'] ?? [];
 $purchasedPages = $orderContext['purchasedPages'] ?? [];
 $planName = $orderContext['planName'] ?? 'Site Vitrine';
+
+// Obter ou criar conversa para logging
+$inputConversationId = $input['conversation_id'] ?? null;
+$orderDataForConv = [
+    'order_id' => $orderContext['orderId'] ?? null,
+    'onboarding_token' => $orderContext['onboardingToken'] ?? null,
+    'customer_name' => $orderContext['customerName'] ?? null,
+    'customer_email' => $orderContext['customerEmail'] ?? null,
+    'plan_name' => $planName,
+    'purchased_pages' => $purchasedPages
+];
+$conversation = onboarding_get_or_create_conversation($inputConversationId, $orderDataForConv);
+$conversationDbId = $conversation ? $conversation['id'] : null;
+$conversationPublicId = $conversation ? $conversation['conversation_id'] : null;
+
+// Extrair a última mensagem do usuário
+$lastUserMessage = null;
+$messages = $input['messages'];
+for ($i = count($messages) - 1; $i >= 0; $i--) {
+    if ($messages[$i]['role'] === 'user') {
+        $lastUserMessage = $messages[$i]['content'];
+        break;
+    }
+}
 
 // Carregar System Prompt
 $systemPromptPath = __DIR__ . '/prompts/consultant-system-prompt.md';
@@ -97,10 +124,37 @@ try {
     // Processar resposta JSON do Gemini
     $parsedResponse = parseGeminiResponse($rawResponse);
     
+    // ============================================================
+    // LOG DA CONVERSA NO BANCO DE DADOS
+    // ============================================================
+    if ($conversationDbId) {
+        try {
+            // Logar mensagem do usuário
+            if ($lastUserMessage) {
+                onboarding_log_message($conversationDbId, 'user', $lastUserMessage);
+            }
+            
+            // Logar resposta da IA
+            onboarding_log_message($conversationDbId, 'assistant', $parsedResponse['message'], [
+                'finished' => $parsedResponse['finished']
+            ]);
+            
+            // Atualizar estado da conversa
+            if ($parsedResponse['finished']) {
+                onboarding_update_conversation($conversationDbId, [
+                    'finished' => true
+                ]);
+            }
+        } catch (Exception $logEx) {
+            error_log('⚠️ [consultant-chat] Erro ao logar conversa (não crítico): ' . $logEx->getMessage());
+        }
+    }
+    
     echo json_encode([
         'success' => true,
         'response' => $parsedResponse['message'],
-        'finished' => $parsedResponse['finished']
+        'finished' => $parsedResponse['finished'],
+        'conversation_id' => $conversationPublicId // ID para rastreamento
     ], JSON_UNESCAPED_UNICODE);
     
 } catch (Exception $e) {

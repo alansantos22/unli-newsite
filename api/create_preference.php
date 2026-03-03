@@ -10,6 +10,13 @@
  * para redirecionamento do cliente.
  */
 
+// Capturar qualquer output indesejado (warnings/notices)
+ob_start();
+
+// Garantir que erros PHP não sejam exibidos como HTML na response
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
+
 // ============================================
 // CONFIGURAÇÃO SEGURA
 // ============================================
@@ -19,7 +26,9 @@ define('SECURE_CONFIG_ACCESS', true);
 $configFile = __DIR__ . '/config.secure.php';
 
 if (!file_exists($configFile)) {
+    ob_end_clean();
     http_response_code(500);
+    header('Content-Type: application/json; charset=utf-8');
     die(json_encode([
         'success' => false,
         'message' => '⚠️ ERRO DE CONFIGURAÇÃO: Arquivo config.secure.php não encontrado.',
@@ -30,6 +39,9 @@ require_once $configFile;
 require_once __DIR__ . '/lib/cors.php';
 require_once __DIR__ . '/lib/pricing.php'; // Importar lógica de pricing
 require_once __DIR__ . '/lib/storage.php'; // Para load_order() - consistência de dados
+
+// Limpar qualquer output gerado durante includes
+ob_end_clean();
 
 header('Content-Type: application/json; charset=utf-8');
 

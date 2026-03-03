@@ -16,6 +16,35 @@
 // Proteção para carregar config segura
 define('SECURE_CONFIG_ACCESS', true);
 
+// ============================================
+// HANDLER GLOBAL DE ERROS
+// Garante que QUALQUER erro retorne JSON válido
+// ============================================
+set_error_handler(function($severity, $message, $file, $line) {
+    // Converter warnings/notices em exceções apenas para erros graves
+    if ($severity & (E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR)) {
+        throw new ErrorException($message, 0, $severity, $file, $line);
+    }
+    // Logar warnings sem matar o script
+    error_log("⚠️ [sdr-chat] PHP Warning [{$severity}]: {$message} em {$file}:{$line}");
+    return true; // Não propagar
+});
+
+register_shutdown_function(function() {
+    $error = error_get_last();
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        // Limpar qualquer output anterior
+        if (ob_get_level()) ob_end_clean();
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'success' => false,
+            'error' => 'Erro interno do servidor. Tente novamente em alguns segundos.',
+            'debug_hint' => $error['message'] . ' em ' . basename($error['file']) . ':' . $error['line']
+        ], JSON_UNESCAPED_UNICODE);
+    }
+});
+
 // Headers e CORS
 require_once __DIR__ . '/../lib/cors.php';
 header('Content-Type: application/json; charset=utf-8');
@@ -57,6 +86,15 @@ if (count($_SESSION['sdr_requests']) >= $rateLimit) {
 
 $_SESSION['sdr_requests'][] = time();
 
+// Carregar logger de conversas (graceful — não impede o funcionamento se falhar)
+$conversationLoggerAvailable = false;
+try {
+    require_once __DIR__ . '/../lib/conversation-logger.php';
+    $conversationLoggerAvailable = true;
+} catch (Throwable $e) {
+    error_log('⚠️ [sdr-chat] Falha ao carregar conversation-logger (não crítico): ' . $e->getMessage());
+}
+
 // Obter input
 $input = json_decode(file_get_contents('php://input'), true);
 
@@ -67,6 +105,31 @@ if (!$input || !isset($input['messages'])) {
         'error' => 'JSON inválido ou campo "messages" ausente.'
     ], JSON_UNESCAPED_UNICODE);
     exit;
+}
+
+// Obter ou criar conversa para logging (graceful — funciona sem DB)
+$inputConversationId = $input['conversation_id'] ?? null;
+$conversationDbId = null;
+$conversationPublicId = $inputConversationId;
+
+if ($conversationLoggerAvailable && function_exists('sdr_get_or_create_conversation')) {
+    try {
+        $conversation = sdr_get_or_create_conversation($inputConversationId);
+        $conversationDbId = $conversation ? $conversation['id'] : null;
+        $conversationPublicId = $conversation ? $conversation['conversation_id'] : ($inputConversationId ?? null);
+    } catch (Throwable $e) {
+        error_log('⚠️ [sdr-chat] Falha ao criar/obter conversa (não crítico): ' . $e->getMessage());
+    }
+}
+
+// Extrair a última mensagem do usuário (é sempre a última do array)
+$lastUserMessage = null;
+$messages = $input['messages'];
+for ($i = count($messages) - 1; $i >= 0; $i--) {
+    if ($messages[$i]['role'] === 'user') {
+        $lastUserMessage = $messages[$i]['content'];
+        break;
+    }
 }
 
 // Carregar System Prompt
@@ -101,84 +164,125 @@ try {
     $correctedFinished = $stageAndFinished['finished'];
     
     // ============================================================
-    // FONTE DE VERDADE: Computar preço real pelo backend sempre que
-    // houver um suggestedPlan com páginas definidas.
-    // A IA NÃO é confiável para calcular preços — ela apenas envia
-    // a seleção (páginas + forma de pagamento).
+    // FONTE DE VERDADE: O agente envia as páginas e addons que o
+    // cliente quer — idêntico ao formulário/configurador.
+    // Aqui convertemos o suggestedPlan para o mesmo formato que
+    // price.php recebe do formulário, e chamamos as mesmas funções.
     // ============================================================
     $realPricing = null;
     $suggestedPlan = $parsedResponse['suggestedPlan'] ?? null;
+    
+    // ============================================================
+    // SAFETY NET: Se a IA usou placeholders de preço mas NÃO incluiu
+    // suggestedPlan.pages, tentar extrair as páginas da mensagem.
+    // Isso resolve o bug "valor sob consulta" quando Gemini esquece
+    // de popular o campo pages no JSON.
+    // ============================================================
+    $msgHasPlaceholders = strpos($parsedResponse['message'], '{{PRECO_MENSAL}}') !== false
+                       || strpos($parsedResponse['message'], '{{PRECO_AVISTA}}') !== false;
+    
+    if ($msgHasPlaceholders && empty($suggestedPlan['pages'])) {
+        error_log('🔧 [sdr-chat] Safety net: mensagem tem placeholders mas suggestedPlan.pages vazio. Tentando extrair páginas da mensagem...');
+        
+        $extractedPages = extractPagesFromMessage($parsedResponse['message']);
+        
+        if (!empty($extractedPages)) {
+            if (!is_array($suggestedPlan)) {
+                $suggestedPlan = ['type' => 'site_complete'];
+                $parsedResponse['suggestedPlan'] = $suggestedPlan;
+            }
+            $suggestedPlan['pages'] = $extractedPages;
+            $parsedResponse['suggestedPlan']['pages'] = $extractedPages;
+            error_log('🔧 [sdr-chat] Safety net: páginas extraídas da mensagem: ' . json_encode($extractedPages));
+        } else {
+            error_log('⚠️ [sdr-chat] Safety net: não foi possível extrair páginas da mensagem. Placeholders ficarão sem substituição.');
+        }
+    }
     
     if (!empty($suggestedPlan['pages'])) {
         try {
             require_once __DIR__ . '/../lib/pricing.php';
             $cfg = load_pricing_config(__DIR__ . '/../pricing.json');
             
-            // Montar seleção a partir do suggestedPlan da IA
-            $pagesMap = [];
-            foreach ($suggestedPlan['pages'] as $pageKey) {
-                if (is_string($pageKey)) {
-                    $pagesMap[$pageKey] = true;
-                }
-            }
+            // Converter suggestedPlan → mesmo formato que o formulário envia
+            $formSelection = sdrPlanToFormSelection($suggestedPlan);
             
-            $selectionForPricing = [
-                'product'               => $suggestedPlan['type'] ?? 'site_complete',
-                'pages'                 => $pagesMap,
-                'content'               => [],
-                'custom_pages'          => [],
-                'video_basic_quantity'  => 0,
-                'video_pro_quantity'    => 0,
-                'pdf'                   => false,
-                'specialist_onboarding' => !empty($suggestedPlan['specialistOnboarding']),
-                'payment_method'        => ($suggestedPlan['paymentMethod'] ?? '') === 'pix_avista'
-                                            ? 'avista' : 'parcelado'
-            ];
+            error_log('📋 [sdr-chat] Seleção convertida (igual formulário): ' . json_encode($formSelection));
             
-            $normalizedSel = normalize_selection($selectionForPricing, $cfg);
+            // Chamar EXATAMENTE as mesmas funções que price.php usa
+            $normalizedSel = normalize_selection($formSelection, $cfg);
             $realPricing   = compute_price($normalizedSel, $cfg);
             
-            // Remover estimatedPrice da IA (está errado)
-            unset($parsedResponse['suggestedPlan']['estimatedPrice']);
+            // Calcular economia à vista (diferença entre total parcelado e à vista)
+            if (isset($realPricing['parcelado_total']) && isset($realPricing['avista'])) {
+                $realPricing['economia_avista'] = round($realPricing['parcelado_total'] - $realPricing['avista'], 2);
+            }
             
-            // Substituir preços mensais errados na mensagem pela parcela real
-            $isParcelado = !in_array($suggestedPlan['paymentMethod'] ?? '', ['pix_avista', 'avista']);
+            // Remover campos de preço inventados pela IA (o backend é a fonte de verdade)
+            unset($parsedResponse['suggestedPlan']['estimatedPrice']);
+            unset($parsedResponse['suggestedPlan']['monthlyPrice']);
+            unset($parsedResponse['suggestedPlan']['totalPrice']);
+            unset($parsedResponse['suggestedPlan']['price']);
+            
+            // ============================================================
+            // SUBSTITUIÇÃO SEGURA POR PLACEHOLDERS
+            // A IA foi instruída a usar {{PRECO_MENSAL}} e {{PRECO_AVISTA}}
+            // no lugar de valores monetários do plano. Aqui substituímos
+            // esses placeholders pelos valores REAIS calculados pelo backend.
+            // Isso NUNCA toca em valores contextuais do cliente (ex: faturamento).
+            // ============================================================
             $msg = $parsedResponse['message'];
             
-            if ($isParcelado && isset($realPricing['parcela_12'])) {
-                $realLabel = 'R$ ' . number_format($realPricing['parcela_12'], 2, ',', '.');
-                // Normalizar bold markdown em volta de valores monetários (IA às vezes usa **R$ X**)
-                $msg = preg_replace('/\*{1,2}(R\$\s*[\d.,]+)\*{1,2}/u', '$1', $msg);
-                // Substituir QUALQUER padrão de preço mensal (mensais, /mês, por mês, mensalmente, ao mês)
-                $msg = preg_replace(
-                    '/R\$\s*[\d.,]+\s*(mensais?|por\s*m[eê]s|\/m[eê]s|mensalmente|ao\s*m[eê]s)/ui',
-                    $realLabel . '/mês',
-                    $msg
-                );
-                // Substituir também padrões numéricos tipo "132,05/mês" sem "R$" explícito
-                $msg = preg_replace(
-                    '/\b[\d]+[,.][\d]+\s*(mensais?|\/m[eê]s|por\s*m[eê]s)/ui',
-                    $realLabel . '/mês',
-                    $msg
-                );
-            } elseif (!$isParcelado && isset($realPricing['avista'])) {
-                $realLabel = 'R$ ' . number_format($realPricing['avista'], 2, ',', '.');
-                // Normalizar bold markdown
-                $msg = preg_replace('/\*{1,2}(R\$\s*[\d.,]+)\*{1,2}/u', '$1', $msg);
-                // Para pagamento à vista, substituir apenas valores com 4+ caracteres numéricos (ex: 1.378)
-                $msg = preg_replace(
-                    '/R\$\s*[\d.,]{4,}/u',
-                    $realLabel,
-                    $msg
-                );
+            if (isset($realPricing['parcela_12'])) {
+                $labelMensal = 'R$ ' . number_format($realPricing['parcela_12'], 2, ',', '.');
+                $msg = str_replace('{{PRECO_MENSAL}}', $labelMensal, $msg);
+            }
+            
+            if (isset($realPricing['avista'])) {
+                $labelAvista = 'R$ ' . number_format($realPricing['avista'], 2, ',', '.');
+                $msg = str_replace('{{PRECO_AVISTA}}', $labelAvista, $msg);
+            }
+            
+            if (isset($realPricing['economia_avista'])) {
+                $labelEconomia = 'R$ ' . number_format($realPricing['economia_avista'], 2, ',', '.');
+                $msg = str_replace('{{ECONOMIA_AVISTA}}', $labelEconomia, $msg);
             }
             
             $parsedResponse['message'] = $msg;
             
             error_log('💰 [sdr-chat] Preço real computado: parcela=' . ($realPricing['parcela_12'] ?? '-') . ' avista=' . ($realPricing['avista'] ?? '-'));
+            error_log('📋 [sdr-chat] Páginas usadas: ' . json_encode(array_keys(array_filter($normalizedSel['pages']))));
             
         } catch (Exception $pricingEx) {
             error_log('⚠️ [sdr-chat] Falha ao computar preço real: ' . $pricingEx->getMessage());
+        }
+    }
+    
+    // ============================================================
+    // LOG DA CONVERSA NO BANCO DE DADOS
+    // ============================================================
+    if ($conversationDbId && $conversationLoggerAvailable) {
+        try {
+            // Logar mensagem do usuário
+            if ($lastUserMessage) {
+                sdr_log_message($conversationDbId, 'user', $lastUserMessage, $correctedStage);
+            }
+            
+            // Logar resposta da IA
+            sdr_log_message($conversationDbId, 'assistant', $parsedResponse['message'], $correctedStage, [
+                'pricing' => $realPricing,
+                'suggested_plan' => $parsedResponse['suggestedPlan'] ?? null
+            ]);
+            
+            // Atualizar dados da conversa
+            sdr_update_conversation($conversationDbId, [
+                'last_stage' => $correctedStage,
+                'client_data' => $parsedResponse['clientData'] ?? null,
+                'suggested_plan' => $parsedResponse['suggestedPlan'] ?? null,
+                'finished' => $correctedFinished
+            ]);
+        } catch (Exception $logEx) {
+            error_log('⚠️ [sdr-chat] Erro ao logar conversa (não crítico): ' . $logEx->getMessage());
         }
     }
     
@@ -189,7 +293,8 @@ try {
         'clientData' => $parsedResponse['clientData'] ?? null,
         'suggestedPlan' => $parsedResponse['suggestedPlan'] ?? null,
         'pricing' => $realPricing, // Preço real calculado pelo backend
-        'finished' => $correctedFinished
+        'finished' => $correctedFinished,
+        'conversation_id' => $conversationPublicId // ID para rastreamento
     ], JSON_UNESCAPED_UNICODE);
     
 } catch (Exception $e) {
@@ -233,7 +338,13 @@ function injectDynamicData(string $prompt): string {
 PROMO;
     
     // Injetar preços de add-ons específicos (valores dinâmicos do pricing.json)
-    $precoEspecialista = "R$ " . ($pricing['service_addons']['specialist_onboarding']['price'] ?? 169);
+    // Especialista: calcular valor MENSAL (total / 12 para PIX, total * 1.15 / 12 para cartão)
+    $especialistaTotalAnual = $pricing['service_addons']['specialist_onboarding']['price'] ?? 169;
+    $especialistaMensalCartao = round(($especialistaTotalAnual * 1.15) / 12, 2);
+    $especialistaMensalPix = round($especialistaTotalAnual / 12, 2);
+    $precoEspecialista = "R$ " . number_format($especialistaMensalCartao, 2, ',', '.');
+    $precoEspecialistaPix = "R$ " . number_format($especialistaMensalPix, 2, ',', '.');
+    $precoEspecialistaTotal = "R$ " . number_format($especialistaTotalAnual, 0, ',', '.');
     
     // Vídeos
     $videoBasicPrice = $pricing['content_addons']['video_basic']['price_per_unit'] ?? 35;
@@ -259,6 +370,8 @@ PROMO;
     $prompt = str_replace('{{TABELA_PRECOS}}', $tabelaPrecos, $prompt);
     $prompt = str_replace('{{PROMOCAO_INFO}}', $promocaoInfo, $prompt);
     $prompt = str_replace('{{PRECO_ESPECIALISTA}}', $precoEspecialista, $prompt);
+    $prompt = str_replace('{{PRECO_ESPECIALISTA_PIX}}', $precoEspecialistaPix, $prompt);
+    $prompt = str_replace('{{PRECO_ESPECIALISTA_TOTAL}}', $precoEspecialistaTotal, $prompt);
     $prompt = str_replace('{{PRECOS_VIDEOS}}', $precosVideos, $prompt);
     $prompt = str_replace('{{PRECO_PDF}}', $precoPdf, $prompt);
     $prompt = str_replace('{{RECURSOS_CUSTOM}}', $recursosCustom, $prompt);
@@ -365,13 +478,55 @@ function formatPricingTable(array $pricing): string {
         $tabela .= "\n";
     }
     
+    // Tabela auxiliar de combinações comuns para a IA NÃO precisar calcular
+    $tabela .= "## COMBINAÇÕES COMUNS PRÉ-CALCULADAS\n\n";
+    $tabela .= "⚠️ Se o cliente escolher uma combinação que está aqui, use os valores EXATOS.\n";
+    $tabela .= "Se não estiver aqui, some os valores ANUAIS das páginas + base e calcule PARCELADO = (total * 1.15) / 12.\n\n";
+    
+    if (isset($pricing['page_addons'])) {
+        // Gerar combinações frequentes
+        $commonCombos = [
+            ['about', 'contact'],
+            ['about', 'services', 'contact'],
+            ['about', 'contact', 'showcase'],
+            ['about', 'services', 'contact', 'showcase'],
+            ['about', 'services', 'contact', 'faq'],
+            ['about', 'services', 'contact', 'portfolio'],
+            ['about', 'contact', 'blog'],
+            ['about', 'contact', 'blog', 'showcase'],
+        ];
+        
+        foreach ($commonCombos as $combo) {
+            $comboTotal = $siteBasePrice;
+            $comboNames = [];
+            $valid = true;
+            foreach ($combo as $pageKey) {
+                if (!isset($pagesPrices[$pageKey])) { $valid = false; break; }
+                $comboTotal += $pagesPrices[$pageKey];
+                $comboNames[] = $pricing['page_addons'][$pageKey]['name'] ?? $pageKey;
+            }
+            if (!$valid) continue;
+            
+            $comboAvista = $comboTotal;
+            $comboParcelado = round(($comboTotal * 1.15) / 12, 2);
+            
+            $tabela .= "- **Site Completo + " . implode(' + ', $comboNames) . "**: ";
+            $tabela .= "À vista R$ {$comboAvista} | Mensal cartão R$ {$comboParcelado}/mês\n";
+        }
+        $tabela .= "\n";
+    }
+    
     $tabela .= "## REGRAS DE USO DESTA TABELA:\n";
     $tabela .= "1. NUNCA faça cálculos matemáticos. Use APENAS os valores acima.\n";
     $tabela .= "2. À vista PIX = valor anual listado (pagamento único — não mencione que é 'anual' separadamente, já está implícito).\n";
     $tabela .= "3. Parcelado cartão = valor mensal listado (12 parcelas que compõem a assinatura anual). SEMPRE diga que é 'assinatura anual de R$ X/mês'.\n";
     $tabela .= "4. NUNCA mencione 'desconto de 15% no PIX' — à vista é o preço normal.\n";
     $tabela .= "5. NUNCA mostre o total anual parcelado (ex: 'total R$ X.XXX ao fim de 12 meses') — o cliente verá isso na plataforma de pagamento.\n";
-    $tabela .= "6. Se o cliente pedir combinação customizada de páginas, some os valores ANUAIS das páginas + produto base para obter o avista, e calcule PARCELADO = (avista * 1.15) / 12.\n";
+    $tabela .= "6. Se o cliente pedir combinação customizada NÃO listada acima, some os valores ANUAIS das páginas + produto base para obter o avista, e calcule PARCELADO = (avista * 1.15) / 12.\n";
+    $tabela .= "\n## ⚠️ REGRA CRÍTICA DO JSON suggestedPlan:\n";
+    $tabela .= "- SEMPRE que sua mensagem mencionar um plano, páginas ou preço, o campo `suggestedPlan.pages` DEVE conter TODAS as páginas propostas\n";
+    $tabela .= "- NUNCA omita suggestedPlan quando falar de preço — o backend usa as páginas para calcular o preço real\n";
+    $tabela .= "- NÃO use campo \"addons\" — TUDO vai em \"pages\"\n";
     
     return $tabela;
 }
@@ -385,12 +540,12 @@ function formatMessagesForGemini(array $messages, string $systemPrompt): array {
     // Adicionar system prompt como primeira mensagem
     $contents[] = [
         'role' => 'user',
-        'parts' => [['text' => $systemPrompt . "\n\n---\nLEMBRETE FINAL CRÍTICO SOBRE STAGES:\n- Se minha resposta SUGERE UM PLANO/PACOTE (Essencial, Autoridade, Ecossistema) ou LISTA PÁGINAS = stage OBRIGATÓRIO: \"PROPOSTA\"\n- Se minha resposta MENCIONA VALORES em R$ = stage OBRIGATÓRIO: \"PRECO\"\n- EXPLORACAO é APENAS quando estou perguntando sobre o negócio, SEM sugerir plano nenhum\n- O campo stage no meu JSON DEVE refletir o CONTEÚDO da minha mensagem, não a etapa anterior"]]
+        'parts' => [['text' => $systemPrompt . "\n\n---\nLEMBRETES FINAIS CRÍTICOS:\n\n## FORMATO DE RESPOSTA (ANTI-VAZAMENTO):\n- Sua resposta deve ser UM ÚNICO JSON válido. NADA antes, NADA depois.\n- O campo \"message\" contém APENAS o texto visível ao cliente. ZERO dados técnicos.\n- NUNCA escreva texto fora do JSON. NUNCA separe texto e JSON. O cliente VÊ tudo que você escreve fora do JSON.\n- NUNCA inclua estimatedPrice, monthlyPrice ou cálculos de preço no JSON.\n- suggestedPlan.type DEVE ser \"site_complete\" ou \"landing\". NUNCA \"vitrine\", \"blog\" ou outro valor.\n\n## STAGES:\n- Se minha resposta SUGERE UM PLANO/PACOTE ou LISTA PÁGINAS = stage OBRIGATÓRIO: \"PROPOSTA\"\n- Se minha resposta MENCIONA VALORES ou PLACEHOLDERS de preço = stage OBRIGATÓRIO: \"PRECO\"\n- EXPLORACAO é APENAS quando estou perguntando sobre o negócio, SEM sugerir plano nenhum\n\n## PLACEHOLDERS DE PREÇO (OBRIGATÓRIO):\n- NUNCA escreva valores em R$ para o preço do plano. Use SEMPRE {{PRECO_MENSAL}} para parcela 12x, {{PRECO_AVISTA}} para valor à vista, {{ECONOMIA_AVISTA}} para economia.\n- O backend substitui os placeholders pelo valor real calculado.\n\n## suggestedPlan.pages (CRÍTICO):\n- SEMPRE que mencionar preço, plano ou páginas, suggestedPlan.pages DEVE conter TODAS as páginas propostas\n- NUNCA omita suggestedPlan quando falar de preço\n- Se não enviar pages, o cliente verá 'valor sob consulta' ao invés do preço real"]]
     ];
     $contents[] = [
         'role' => 'model',
         'parts' => [['text' => json_encode([
-            'message' => 'Entendido. Vou atuar como o Assistente Unli, consultor de estratégia digital. Estou pronto para iniciar uma conversa consultiva e humanizada. Confirmo que seguirei rigorosamente as regras de stage: PROPOSTA quando sugerir plano/páginas, PRECO quando mencionar R$, EXPLORACAO apenas quando ainda estiver descobrindo o negócio.',
+            'message' => 'Entendido! Estou pronto para conversar como o Assistente Unli. Vou ser natural e humanizado. Confirmo: resposta sempre em JSON único, message só com texto do cliente, nunca vazar dados técnicos. Preços sempre com placeholders. suggestedPlan.type sempre "site_complete" ou "landing". Pages sempre preenchido quando falar de plano/preço.',
             'stage' => 'PRONTO',
             'finished' => false
         ], JSON_UNESCAPED_UNICODE)]]
@@ -539,6 +694,10 @@ function validateAndCorrectStageAndFinished(array $parsedResponse): array {
         'encaminhar para o pagamento',
         'qualquer dúvida, é só chamar',
         'qualquer duvida, e so chamar',
+        'tudo certo ou tem mais alguma',
+        'tudo certo ou tem alguma',
+        'vou te encaminhar',
+        'direcionar para o pagamento',
     ];
     
     $isClosingMessage = false;
@@ -549,18 +708,29 @@ function validateAndCorrectStageAndFinished(array $parsedResponse): array {
         }
     }
     
-    // Se é mensagem de fechamento E tem preço E tem suggestedPlan com paymentMethod
+    // Se é mensagem de fechamento E tem preço/valor/menção monetária E tem suggestedPlan com paymentMethod
     // → forçar finished=true e stage=FECHAMENTO
-    $hasPrice = preg_match('/R\$\s*[\d.,]+/', $message);
+    $hasPrice = preg_match('/R\$\s*[\d.,]+/', $message) || 
+                preg_match('/\{\{PRECO_(MENSAL|AVISTA|ECONOMIA_AVISTA)\}\}/', $message) ||
+                mb_strpos($messageLower, 'valor sob consulta') !== false ||
+                mb_strpos($messageLower, '/mês') !== false ||
+                mb_strpos($messageLower, 'parcela') !== false;
     $hasPaymentMethod = !empty($suggestedPlan['paymentMethod']);
+    $hasPlanPages = !empty($suggestedPlan['pages']);
     
-    if ($isClosingMessage && $hasPrice && $hasPaymentMethod) {
-        error_log('🔧 [validateStage] Forçando FECHAMENTO + finished=true (mensagem de fechamento detectada)');
+    if ($isClosingMessage && $hasPaymentMethod) {
+        // Mensagem de fechamento + método de pagamento = FECHAMENTO
+        error_log('🔧 [validateStage] Forçando FECHAMENTO + finished=true (mensagem de fechamento + paymentMethod)');
+        return ['stage' => 'FECHAMENTO', 'finished' => true];
+    }
+    
+    if ($isClosingMessage && ($hasPrice || $hasPlanPages)) {
+        error_log('🔧 [validateStage] Forçando FECHAMENTO + finished=true (mensagem de fechamento + preço/plano)');
         return ['stage' => 'FECHAMENTO', 'finished' => true];
     }
     
     // Se é mensagem de fechamento E já falou preço antes (stage=PRECO) → forçar
-    if ($isClosingMessage && ($stage === 'PRECO' || $stage === 'FECHAMENTO' || $hasPrice)) {
+    if ($isClosingMessage && ($stage === 'PRECO' || $stage === 'FECHAMENTO')) {
         error_log('🔧 [validateStage] Forçando FECHAMENTO + finished=true (fechamento após preço)');
         return ['stage' => 'FECHAMENTO', 'finished' => true];
     }
@@ -572,7 +742,8 @@ function validateAndCorrectStageAndFinished(array $parsedResponse): array {
     
     // ====== REGRA 2: PRECO ======
     $hasPriceTerms = preg_match('/(à vista|parcel|pagamento|pix|12x|valor anual|por mês|por ano|mensais|mensal)/iu', $messageLower);
-    if ($hasPrice && $hasPriceTerms) {
+    $hasPricePlaceholders = preg_match('/\{\{PRECO_(MENSAL|AVISTA)\}\}/', $message);
+    if (($hasPrice && $hasPriceTerms) || $hasPricePlaceholders) {
         return ['stage' => 'PRECO', 'finished' => false];
     }
     
@@ -649,7 +820,7 @@ function parseSDRResponse(string $rawResponse): array {
     $decoded = json_decode($rawResponse, true);
     
     if ($decoded && isset($decoded['message'])) {
-        return $decoded;
+        return sanitizeSDRResponse($decoded);
     }
     
     // Limpar possíveis marcadores de código no início e fim
@@ -659,14 +830,14 @@ function parseSDRResponse(string $rawResponse): array {
     
     $decoded = json_decode($cleanResponse, true);
     if ($decoded && isset($decoded['message'])) {
-        return $decoded;
+        return sanitizeSDRResponse($decoded);
     }
     
     // Tentar extrair JSON de dentro de bloco ```json ... ``` (pode estar no meio do texto)
     if (preg_match('/```json\s*(\{[\s\S]*?\})\s*```/i', $rawResponse, $matches)) {
         $extracted = json_decode($matches[1], true);
         if ($extracted && isset($extracted['message'])) {
-            return $extracted;
+            return sanitizeSDRResponse($extracted);
         }
     }
     
@@ -674,8 +845,19 @@ function parseSDRResponse(string $rawResponse): array {
     if (preg_match('/```\s*(\{[\s\S]*?"message"[\s\S]*?\})\s*```/i', $rawResponse, $matches)) {
         $extracted = json_decode($matches[1], true);
         if ($extracted && isset($extracted['message'])) {
-            return $extracted;
+            return sanitizeSDRResponse($extracted);
         }
+    }
+    
+    // ============================================================
+    // SAFETY NET: IA retornou texto + JSON separados (sem "message" no JSON)
+    // Exemplo: "Texto da mensagem aqui...\n{"stage": "FECHAMENTO", ...}"
+    // Separa o texto (= message) do JSON (= metadata)
+    // ============================================================
+    $metadataJson = extractMetadataJsonFromText($rawResponse);
+    if ($metadataJson !== null) {
+        error_log('🔧 [parseSDR] Safety net: texto + JSON separados detectado. Recombinando.');
+        return sanitizeSDRResponse($metadataJson);
     }
     
     // Tentar extrair JSON completo (com objetos aninhados) do texto
@@ -741,14 +923,135 @@ function parseSDRResponse(string $rawResponse): array {
         }
     }
     
-    // Fallback: retorna texto puro como mensagem
+    // Fallback: retorna texto puro como mensagem (limpando JSON residual)
+    $cleanMessage = cleanJsonFromMessage($rawResponse);
     return [
-        'message' => $rawResponse,
+        'message' => $cleanMessage,
         'stage' => 'EXPLORACAO',
         'clientData' => null,
         'suggestedPlan' => null,
         'finished' => false
     ];
+}
+
+/**
+ * Extrai JSON de metadados que a IA enviou separado do texto.
+ * Quando a IA retorna "Texto da mensagem\n{\"stage\": \"X\", ...}" sem campo "message" no JSON.
+ * Recombina o texto como message e os metadados do JSON.
+ */
+function extractMetadataJsonFromText(string $rawResponse): ?array {
+    // Procurar por um bloco JSON que NÃO tenha "message" mas tenha "stage" ou "clientData"
+    // Isso indica que a IA separou texto e metadados
+    $jsonStart = -1;
+    $len = strlen($rawResponse);
+    
+    // Procurar de trás para frente o último '{' que abre um JSON de metadados
+    for ($i = $len - 1; $i >= 0; $i--) {
+        if ($rawResponse[$i] === '}') {
+            // Encontrou o fim de um possível JSON, agora buscar o início correspondente
+            $depth = 0;
+            for ($j = $i; $j >= 0; $j--) {
+                if ($rawResponse[$j] === '}') $depth++;
+                if ($rawResponse[$j] === '{') $depth--;
+                if ($depth === 0) {
+                    $jsonStart = $j;
+                    break;
+                }
+            }
+            break;
+        }
+    }
+    
+    if ($jsonStart < 0) return null;
+    
+    $jsonStr = substr($rawResponse, $jsonStart);
+    $metadata = json_decode($jsonStr, true);
+    
+    if (!$metadata || !is_array($metadata)) return null;
+    
+    // Verificar que é um JSON de metadados (tem stage, clientData ou suggestedPlan mas NÃO tem message)
+    $hasMetadataFields = isset($metadata['stage']) || isset($metadata['clientData']) || isset($metadata['suggestedPlan']) || isset($metadata['finished']);
+    
+    if (!$hasMetadataFields) return null;
+    
+    // Extrair a parte de texto (antes do JSON)
+    $textPart = trim(substr($rawResponse, 0, $jsonStart));
+    
+    if (empty($textPart)) {
+        // Se não tem texto antes, pode ser que o message está dentro do JSON afinal
+        if (isset($metadata['message'])) return $metadata;
+        return null;
+    }
+    
+    // Recombinar: texto vira message, merge com metadados
+    $result = $metadata;
+    $result['message'] = $textPart;
+    
+    return $result;
+}
+
+/**
+ * Remove blocos JSON residuais que possam ter vazado para o texto da mensagem.
+ * Usado como último fallback para garantir que o cliente nunca veja JSON.
+ */
+function cleanJsonFromMessage(string $message): string {
+    // Remover blocos que parecem JSON (começam com { e têm campos como stage, clientData, etc)
+    $cleaned = preg_replace('/\{[\s]*"(?:stage|clientData|suggestedPlan|finished|niche|type)"[^}]*(?:\{[^}]*\}[^}]*)*\}/s', '', $message);
+    return trim($cleaned);
+}
+
+/**
+ * Garante que o campo message não contém JSON vazado.
+ * Limpa metadados que a IA possa ter incluído dentro do texto da mensagem.
+ */
+function sanitizeSDRResponse(array $response): array {
+    if (isset($response['message'])) {
+        // Remover JSON de metadados que possam estar dentro do campo message
+        $msg = $response['message'];
+        
+        // Detectar se o message contém um bloco JSON de metadados no final
+        $lastBrace = strrpos($msg, '}');
+        if ($lastBrace !== false) {
+            // Procurar o '{' correspondente
+            $depth = 0;
+            $jsonStart = -1;
+            for ($i = $lastBrace; $i >= 0; $i--) {
+                if ($msg[$i] === '}') $depth++;
+                if ($msg[$i] === '{') $depth--;
+                if ($depth === 0) {
+                    $jsonStart = $i;
+                    break;
+                }
+            }
+            
+            if ($jsonStart > 0) {
+                $possibleJson = substr($msg, $jsonStart);
+                $decoded = json_decode($possibleJson, true);
+                if ($decoded && is_array($decoded)) {
+                    $hasMetadata = isset($decoded['stage']) || isset($decoded['clientData']) || isset($decoded['suggestedPlan']) || isset($decoded['finished']) || isset($decoded['niche']);
+                    if ($hasMetadata) {
+                        $response['message'] = trim(substr($msg, 0, $jsonStart));
+                        error_log('🧹 [sanitizeSDR] Removido JSON de metadados do campo message');
+                        
+                        // Merge dados do JSON interno se os campos principais estiverem ausentes
+                        if (!isset($response['stage']) && isset($decoded['stage'])) {
+                            $response['stage'] = $decoded['stage'];
+                        }
+                        if (!isset($response['clientData']) && isset($decoded['clientData'])) {
+                            $response['clientData'] = $decoded['clientData'];
+                        }
+                        if (!isset($response['suggestedPlan']) && isset($decoded['suggestedPlan'])) {
+                            $response['suggestedPlan'] = $decoded['suggestedPlan'];
+                        }
+                        if (!isset($response['finished']) && isset($decoded['finished'])) {
+                            $response['finished'] = $decoded['finished'];
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return $response;
 }
 
 /**
@@ -770,4 +1073,95 @@ Responda em JSON:
 
 Comece perguntando o que o cliente precisa.
 PROMPT;
+}
+
+/**
+ * Extrai nomes de páginas mencionadas na mensagem da IA.
+ * Safety net para quando o Gemini esquece de popular suggestedPlan.pages
+ * mas menciona as páginas no texto da mensagem.
+ * 
+ * @param string $message Mensagem da IA
+ * @return array Lista de page keys (ex: ['about', 'contact', 'showcase'])
+ */
+function extractPagesFromMessage(string $message): array {
+    $msg = mb_strtolower($message);
+    
+    // Mapa de termos em PT-BR → page key do pricing.json
+    $pagePatterns = [
+        'about'     => ['sobre n[óo]s', 'sobre a empresa', 'p[áa]gina sobre', 'quem somos'],
+        'services'  => ['servi[çc]os', 'p[áa]gina de servi'],
+        'portfolio' => ['portf[óo]lio', 'portif[óo]lio', 'galeria de projetos', 'trabalhos realizados'],
+        'faq'       => ['\bfaq\b', 'perguntas frequentes', 'd[úu]vidas frequentes'],
+        'contact'   => ['contato', 'fale conosco', 'formul[áa]rio de contato'],
+        'blog'      => ['\bblog\b', 'not[íi]cias', 'artigos'],
+        'showcase'  => ['vitrine', 'cat[áa]logo', 'vitrine de produtos'],
+    ];
+    
+    $foundPages = [];
+    
+    foreach ($pagePatterns as $pageKey => $patterns) {
+        foreach ($patterns as $pattern) {
+            if (preg_match('/' . $pattern . '/ui', $msg)) {
+                $foundPages[] = $pageKey;
+                break; // uma vez encontrado, não precisa checar outros patterns
+            }
+        }
+    }
+    
+    return $foundPages;
+}
+
+/**
+ * Converte suggestedPlan do agente SDR para o MESMO formato
+ * que o formulário/configurador envia para price.php.
+ * 
+ * O agente funciona como se estivesse preenchendo o formulário:
+ * ele envia as páginas, content addons, quantidades de vídeo, etc.
+ * 
+ * Formato do formulário (SiteConfigurator):
+ *   { product, pages: {about:1, contact:1}, content: ['video_basic','pdf'],
+ *     video_basic_quantity: 3, video_pro_quantity: 0, custom_pages: [],
+ *     service_addons: { specialist_onboarding: true } }
+ * 
+ * @param array $suggestedPlan Dados do agente SDR
+ * @return array Seleção no formato idêntico ao formulário
+ */
+function sdrPlanToFormSelection(array $suggestedPlan): array {
+    // pages: ["about","contact","showcase"] → {about:1, contact:1, showcase:1}
+    $pagesMap = [];
+    $allPages = $suggestedPlan['pages'] ?? [];
+    foreach ($allPages as $pageKey) {
+        if (is_string($pageKey)) {
+            $pagesMap[$pageKey] = 1;
+        }
+    }
+    
+    // content: ["video_basic","pdf"] (array de keys ativados)
+    $content = $suggestedPlan['content'] ?? [];
+    
+    // ============================================================
+    // NORMALIZAR TIPO DO PRODUTO
+    // A IA às vezes envia "vitrine", "blog", "site" etc. como type.
+    // Os únicos tipos válidos são: "site_complete" e "landing".
+    // Qualquer outro valor é mapeado para "site_complete".
+    // ============================================================
+    $rawType = $suggestedPlan['type'] ?? 'site_complete';
+    $validTypes = ['site_complete', 'landing'];
+    $productType = in_array($rawType, $validTypes) ? $rawType : 'site_complete';
+    
+    if ($rawType !== $productType) {
+        error_log('🔧 [sdrPlanToForm] Tipo normalizado: "' . $rawType . '" → "' . $productType . '"');
+    }
+    
+    return [
+        'product'              => $productType,
+        'pages'                => $pagesMap,
+        'content'              => $content,
+        'custom_pages'         => [],
+        'video_basic_quantity' => intval($suggestedPlan['video_basic_quantity'] ?? 0),
+        'video_pro_quantity'   => intval($suggestedPlan['video_pro_quantity'] ?? 0),
+        'service_addons'       => [
+            'specialist_onboarding' => !empty($suggestedPlan['specialistOnboarding'])
+        ]
+    ];
 }

@@ -397,6 +397,7 @@ export default {
       isTyping: false, // Novo: controla o delay de digitação
       conversationFinished: false,
       hasRestoredSession: false,
+      conversationId: null, // UUID do servidor para rastreamento
 
       // Progress Tracker (Gamificação)
       steps: ['Empresa', 'Produto', 'Visual', 'Autoridade', 'Diferencial'],
@@ -519,6 +520,12 @@ Comece pedindo uma apresentação da empresa: nome, origem e história.`,
       this.consultant = useBrandConsultant();
       const restored = this.consultant.initSession(this.sessionId);
       
+      // Restaurar conversationId do localStorage
+      try {
+        const savedConvId = localStorage.getItem(`unli_consultant_${this.sessionId}_conversationId`);
+        if (savedConvId) this.conversationId = savedConvId;
+      } catch (e) { /* ignore */ }
+      
       if (restored.hasRestoredData && restored.messageCount > 0) {
         // Restore chat history from composable (chatHistory is a computed ref)
         const historyRef = this.consultant.chatHistory;
@@ -558,6 +565,12 @@ Comece pedindo uma apresentação da empresa: nome, origem e história.`,
     saveConversation() {
       if (this.consultant) {
         this.consultant.saveConversation();
+        // Persistir conversationId do backend
+        if (this.conversationId && this.sessionId) {
+          try {
+            localStorage.setItem(`unli_consultant_${this.sessionId}_conversationId`, this.conversationId);
+          } catch (e) { /* ignore */ }
+        }
         this.$emit('conversation-saved', this.chatHistory);
       }
     },
@@ -728,13 +741,19 @@ Comece pedindo uma apresentação da empresa: nome, origem e história.`,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           messages,
-          orderContext // Enviar contexto do pedido para o backend
+          orderContext, // Enviar contexto do pedido para o backend
+          conversation_id: this.conversationId
         })
       });
 
       if (!response.ok) throw new Error('Falha na API');
 
       const data = await response.json();
+      
+      // Salvar conversation_id retornado pelo servidor
+      if (data.conversation_id) {
+        this.conversationId = data.conversation_id;
+      }
       
       // Retornar objeto com message e finished
       return {
@@ -801,7 +820,8 @@ Comece pedindo uma apresentação da empresa: nome, origem e história.`,
             chat_history: this.chatHistory.map(msg => ({
               role: msg.role,
               content: msg.content
-            }))
+            })),
+            conversation_id: this.conversationId
           })
         });
 

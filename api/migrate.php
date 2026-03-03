@@ -317,6 +317,258 @@ function rollback_orders_table($pdo) {
 }
 
 // ============================================
+// MIGRATION: TABELA SDR_CONVERSATIONS
+// ============================================
+
+function migrate_sdr_conversations_table($pdo) {
+    $tableName = DB_PREFIX . 'sdr_conversations';
+    
+    log_message("🔍 Verificando tabela {$tableName}...");
+    
+    if (!table_exists($pdo, $tableName)) {
+        log_message("📦 Criando tabela {$tableName}...", 'warning');
+        
+        $sql = "CREATE TABLE `{$tableName}` (
+            `id` INT(11) NOT NULL AUTO_INCREMENT COMMENT 'ID interno',
+            `conversation_id` VARCHAR(36) NOT NULL COMMENT 'UUID público da conversa',
+            
+            -- Rastreamento do visitante
+            `ip_address` VARCHAR(45) NOT NULL COMMENT 'IP do visitante (IPv4/IPv6)',
+            `user_agent` VARCHAR(500) DEFAULT NULL COMMENT 'User-Agent do navegador',
+            
+            -- Dados do cliente (preenchidos após checkout)
+            `customer_name` VARCHAR(255) DEFAULT NULL COMMENT 'Nome do cliente (atualizado no checkout)',
+            `customer_email` VARCHAR(255) DEFAULT NULL COMMENT 'Email do cliente (atualizado no checkout)',
+            `customer_phone` VARCHAR(50) DEFAULT NULL COMMENT 'Telefone/WhatsApp (atualizado no checkout)',
+            
+            -- Estado da conversa
+            `last_stage` VARCHAR(30) DEFAULT 'ABERTURA' COMMENT 'Último estágio do SDR',
+            `client_data` JSON DEFAULT NULL COMMENT 'Dados extraídos do cliente (negócio, nicho, etc)',
+            `suggested_plan` JSON DEFAULT NULL COMMENT 'Plano sugerido pela IA',
+            `finished` TINYINT(1) DEFAULT 0 COMMENT 'Se a conversa foi finalizada',
+            
+            -- Vínculo com pedido
+            `order_id` INT(11) DEFAULT NULL COMMENT 'FK: pedido criado a partir desta conversa',
+            
+            -- Estatísticas
+            `total_messages` INT(11) DEFAULT 0 COMMENT 'Total de mensagens na conversa',
+            
+            -- Timestamps
+            `started_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Início da conversa',
+            `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Última interação',
+            
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `uk_conversation_id` (`conversation_id`),
+            INDEX `idx_ip` (`ip_address`),
+            INDEX `idx_email` (`customer_email`),
+            INDEX `idx_order_id` (`order_id`),
+            INDEX `idx_stage` (`last_stage`),
+            INDEX `idx_finished` (`finished`),
+            INDEX `idx_started_at` (`started_at`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Log de conversas do SDR (pré-venda)'";
+        
+        try {
+            $pdo->exec($sql);
+            log_message("✅ Tabela {$tableName} criada com sucesso!", 'success');
+        } catch (PDOException $e) {
+            log_message("❌ Erro ao criar tabela {$tableName}: " . $e->getMessage(), 'error');
+            return false;
+        }
+    } else {
+        log_message("✅ Tabela {$tableName} já existe");
+    }
+    
+    return true;
+}
+
+// ============================================
+// MIGRATION: TABELA SDR_MESSAGES
+// ============================================
+
+function migrate_sdr_messages_table($pdo) {
+    $tableName = DB_PREFIX . 'sdr_messages';
+    
+    log_message("🔍 Verificando tabela {$tableName}...");
+    
+    if (!table_exists($pdo, $tableName)) {
+        log_message("📦 Criando tabela {$tableName}...", 'warning');
+        
+        $convTableName = DB_PREFIX . 'sdr_conversations';
+        
+        $sql = "CREATE TABLE `{$tableName}` (
+            `id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT 'ID da mensagem',
+            `conversation_id` INT(11) NOT NULL COMMENT 'FK: conversa SDR',
+            
+            -- Conteúdo
+            `role` ENUM('user', 'assistant') NOT NULL COMMENT 'Quem enviou a mensagem',
+            `content` TEXT NOT NULL COMMENT 'Conteúdo da mensagem',
+            `stage` VARCHAR(30) DEFAULT NULL COMMENT 'Estágio do SDR neste momento',
+            `metadata` JSON DEFAULT NULL COMMENT 'Dados extras (pricing, clientData, etc)',
+            
+            -- Timestamps
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Quando a mensagem foi enviada',
+            
+            PRIMARY KEY (`id`),
+            INDEX `idx_conversation` (`conversation_id`),
+            INDEX `idx_role` (`role`),
+            INDEX `idx_created_at` (`created_at`),
+            CONSTRAINT `fk_sdr_msg_conv` FOREIGN KEY (`conversation_id`) 
+                REFERENCES `{$convTableName}` (`id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Mensagens individuais das conversas SDR'";
+        
+        try {
+            $pdo->exec($sql);
+            log_message("✅ Tabela {$tableName} criada com sucesso!", 'success');
+        } catch (PDOException $e) {
+            log_message("❌ Erro ao criar tabela {$tableName}: " . $e->getMessage(), 'error');
+            return false;
+        }
+    } else {
+        log_message("✅ Tabela {$tableName} já existe");
+    }
+    
+    return true;
+}
+
+// ============================================
+// MIGRATION: TABELA ONBOARDING_CONVERSATIONS
+// ============================================
+
+function migrate_onboarding_conversations_table($pdo) {
+    $tableName = DB_PREFIX . 'onboarding_conversations';
+    
+    log_message("🔍 Verificando tabela {$tableName}...");
+    
+    if (!table_exists($pdo, $tableName)) {
+        log_message("📦 Criando tabela {$tableName}...", 'warning');
+        
+        $sql = "CREATE TABLE `{$tableName}` (
+            `id` INT(11) NOT NULL AUTO_INCREMENT COMMENT 'ID interno',
+            `conversation_id` VARCHAR(36) NOT NULL COMMENT 'UUID público da conversa',
+            
+            -- Vínculo com pedido/projeto
+            `order_id` INT(11) DEFAULT NULL COMMENT 'FK: pedido associado',
+            `onboarding_token` VARCHAR(64) DEFAULT NULL COMMENT 'Token do magic-link de onboarding',
+            
+            -- Dados do cliente (já disponíveis via pedido)
+            `customer_name` VARCHAR(255) DEFAULT NULL COMMENT 'Nome do cliente',
+            `customer_email` VARCHAR(255) DEFAULT NULL COMMENT 'Email do cliente',
+            
+            -- Contexto do projeto
+            `plan_name` VARCHAR(100) DEFAULT NULL COMMENT 'Nome do plano contratado',
+            `purchased_pages` JSON DEFAULT NULL COMMENT 'Páginas compradas',
+            
+            -- Estado da conversa
+            `finished` TINYINT(1) DEFAULT 0 COMMENT 'Se a conversa foi finalizada',
+            `extracted_data` JSON DEFAULT NULL COMMENT 'Dados extraídos pela IA (briefing)',
+            
+            -- Estatísticas
+            `total_messages` INT(11) DEFAULT 0 COMMENT 'Total de mensagens na conversa',
+            
+            -- Timestamps
+            `started_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Início da conversa',
+            `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Última interação',
+            
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `uk_conversation_id` (`conversation_id`),
+            INDEX `idx_order_id` (`order_id`),
+            INDEX `idx_token` (`onboarding_token`),
+            INDEX `idx_email` (`customer_email`),
+            INDEX `idx_finished` (`finished`),
+            INDEX `idx_started_at` (`started_at`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Log de conversas do onboarding (pós-venda)'";
+        
+        try {
+            $pdo->exec($sql);
+            log_message("✅ Tabela {$tableName} criada com sucesso!", 'success');
+        } catch (PDOException $e) {
+            log_message("❌ Erro ao criar tabela {$tableName}: " . $e->getMessage(), 'error');
+            return false;
+        }
+    } else {
+        log_message("✅ Tabela {$tableName} já existe");
+    }
+    
+    return true;
+}
+
+// ============================================
+// MIGRATION: TABELA ONBOARDING_MESSAGES
+// ============================================
+
+function migrate_onboarding_messages_table($pdo) {
+    $tableName = DB_PREFIX . 'onboarding_messages';
+    
+    log_message("🔍 Verificando tabela {$tableName}...");
+    
+    if (!table_exists($pdo, $tableName)) {
+        log_message("📦 Criando tabela {$tableName}...", 'warning');
+        
+        $convTableName = DB_PREFIX . 'onboarding_conversations';
+        
+        $sql = "CREATE TABLE `{$tableName}` (
+            `id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT 'ID da mensagem',
+            `conversation_id` INT(11) NOT NULL COMMENT 'FK: conversa onboarding',
+            
+            -- Conteúdo
+            `role` ENUM('user', 'assistant') NOT NULL COMMENT 'Quem enviou a mensagem',
+            `content` TEXT NOT NULL COMMENT 'Conteúdo da mensagem',
+            `metadata` JSON DEFAULT NULL COMMENT 'Dados extras',
+            
+            -- Timestamps
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Quando a mensagem foi enviada',
+            
+            PRIMARY KEY (`id`),
+            INDEX `idx_conversation` (`conversation_id`),
+            INDEX `idx_role` (`role`),
+            INDEX `idx_created_at` (`created_at`),
+            CONSTRAINT `fk_onb_msg_conv` FOREIGN KEY (`conversation_id`) 
+                REFERENCES `{$convTableName}` (`id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Mensagens individuais das conversas de onboarding'";
+        
+        try {
+            $pdo->exec($sql);
+            log_message("✅ Tabela {$tableName} criada com sucesso!", 'success');
+        } catch (PDOException $e) {
+            log_message("❌ Erro ao criar tabela {$tableName}: " . $e->getMessage(), 'error');
+            return false;
+        }
+    } else {
+        log_message("✅ Tabela {$tableName} já existe");
+    }
+    
+    return true;
+}
+
+// ============================================
+// ROLLBACK: TABELAS DE CONVERSAS
+// ============================================
+
+function rollback_conversation_tables($pdo) {
+    $tables = [
+        DB_PREFIX . 'sdr_messages',
+        DB_PREFIX . 'sdr_conversations',
+        DB_PREFIX . 'onboarding_messages',
+        DB_PREFIX . 'onboarding_conversations'
+    ];
+    
+    foreach ($tables as $tableName) {
+        log_message("⚠️ ROLLBACK: Removendo tabela {$tableName}...", 'warning');
+        
+        if (table_exists($pdo, $tableName)) {
+            try {
+                $pdo->exec("DROP TABLE `{$tableName}`");
+                log_message("✅ Tabela {$tableName} removida!", 'success');
+            } catch (PDOException $e) {
+                log_message("❌ Erro ao remover {$tableName}: " . $e->getMessage(), 'error');
+            }
+        } else {
+            log_message("ℹ️ Tabela {$tableName} não existe", 'info');
+        }
+    }
+}
+
+// ============================================
 // EXECUTAR MIGRATIONS
 // ============================================
 
@@ -329,11 +581,16 @@ if ($action === 'rollback') {
     file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] Executando ROLLBACK\n", FILE_APPEND);
     log_message("🔄 Iniciando ROLLBACK...", 'warning');
     rollback_orders_table($pdo);
+    rollback_conversation_tables($pdo);
     
 } else {
     file_put_contents($debug_log, "[" . date('Y-m-d H:i:s') . "] Executando MIGRATIONS\n", FILE_APPEND);
     log_message("🚀 Iniciando MIGRATIONS...");
     migrate_orders_table($pdo);
+    migrate_sdr_conversations_table($pdo);
+    migrate_sdr_messages_table($pdo);
+    migrate_onboarding_conversations_table($pdo);
+    migrate_onboarding_messages_table($pdo);
     log_message("🎉 Migrations concluídas!");
 }
 

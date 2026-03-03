@@ -103,6 +103,35 @@
                 {{ formatTime(message.timestamp) }}
               </div>
             </div>
+            <!-- Pricing Card: renderizado abaixo de mensagens do assistente que tenham pricing -->
+            <div v-if="message.role === 'assistant' && message.pricing" class="pricing-card glass-panel">
+              <div class="pricing-card-header">
+                <i class="fas fa-receipt"></i>
+                <span>Resumo de Valores</span>
+              </div>
+              <div class="pricing-card-body">
+                <div class="pricing-card-option" v-if="message.pricing.parcela_12">
+                  <div class="pricing-card-label">
+                    <i class="fas fa-credit-card"></i> 12x no Cartão
+                  </div>
+                  <div class="pricing-card-value highlight">
+                    {{ formatCurrency(message.pricing.parcela_12) }}<span class="pricing-card-suffix">/mês</span>
+                  </div>
+                </div>
+                <div class="pricing-card-divider" v-if="message.pricing.parcela_12 && message.pricing.avista"></div>
+                <div class="pricing-card-option" v-if="message.pricing.avista">
+                  <div class="pricing-card-label">
+                    <i class="fas fa-qrcode"></i> PIX à Vista
+                  </div>
+                  <div class="pricing-card-value">
+                    {{ formatCurrency(message.pricing.avista) }}
+                  </div>
+                  <div class="pricing-card-savings" v-if="message.pricing.economia_avista">
+                    Economia de {{ formatCurrency(message.pricing.economia_avista) }}
+                  </div>
+                </div>
+              </div>
+            </div>
             <div v-if="message.role === 'assistant'" class="bot-mini-avatar">
               <i class="fas fa-headset"></i>
             </div>
@@ -363,6 +392,7 @@ export default {
       isLoading: false,
       isTyping: false,
       finished: false,
+      conversationId: null, // UUID do servidor para rastreamento
       
       // Flag para desenvolvimento customizado (e-commerce/app)
       needsCustomDev: false,
@@ -530,14 +560,32 @@ export default {
             messages: this.messages.map(m => ({
               role: m.role === 'assistant' ? 'model' : 'user',
               content: m.content
-            }))
+            })),
+            conversation_id: this.conversationId
           })
         });
+        
+        // Tratar respostas de erro do servidor antes de parsear JSON
+        if (!response.ok) {
+          let errorMsg = `Erro HTTP ${response.status}`;
+          try {
+            const errorData = await response.json();
+            errorMsg = errorData.error || errorMsg;
+          } catch {
+            // Corpo vazio ou inválido — manter mensagem HTTP
+          }
+          throw new Error(errorMsg);
+        }
         
         const data = await response.json();
         
         if (!data.success) {
           throw new Error(data.error || 'Erro na API');
+        }
+        
+        // Salvar conversation_id retornado pelo servidor
+        if (data.conversation_id) {
+          this.conversationId = data.conversation_id;
         }
         
         // Atualizar stage (apenas se avançar, nunca voltar)
@@ -559,7 +607,8 @@ export default {
           content: data.response,
           timestamp: new Date(),
           clientData: data.clientData,
-          suggestedPlan: data.suggestedPlan
+          suggestedPlan: data.suggestedPlan,
+          pricing: data.pricing || null
         });
         
         // Verificar se precisa de desenvolvimento customizado (e-commerce/app)
@@ -574,6 +623,10 @@ export default {
           // Se tem plano sugerido com método de pagamento, abrir checkout direto
           if (data.suggestedPlan && data.suggestedPlan.paymentMethod) {
             this.openDirectCheckout(data.suggestedPlan, data.pricing);
+          } else if (data.suggestedPlan && data.suggestedPlan.pages && data.suggestedPlan.pages.length > 0) {
+            // finished=true mas paymentMethod ausente: inferir do texto da mensagem
+            console.warn('⚠️ [SDRChat] finished=true mas paymentMethod ausente. Inferindo do texto...');
+            this.inferPaymentMethodAndCheckout(data);
           }
         } else {
           // Fallback: detectar mensagem de fechamento mesmo sem finished=true
@@ -587,14 +640,17 @@ export default {
       } catch (error) {
         console.warn(`[SDRChat] Tentativa ${retryCount + 1} falhou:`, error.message);
         
-        // Retry automático para erros de rede/servidor (429, 500, 502, 503)
+        // Retry automático para erros de rede/servidor (429, 500, 502, 503, corpo vazio)
         const isRetryable = error.message?.includes('Resource exhausted') 
+          || error.message?.includes('Erro HTTP')
           || error.message?.includes('500')
           || error.message?.includes('502')
           || error.message?.includes('503')
           || error.message?.includes('429')
           || error.message?.includes('Failed to fetch')
-          || error.message?.includes('NetworkError');
+          || error.message?.includes('NetworkError')
+          || error.message?.includes('Unexpected end of JSON')
+          || error.message?.includes('Erro interno');
         
         if (isRetryable && retryCount < maxRetries) {
           const waitMs = (retryCount + 1) * 3000; // 3s, 6s
@@ -740,11 +796,80 @@ export default {
     
     formatMessage(content) {
       if (!content) return '';
+      
+      // ============================================================
+      // SAFETY NET: Remover JSON de metadados que possa ter vazado
+      // na mensagem (quando a IA retorna texto + JSON misturado)
+      // ============================================================
+      let formatted = content;
+      
+      // Detectar e remover blocos JSON de metadados no final da mensagem
+      const jsonMetadataPattern = /\{\s*"(?:stage|clientData|suggestedPlan|finished|niche|type)"[\s\S]*\}\s*$/;
+      const metadataMatch = formatted.match(jsonMetadataPattern);
+      if (metadataMatch) {
+        // Verificar se é realmente JSON válido antes de remover
+        try {
+          const parsed = JSON.parse(metadataMatch[0]);
+          if (parsed && (parsed.stage || parsed.clientData || parsed.suggestedPlan || parsed.finished !== undefined)) {
+            formatted = formatted.substring(0, metadataMatch.index).trim();
+            console.warn('🧹 [formatMessage] JSON de metadados removido da mensagem visível');
+          }
+        } catch (e) {
+          // Não é JSON válido, deixar como está
+        }
+      }
+      
+      // Tentar substituir placeholders residuais usando último pricing conhecido
+      // (caso backend não tenha substituído — ex: suggestedPlan.pages vazio)
+      
+      if (formatted.includes('{{PRECO_MENSAL}}') || formatted.includes('{{PRECO_AVISTA}}')) {
+        // Buscar último pricing disponível nas mensagens
+        const lastPricing = this.getLastKnownPricing();
+        
+        if (lastPricing) {
+          const fmtCurrency = (v) => 'R$ ' + Number(v).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+          
+          if (lastPricing.parcela_12) {
+            formatted = formatted.replace(/\{\{PRECO_MENSAL\}\}/g, fmtCurrency(lastPricing.parcela_12));
+          }
+          if (lastPricing.avista) {
+            formatted = formatted.replace(/\{\{PRECO_AVISTA\}\}/g, fmtCurrency(lastPricing.avista));
+          }
+          if (lastPricing.economia_avista) {
+            formatted = formatted.replace(/\{\{ECONOMIA_AVISTA\}\}/g, fmtCurrency(lastPricing.economia_avista));
+          }
+        }
+      }
+      
+      // Último fallback: remover placeholders que ainda sobraram
+      formatted = formatted
+        .replace(/\{\{PRECO_MENSAL\}\}/g, 'valor sob consulta')
+        .replace(/\{\{PRECO_AVISTA\}\}/g, 'valor sob consulta')
+        .replace(/\{\{ECONOMIA_AVISTA\}\}/g, '');
+      
       // Converter quebras de linha
-      let formatted = content.replace(/\n/g, '<br>');
+      formatted = formatted.replace(/\n/g, '<br>');
       // Converter **bold**
       formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
       return formatted;
+    },
+    
+    /**
+     * Busca o último pricing válido nas mensagens da conversa.
+     * Útil como fallback quando o backend não conseguiu resolver placeholders.
+     */
+    getLastKnownPricing() {
+      for (let i = this.messages.length - 1; i >= 0; i--) {
+        if (this.messages[i].pricing && this.messages[i].pricing.parcela_12) {
+          return this.messages[i].pricing;
+        }
+      }
+      return null;
+    },
+    
+    formatCurrency(value) {
+      if (value == null) return '';
+      return Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     },
     
     formatTime(date) {
@@ -778,6 +903,7 @@ export default {
         localStorage.setItem('unli_sdr_conversation', JSON.stringify({
           messages: this.messages,
           stage: this.currentStage,
+          conversationId: this.conversationId,
           timestamp: new Date().toISOString()
         }));
       } catch (e) {
@@ -798,6 +924,7 @@ export default {
           if (hoursDiff < 24) {
             this.messages = data.messages || [];
             this.currentStage = data.stage || 'ABERTURA';
+            this.conversationId = data.conversationId || null;
           } else {
             localStorage.removeItem('unli_sdr_conversation');
           }
@@ -811,12 +938,66 @@ export default {
       this.messages = [];
       this.currentStage = 'ABERTURA';
       this.finished = false;
+      this.conversationId = null;
       localStorage.removeItem('unli_sdr_conversation');
     },
     
     // ==================
     // CHECKOUT DIRETO
     // ==================
+    
+    /**
+     * Infere o método de pagamento a partir do texto da mensagem
+     * Retorna 'parcelado', 'pix_avista' ou null
+     */
+    inferPaymentMethodFromMessage(message) {
+      const msg = (message || '').toLowerCase();
+      if (msg.includes('pix') || msg.includes('à vista') || msg.includes('a vista')) {
+        return 'pix_avista';
+      }
+      if (msg.includes('mensal') || msg.includes('mensais') || msg.includes('parcel') 
+          || msg.includes('cartão') || msg.includes('12x') || msg.includes('/mês')) {
+        return 'parcelado';
+      }
+      return null;
+    },
+    
+    /**
+     * Quando finished=true mas paymentMethod ausente:
+     * Tenta inferir do texto e abre checkout de qualquer forma
+     */
+    inferPaymentMethodAndCheckout(data) {
+      const inferred = this.inferPaymentMethodFromMessage(data.response);
+      
+      if (inferred) {
+        data.suggestedPlan.paymentMethod = inferred;
+        console.log(`✅ [SDRChat] paymentMethod inferido do texto: ${inferred}`);
+      } else {
+        // Último recurso: verificar o histórico da conversa para achar a escolha
+        const lastMessages = this.messages.slice(-6);
+        for (const msg of lastMessages) {
+          const content = (msg.content || '').toLowerCase();
+          if (content.includes('parcelado') || content.includes('cartão') || content.includes('12x') || content.includes('mensal')) {
+            data.suggestedPlan.paymentMethod = 'parcelado';
+            console.log('✅ [SDRChat] paymentMethod inferido do histórico: parcelado');
+            break;
+          }
+          if (content.includes('pix') || content.includes('à vista') || content.includes('a vista')) {
+            data.suggestedPlan.paymentMethod = 'pix_avista';
+            console.log('✅ [SDRChat] paymentMethod inferido do histórico: pix_avista');
+            break;
+          }
+        }
+      }
+      
+      // Se ainda não achou, default para parcelado (mais comum)
+      if (!data.suggestedPlan.paymentMethod) {
+        data.suggestedPlan.paymentMethod = 'parcelado';
+        console.warn('⚠️ [SDRChat] paymentMethod não pôde ser inferido. Usando default: parcelado');
+      }
+      
+      this.openDirectCheckout(data.suggestedPlan, data.pricing);
+    },
     
     detectClosingMessageFallback(data) {
       const message = (data.response || '').toLowerCase();
@@ -828,29 +1009,25 @@ export default {
         'prosseguir para o pagamento',
         'fechar o pedido',
         'concluir o pedido',
+        'tudo certo ou tem mais alguma',
+        'tudo certo ou tem mais alguma dúvida',
+        'qualquer dúvida',
       ];
       
       const isClosing = closingPhrases.some(phrase => message.includes(phrase));
-      const hasPrice = /r\$\s*[\d.,]+/.test(message);
+      // Detectar preço: R$ real ou placeholders não substituídos ou "valor sob consulta"
+      const hasPrice = /r\$\s*[\d.,]+/.test(message) 
+        || /valor sob consulta/.test(message)
+        || /\{\{preco_(mensal|avista)\}\}/i.test(message);
       const hasPlan = data.suggestedPlan && data.suggestedPlan.pages && data.suggestedPlan.pages.length > 0;
       
-      if (isClosing && hasPrice && hasPlan) {
+      if ((isClosing && hasPlan) || (isClosing && hasPrice && hasPlan)) {
         console.warn('⚠️ [SDRChat] Fallback: Mensagem de fechamento detectada sem finished=true. Forçando checkout.');
         this.finished = true;
         this.currentStage = 'FECHAMENTO';
         
-        // Tentar inferir paymentMethod se não veio
-        if (!data.suggestedPlan.paymentMethod) {
-          if (message.includes('pix') || message.includes('à vista') || message.includes('a vista')) {
-            data.suggestedPlan.paymentMethod = 'pix_avista';
-          } else if (message.includes('mensal') || message.includes('mensais') || message.includes('parcel') || message.includes('cartão') || message.includes('12x')) {
-            data.suggestedPlan.paymentMethod = 'parcelado';
-          }
-        }
-        
-        if (data.suggestedPlan.paymentMethod) {
-          this.openDirectCheckout(data.suggestedPlan, data.pricing);
-        }
+        // Inferir paymentMethod e abrir checkout
+        this.inferPaymentMethodAndCheckout(data);
       }
     },
     
@@ -892,7 +1069,10 @@ export default {
         paymentMethod,
         packageLabel,
         paymentLabel,
-        specialistOnboarding: suggestedPlan.specialistOnboarding || false
+        specialistOnboarding: suggestedPlan.specialistOnboarding || false,
+        content: suggestedPlan.content || [],
+        video_basic_quantity: suggestedPlan.video_basic_quantity || 0,
+        video_pro_quantity: suggestedPlan.video_pro_quantity || 0
       };
       
       // Limpar form e erros
@@ -984,10 +1164,10 @@ export default {
         const orderData = {
           product: this.checkoutPlanData.type || 'site_complete',
           pages: pagesAsObject,
-          content: [],
+          content: this.checkoutPlanData.content || [],
           custom_pages: [],
-          video_basic_quantity: 0,
-          video_pro_quantity: 0,
+          video_basic_quantity: this.checkoutPlanData.video_basic_quantity || 0,
+          video_pro_quantity: this.checkoutPlanData.video_pro_quantity || 0,
           service_addons: {
             specialist_onboarding: this.checkoutPlanData.specialistOnboarding || false
           },
@@ -996,7 +1176,8 @@ export default {
             email: this.checkoutForm.email.trim(),
             whatsapp: this.checkoutForm.whatsapp
           },
-          payment_method: paymentMethod
+          payment_method: paymentMethod,
+          conversation_id: this.conversationId
         };
         
         console.log('📦 [SDRChat→Checkout] Criando pedido:', orderData);
@@ -1004,11 +1185,20 @@ export default {
         // 2. Criar pedido no backend (recalcula preço do zero)
         const orderResponse = await fetch('/api/order_create.php', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           body: JSON.stringify(orderData)
         });
         
-        const orderResult = await orderResponse.json();
+        // Verificar se a resposta é JSON válido antes de parsear
+        const orderText = await orderResponse.text();
+        let orderResult;
+        try {
+          orderResult = JSON.parse(orderText);
+        } catch (parseError) {
+          console.error('🔴 [SDRChat→Checkout] API retornou resposta inválida:', orderText.substring(0, 500));
+          throw new Error('Servidor retornou resposta inválida. Tente novamente em instantes.');
+        }
+        
         console.log('📦 [SDRChat→Checkout] Resultado do pedido:', orderResult);
         
         if (!orderResult.ok) {
@@ -1043,11 +1233,20 @@ export default {
         
         const prefResponse = await fetch('/api/create_preference.php', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           body: JSON.stringify(preferenceData)
         });
         
-        const prefResult = await prefResponse.json();
+        // Verificar se a resposta é JSON válido antes de parsear
+        const prefText = await prefResponse.text();
+        let prefResult;
+        try {
+          prefResult = JSON.parse(prefText);
+        } catch (parseError) {
+          console.error('🔴 [SDRChat→Checkout] Pagar.me retornou resposta inválida:', prefText.substring(0, 500));
+          throw new Error('Erro ao criar link de pagamento. Tente novamente.');
+        }
+        
         console.log('💳 [SDRChat→Checkout] Resultado Pagar.me:', prefResult);
         
         clearInterval(progressInterval);
@@ -1581,6 +1780,90 @@ $text-muted: rgba(255, 255, 255, 0.5);
   i {
     font-size: 12px;
     color: white;
+  }
+}
+
+// ==================
+// PRICING CARD (inline after AI messages)
+// ==================
+.pricing-card {
+  width: fit-content;
+  max-width: 75%;
+  margin-top: 8px;
+  margin-left: 38px; // align with message bubble (avatar gap)
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba($secondary, 0.3);
+  background: rgba($secondary, 0.06);
+  animation: message-slide-in 0.4s ease-out;
+
+  .pricing-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: $secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    i {
+      font-size: 13px;
+    }
+  }
+
+  .pricing-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .pricing-card-option {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .pricing-card-label {
+    font-size: 12px;
+    color: $text-secondary;
+
+    i {
+      margin-right: 4px;
+      font-size: 11px;
+    }
+  }
+
+  .pricing-card-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: $text-primary;
+
+    &.highlight {
+      color: $secondary;
+    }
+
+    .pricing-card-suffix {
+      font-size: 13px;
+      font-weight: 400;
+      color: $text-secondary;
+    }
+  }
+
+  .pricing-card-savings {
+    font-size: 11px;
+    color: $secondary;
+    margin-top: 2px;
+    
+    &::before {
+      content: '✨ ';
+    }
+  }
+
+  .pricing-card-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
   }
 }
 

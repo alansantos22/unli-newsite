@@ -181,6 +181,183 @@ SHOW TABLES LIKE 'orders';
 DESCRIBE orders;
 
 -- ============================================
+-- 5. Tabelas de Log de Conversas IA
+-- ============================================
+
+-- SDR Conversations (pré-venda)
+DROP TABLE IF EXISTS `sdr_messages`;
+DROP TABLE IF EXISTS `sdr_conversations`;
+
+CREATE TABLE `sdr_conversations` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT COMMENT 'ID interno',
+  `conversation_id` VARCHAR(36) NOT NULL COMMENT 'UUID público da conversa',
+  
+  -- Rastreamento do visitante
+  `ip_address` VARCHAR(45) NOT NULL COMMENT 'IP do visitante (IPv4/IPv6)',
+  `user_agent` VARCHAR(500) DEFAULT NULL COMMENT 'User-Agent do navegador',
+  
+  -- Dados do cliente (preenchidos após checkout)
+  `customer_name` VARCHAR(255) DEFAULT NULL COMMENT 'Nome do cliente (atualizado no checkout)',
+  `customer_email` VARCHAR(255) DEFAULT NULL COMMENT 'Email do cliente (atualizado no checkout)',
+  `customer_phone` VARCHAR(50) DEFAULT NULL COMMENT 'Telefone/WhatsApp (atualizado no checkout)',
+  
+  -- Estado da conversa
+  `last_stage` VARCHAR(30) DEFAULT 'ABERTURA' COMMENT 'Último estágio do SDR',
+  `client_data` JSON DEFAULT NULL COMMENT 'Dados extraídos do cliente (negócio, nicho, etc)',
+  `suggested_plan` JSON DEFAULT NULL COMMENT 'Plano sugerido pela IA',
+  `finished` TINYINT(1) DEFAULT 0 COMMENT 'Se a conversa foi finalizada',
+  
+  -- Vínculo com pedido
+  `order_id` INT(11) DEFAULT NULL COMMENT 'FK: pedido criado a partir desta conversa',
+  
+  -- Estatísticas
+  `total_messages` INT(11) DEFAULT 0 COMMENT 'Total de mensagens na conversa',
+  
+  -- Timestamps
+  `started_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Início da conversa',
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Última interação',
+  
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_conversation_id` (`conversation_id`),
+  INDEX `idx_ip` (`ip_address`),
+  INDEX `idx_email` (`customer_email`),
+  INDEX `idx_order_id` (`order_id`),
+  INDEX `idx_stage` (`last_stage`),
+  INDEX `idx_finished` (`finished`),
+  INDEX `idx_started_at` (`started_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Log de conversas do SDR (pré-venda)';
+
+CREATE TABLE `sdr_messages` (
+  `id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT 'ID da mensagem',
+  `conversation_id` INT(11) NOT NULL COMMENT 'FK: conversa SDR',
+  
+  -- Conteúdo
+  `role` ENUM('user', 'assistant') NOT NULL COMMENT 'Quem enviou a mensagem',
+  `content` TEXT NOT NULL COMMENT 'Conteúdo da mensagem',
+  `stage` VARCHAR(30) DEFAULT NULL COMMENT 'Estágio do SDR neste momento',
+  `metadata` JSON DEFAULT NULL COMMENT 'Dados extras (pricing, clientData, etc)',
+  
+  -- Timestamps
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Quando a mensagem foi enviada',
+  
+  PRIMARY KEY (`id`),
+  INDEX `idx_conversation` (`conversation_id`),
+  INDEX `idx_role` (`role`),
+  INDEX `idx_created_at` (`created_at`),
+  CONSTRAINT `fk_sdr_msg_conv` FOREIGN KEY (`conversation_id`) 
+    REFERENCES `sdr_conversations` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Mensagens individuais das conversas SDR';
+
+-- Onboarding Conversations (pós-venda)
+DROP TABLE IF EXISTS `onboarding_messages`;
+DROP TABLE IF EXISTS `onboarding_conversations`;
+
+CREATE TABLE `onboarding_conversations` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT COMMENT 'ID interno',
+  `conversation_id` VARCHAR(36) NOT NULL COMMENT 'UUID público da conversa',
+  
+  -- Vínculo com pedido/projeto
+  `order_id` INT(11) DEFAULT NULL COMMENT 'FK: pedido associado',
+  `onboarding_token` VARCHAR(64) DEFAULT NULL COMMENT 'Token do magic-link de onboarding',
+  
+  -- Dados do cliente (já disponíveis via pedido)
+  `customer_name` VARCHAR(255) DEFAULT NULL COMMENT 'Nome do cliente',
+  `customer_email` VARCHAR(255) DEFAULT NULL COMMENT 'Email do cliente',
+  
+  -- Contexto do projeto
+  `plan_name` VARCHAR(100) DEFAULT NULL COMMENT 'Nome do plano contratado',
+  `purchased_pages` JSON DEFAULT NULL COMMENT 'Páginas compradas',
+  
+  -- Estado da conversa
+  `finished` TINYINT(1) DEFAULT 0 COMMENT 'Se a conversa foi finalizada',
+  `extracted_data` JSON DEFAULT NULL COMMENT 'Dados extraídos pela IA (briefing)',
+  
+  -- Estatísticas
+  `total_messages` INT(11) DEFAULT 0 COMMENT 'Total de mensagens na conversa',
+  
+  -- Timestamps
+  `started_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Início da conversa',
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Última interação',
+  
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_conversation_id` (`conversation_id`),
+  INDEX `idx_order_id` (`order_id`),
+  INDEX `idx_token` (`onboarding_token`),
+  INDEX `idx_email` (`customer_email`),
+  INDEX `idx_finished` (`finished`),
+  INDEX `idx_started_at` (`started_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Log de conversas do onboarding (pós-venda)';
+
+CREATE TABLE `onboarding_messages` (
+  `id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT 'ID da mensagem',
+  `conversation_id` INT(11) NOT NULL COMMENT 'FK: conversa onboarding',
+  
+  -- Conteúdo
+  `role` ENUM('user', 'assistant') NOT NULL COMMENT 'Quem enviou a mensagem',
+  `content` TEXT NOT NULL COMMENT 'Conteúdo da mensagem',
+  `metadata` JSON DEFAULT NULL COMMENT 'Dados extras',
+  
+  -- Timestamps
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Quando a mensagem foi enviada',
+  
+  PRIMARY KEY (`id`),
+  INDEX `idx_conversation` (`conversation_id`),
+  INDEX `idx_role` (`role`),
+  INDEX `idx_created_at` (`created_at`),
+  CONSTRAINT `fk_onb_msg_conv` FOREIGN KEY (`conversation_id`) 
+    REFERENCES `onboarding_conversations` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Mensagens individuais das conversas de onboarding';
+
+-- ============================================
+-- 6. Queries úteis para análise de conversas
+-- ============================================
+
+-- Ver conversas SDR recentes com estatísticas
+-- SELECT 
+--   c.conversation_id,
+--   c.ip_address,
+--   c.customer_name,
+--   c.customer_email,
+--   c.last_stage,
+--   c.finished,
+--   c.total_messages,
+--   c.started_at,
+--   c.order_id
+-- FROM sdr_conversations c
+-- ORDER BY c.started_at DESC
+-- LIMIT 20;
+
+-- Ver conversa SDR completa (todas as mensagens)
+-- SELECT 
+--   m.role,
+--   m.content,
+--   m.stage,
+--   m.created_at
+-- FROM sdr_messages m
+-- JOIN sdr_conversations c ON c.id = m.conversation_id
+-- WHERE c.conversation_id = 'UUID_AQUI'
+-- ORDER BY m.created_at ASC;
+
+-- Taxa de conversão SDR (conversas → pedidos)
+-- SELECT 
+--   COUNT(*) as total_conversas,
+--   SUM(CASE WHEN finished = 1 THEN 1 ELSE 0 END) as finalizadas,
+--   SUM(CASE WHEN order_id IS NOT NULL THEN 1 ELSE 0 END) as converteram,
+--   ROUND(SUM(CASE WHEN order_id IS NOT NULL THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as taxa_conversao
+-- FROM sdr_conversations;
+
+-- Ver conversas onboarding por projeto
+-- SELECT 
+--   c.conversation_id,
+--   c.customer_name,
+--   c.plan_name,
+--   c.finished,
+--   c.total_messages,
+--   c.started_at
+-- FROM onboarding_conversations c
+-- ORDER BY c.started_at DESC;
+
+-- ============================================
 -- FIM DO SCRIPT
 -- ============================================
 

@@ -55,8 +55,9 @@ function normalize_selection(array $input, array $cfg): array {
     // Validar produto (whitelist)
     $product = $input['product'] ?? '';
     if (!array_key_exists($product, $products)) {
-        // Fallback seguro para primeiro produto válido
-        $product = array_key_first($products);
+        // Fallback seguro para primeiro produto válido (PHP 7.2 compat)
+        $keys = array_keys($products);
+        $product = reset($keys);
     }
     
     // Validar páginas adicionais

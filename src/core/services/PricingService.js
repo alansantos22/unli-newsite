@@ -18,30 +18,55 @@ class PricingService {
   constructor() {
     this.serverAvailable = null;
     this.config = null;
+    this.lastCheckTime = 0;
+    this.retryCount = 0;
+    this.maxRetries = 3;
+    this.retryIntervalMs = 10000; // 10s entre retries automáticos
   }
   
   isDebugMode() {
     return store.state.ConfigModule?.debug === true;
   }
 
-  async checkServerAvailability() {
+  /**
+   * Verifica disponibilidade do servidor.
+   * @param {boolean} force - Se true, ignora cache e força nova verificação
+   */
+  async checkServerAvailability(force = false) {
     if (this.isDebugMode()) {
       console.info('🔧 DEBUG MODE: API desabilitada (forçando modo local)');
       this.serverAvailable = false;
       return false;
     }
+
+    // Se já verificou recentemente e não é forçado, retorna cache
+    const now = Date.now();
+    if (!force && this.serverAvailable !== null && (now - this.lastCheckTime) < this.retryIntervalMs) {
+      return this.serverAvailable;
+    }
     
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
+
       const response = await fetch(`${API_BASE_URL}/config.php`, {
         method: 'GET',
-        headers: { 'Accept': 'application/json' }
+        headers: { 'Accept': 'application/json' },
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
       
       if (response.ok) {
         const data = await response.json();
         this.serverAvailable = data.ok === true;
         if (this.serverAvailable && data.products) {
           this.config = data;
+        }
+        this.lastCheckTime = now;
+        this.retryCount = 0; // Reset retries on success
+        if (this.serverAvailable) {
+          console.info('✅ API Server disponível (verificação OK)');
         }
         return this.serverAvailable;
       }
@@ -50,15 +75,19 @@ class PricingService {
       console.error(`🔴 ERRO NA API: HTTP ${response.status} - ${response.statusText}`);
       console.error('🔴 Verifique .htaccess e permissões de arquivos');
       this.serverAvailable = false;
+      this.lastCheckTime = now;
       return false;
     } catch (error) {
       // Erros de rede ou parsing JSON
-      if (error.message.includes('JSON') || error.message.includes('<!doctype')) {
+      if (error.name === 'AbortError') {
+        console.warn('🟡 API timeout (8s) - servidor pode estar lento');
+      } else if (error.message.includes('JSON') || error.message.includes('<!doctype')) {
         console.error('🔴 API retornou HTML em vez de JSON - Verifique configuração do servidor');
       } else {
-        console.warn('🟡 API não disponível (modo desenvolvimento):', error.message);
+        console.warn('🟡 API não disponível:', error.message);
       }
       this.serverAvailable = false;
+      this.lastCheckTime = now;
       return false;
     }
   }
@@ -147,7 +176,15 @@ class PricingService {
     }
     
     if (this.serverAvailable === false) {
-      return null;
+      // Tentar reconectar periodicamente em vez de desistir para sempre
+      const timeSinceLastCheck = Date.now() - this.lastCheckTime;
+      if (timeSinceLastCheck > this.retryIntervalMs) {
+        console.info('🔄 Tentando reconectar ao servidor...');
+        await this.checkServerAvailability(true);
+      }
+      if (this.serverAvailable === false) {
+        return null;
+      }
     }
 
     try {
@@ -233,17 +270,24 @@ class PricingService {
     }
     
     if (this.serverAvailable === false) {
-      console.warn('🟡 Servidor offline - pedido não será enviado');
-      return {
-        ok: false,
-        error: 'API offline',
-        offline: true,
-        mockData: {
-          order_id: 'MOCK-' + Date.now(),
-          status: 'pending_api',
-          message: 'Pedido salvo localmente (API offline)'
-        }
-      };
+      // CRITICAL: Antes de desistir, tentar reconectar uma última vez
+      console.info('🔄 [createOrder] Servidor marcado offline. Tentando reconectar...');
+      await this.checkServerAvailability(true);
+      
+      if (this.serverAvailable === false) {
+        console.warn('🟡 Servidor offline confirmado após retry - pedido não será enviado');
+        return {
+          ok: false,
+          error: 'API offline',
+          offline: true,
+          mockData: {
+            order_id: 'MOCK-' + Date.now(),
+            status: 'pending_api',
+            message: 'Pedido salvo localmente (API offline)'
+          }
+        };
+      }
+      console.info('✅ [createOrder] Servidor reconectado! Continuando com o pedido...');
     }
 
     try {

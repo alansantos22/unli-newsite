@@ -6,8 +6,27 @@
  * para renderização da UI do configurador
  */
 
+// Capturar qualquer output indesejado (warnings/notices)
+ob_start();
+
+// Garantir que erros PHP não sejam exibidos como HTML na response
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
+
+// Carregar configurações seguras (define DEBUG_MODE para CORS)
+if (!defined('SECURE_CONFIG_ACCESS')) {
+    define('SECURE_CONFIG_ACCESS', true);
+}
+$secureConfig = __DIR__ . '/config.secure.php';
+if (file_exists($secureConfig)) {
+    require_once $secureConfig;
+}
+
 // CORS - Configuração segura
 require_once __DIR__ . '/lib/cors.php';
+
+// Limpar qualquer output gerado durante includes
+ob_end_clean();
 
 header('Content-Type: application/json; charset=utf-8');
 

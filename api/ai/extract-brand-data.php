@@ -66,6 +66,9 @@ if (!$input || !isset($input['chat_history'])) {
     exit;
 }
 
+// Carregar logger de conversas
+require_once __DIR__ . '/../lib/conversation-logger.php';
+
 // Carregar System Prompt do Extrator
 $extractorPromptPath = __DIR__ . '/prompts/extractor-system-prompt.md';
 $extractorPrompt = file_exists($extractorPromptPath) 
@@ -92,6 +95,19 @@ try {
     // Adicionar metadados
     $extractedData['extractionMeta']['conversationTurns'] = count($input['chat_history']);
     $extractedData['extractionMeta']['extractedAt'] = date('c');
+    
+    // Salvar dados extraídos na conversa de onboarding (se houver conversation_id)
+    $extractConversationId = $input['conversation_id'] ?? null;
+    if ($extractConversationId) {
+        $conv = onboarding_get_or_create_conversation($extractConversationId);
+        if ($conv) {
+            onboarding_update_conversation($conv['id'], [
+                'finished' => true,
+                'extracted_data' => $extractedData
+            ]);
+            error_log('✅ [extract-brand-data] Dados extraídos salvos na conversa: ' . $extractConversationId);
+        }
+    }
     
     echo json_encode([
         'success' => true,
