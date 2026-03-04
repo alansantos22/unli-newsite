@@ -44,6 +44,8 @@ try {
         'products' => $cfg['products'],
         'page_addons' => $cfg['page_addons'],
         'content_addons' => $cfg['content_addons'],
+        'service_addons' => $cfg['service_addons'] ?? [],
+        'predefined_packages' => $cfg['predefined_packages'] ?? [],
         'pricing_rules' => $cfg['pricing_rules'],
         'limits' => $cfg['limits']
     ];

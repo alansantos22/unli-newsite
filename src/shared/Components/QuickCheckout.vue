@@ -382,31 +382,32 @@ export default {
       const subtotal = basePrice + pagesTotal;
       
       // Atendimento com especialista
+      // R$169 JÁ É o preço parcelado — NÃO aplica 15% a mais
       const specialistBasePrice = this.pricingConfig?.service_addons?.specialist_onboarding?.price || 169;
       const specialistMonthlyBadge = Math.ceil(specialistBasePrice / 12); // exibição no badge
-      const specialistPrice = this.localSpecialist ? specialistBasePrice : 0;
-      const subtotalFinal = subtotal + specialistPrice;
+      const specialistParcelado = this.localSpecialist ? specialistBasePrice : 0;
+      const specialistAvista = this.localSpecialist ? Math.round((specialistBasePrice / 1.15) * 100) / 100 : 0;
       
       // NOTA: NÃO aplicar 30% de desconto - os preços já são promocionais!
-      // À vista (PIX) = preço base (subtotal)
-      // Parcelado (12x) = preço base + 15% (taxa do cartão)
+      // À vista (PIX) = subtotal base + specialist revertido (sem markup)
+      // Parcelado (12x) = subtotal base × 1.15 + specialist (já parcelado)
       
-      const cashPrice = subtotalFinal; // PIX = preço base
-      
-      // Parcelado: acréscimo de 15% para cobrir taxa do gateway
+      // Parcelado: acréscimo de 15% para cobrir taxa do gateway (SÓ no base)
       const installmentPercent = config?.pricing_rules?.installments_12_markup_percent || this.localPricing.installmentMarkupPercent;
-      const installmentTotal = subtotalFinal * (1 + installmentPercent / 100);
+      const installmentTotal = subtotal * (1 + installmentPercent / 100) + specialistParcelado;
       const installmentPrice = installmentTotal / 12;
+      
+      const cashPrice = subtotal + specialistAvista; // PIX = base + specialist sem markup
       
       return {
         basePrice,
         pagesTotal,
         subtotal,
-        specialistPrice,
+        specialistPrice: specialistParcelado,
         specialistMonthlyBadge,
-        cashPrice, // PIX = preço base
-        installmentTotal, // Cartão = base + 15%
-        installmentPrice // Valor da parcela
+        cashPrice,
+        installmentTotal,
+        installmentPrice
       };
     }
   },

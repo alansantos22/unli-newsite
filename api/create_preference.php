@@ -163,6 +163,35 @@ try {
     $pricing = $order['pricing'];
     $paymentMethodFromOrder = $order['payment_method'];
     
+    // 🚨 SAFETY NET: Verificar se o specialist está na selection mas não no pricing
+    $specialistInSelection = !empty($selection['service_addons']['specialist_onboarding']);
+    $specialistInBreakdown = false;
+    if (!empty($pricing['breakdown']['service_addons'])) {
+        foreach ($pricing['breakdown']['service_addons'] as $addon) {
+            if (($addon['key'] ?? '') === 'specialist_onboarding') {
+                $specialistInBreakdown = true;
+                break;
+            }
+        }
+    }
+    
+    error_log('🎯 [create_preference] SPECIALIST CHECK: inSelection=' . ($specialistInSelection ? 'YES' : 'NO') 
+        . ' inBreakdown=' . ($specialistInBreakdown ? 'YES' : 'NO')
+        . ' subtotal=' . ($pricing['subtotal'] ?? '?')
+        . ' parcelado=' . ($pricing['parcelado_total'] ?? '?'));
+    
+    // Se specialist está na selection mas NÃO no pricing, RECALCULAR
+    if ($specialistInSelection && !$specialistInBreakdown) {
+        error_log('⚠️ [create_preference] SPECIALIST MISSING FROM PRICING! Recalculando...');
+        try {
+            $cfg = load_pricing_config(__DIR__ . '/pricing.json');
+            $pricing = compute_price($selection, $cfg);
+            error_log('✅ [create_preference] Preço recalculado com specialist: subtotal=' . $pricing['subtotal'] . ' parcelado=' . $pricing['parcelado_total']);
+        } catch (Exception $e) {
+            error_log('❌ [create_preference] Falha ao recalcular: ' . $e->getMessage());
+        }
+    }
+    
     debugLog('Dados carregados da ordem salva', [
         'order_id' => $orderId,
         'selection' => $selection,
@@ -225,7 +254,9 @@ try {
         'is_parcelado' => $isParcelado,
         'amount' => $precoFinal,
         'max_parcelas' => $maxParcelas,
-        'source' => 'server_calculated'
+        'source' => 'server_calculated',
+        'specialist_onboarding' => !empty($selection['service_addons']['specialist_onboarding']),
+        'breakdown_service_addons' => $pricing['breakdown']['service_addons'] ?? []
     ]);
     
     $externalReference = "UNLI-" . $orderId . "-" . time();
@@ -290,15 +321,64 @@ try {
         $customerData["document_type"] = $documentType;
     }
 
-    $pagarmeOrder = [
-        "items" => [
+    // ============================================
+    // MONTAR ITENS DO PEDIDO (com specialist separado para transparência)
+    // ============================================
+    $hasSpecialist = !empty($selection['service_addons']['specialist_onboarding']);
+    
+    // LOG OBRIGATÓRIO: Sempre logar o estado do specialist para diagnóstico
+    error_log('🎯 [create_preference] specialist_onboarding check: ' 
+        . json_encode([
+            'hasSpecialist' => $hasSpecialist,
+            'service_addons_raw' => $selection['service_addons'] ?? 'NOT_SET',
+            'precoFinal' => $precoFinal,
+            'isParcelado' => $isParcelado
+        ]));
+    
+    if ($hasSpecialist) {
+        // R$169 JÁ É o preço parcelado do specialist (sem markup adicional)
+        // Para à vista: 169 / 1.15
+        $specialistPriceParcelado = 169.0;
+        $specialistPriceAvista = round($specialistPriceParcelado / 1.15, 2);
+        $specialistFinalPrice = $isParcelado ? $specialistPriceParcelado : $specialistPriceAvista;
+        $siteAmount = round($precoFinal - $specialistFinalPrice, 2);
+        $siteAmountCents = (int) round($siteAmount * 100);
+        $specialistAmountCents = $amountInCents - $siteAmountCents; // Garante soma exata
+        
+        $items = [
+            [
+                "amount" => $siteAmountCents,
+                "description" => $descricao,
+                "quantity" => 1,
+                "code" => $orderId
+            ],
+            [
+                "amount" => $specialistAmountCents,
+                "description" => "Atendimento com Especialista",
+                "quantity" => 1,
+                "code" => $orderId . '-SPECIALIST'
+            ]
+        ];
+        
+        debugLog('Itens com especialista separado', [
+            'site_amount' => $siteAmountCents,
+            'specialist_amount' => $specialistAmountCents,
+            'total' => $siteAmountCents + $specialistAmountCents,
+            'expected_total' => $amountInCents
+        ]);
+    } else {
+        $items = [
             [
                 "amount" => $amountInCents,
                 "description" => $descricao,
                 "quantity" => 1,
                 "code" => $orderId
             ]
-        ],
+        ];
+    }
+
+    $pagarmeOrder = [
+        "items" => $items,
         "customer" => $customerData,
         "payments" => [
             [

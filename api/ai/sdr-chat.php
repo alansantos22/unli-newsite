@@ -173,6 +173,70 @@ try {
     $suggestedPlan = $parsedResponse['suggestedPlan'] ?? null;
     
     // ============================================================
+    // 🛡️ SAFETY NET: Quando a IA esquece de incluir suggestedPlan.pages
+    // (ex: responde sobre forma de pagamento sem repetir o plano),
+    // usar o último suggestedPlan enviado pelo frontend como fallback.
+    // ============================================================
+    $lastSuggestedPlan = $input['last_suggested_plan'] ?? null;
+    
+    if (empty($suggestedPlan['pages']) && !empty($lastSuggestedPlan['pages'])) {
+        error_log('🔧 [sdr-chat] SAFETY NET: suggestedPlan.pages vazio na resposta da IA. Usando last_suggested_plan do frontend como fallback.');
+        // Mesclar: manter campos que a IA atualizou (paymentMethod, specialistOnboarding)
+        // mas recuperar pages e type do plano anterior
+        $fallback = $lastSuggestedPlan;
+        if (!is_array($suggestedPlan)) {
+            $suggestedPlan = $fallback;
+        } else {
+            $suggestedPlan['pages'] = $suggestedPlan['pages'] ?: $fallback['pages'];
+            $suggestedPlan['type'] = $suggestedPlan['type'] ?: ($fallback['type'] ?? 'site_complete');
+            $suggestedPlan['content'] = $suggestedPlan['content'] ?: ($fallback['content'] ?? []);
+            $suggestedPlan['video_basic_quantity'] = $suggestedPlan['video_basic_quantity'] ?? ($fallback['video_basic_quantity'] ?? 0);
+            $suggestedPlan['video_pro_quantity'] = $suggestedPlan['video_pro_quantity'] ?? ($fallback['video_pro_quantity'] ?? 0);
+            // specialistOnboarding e paymentMethod: manter o da resposta atual (pode ter mudado)
+            if (!isset($suggestedPlan['specialistOnboarding'])) {
+                $suggestedPlan['specialistOnboarding'] = $fallback['specialistOnboarding'] ?? false;
+            }
+        }
+        $parsedResponse['suggestedPlan'] = $suggestedPlan;
+    }
+    
+    // ============================================================
+    // 🛡️ SAFETY NET: Auto-detectar specialist pela mensagem da IA
+    // Se a IA diz "incluir o especialista" mas JSON tem specialistOnboarding=false,
+    // forçar para true (Gemini frequentemente esquece de setar o campo)
+    // ============================================================
+    $msgLower = mb_strtolower($parsedResponse['message'] ?? '', 'UTF-8');
+    $specialistTextPatterns = [
+        'incluir o atendimento com especialista',
+        'incluir o especialista',
+        'adicionar o atendimento com especialista',
+        'com o atendimento com especialista',
+        'incluir o atendente',
+        'vou incluir o atendimento',
+        'atendimento com especialista no seu pedido',
+        'especialista incluso',
+        'com especialista incluso',
+    ];
+    $msgMentionsSpecialist = false;
+    foreach ($specialistTextPatterns as $pattern) {
+        if (mb_strpos($msgLower, $pattern) !== false) {
+            $msgMentionsSpecialist = true;
+            break;
+        }
+    }
+    
+    if ($msgMentionsSpecialist && is_array($suggestedPlan) && empty($suggestedPlan['specialistOnboarding'])) {
+        error_log('🔧 [sdr-chat] SAFETY NET: IA mencionou especialista na mensagem mas specialistOnboarding=false. Forçando para true.');
+        $suggestedPlan['specialistOnboarding'] = true;
+        $parsedResponse['suggestedPlan']['specialistOnboarding'] = true;
+    }
+    
+    // Log de specialist para diagnóstico
+    error_log('🎯 [sdr-chat] SPECIALIST STATE: suggestedPlan.specialistOnboarding=' 
+        . json_encode($suggestedPlan['specialistOnboarding'] ?? null)
+        . ' | msgMentionsSpecialist=' . ($msgMentionsSpecialist ? 'YES' : 'NO'));
+    
+    // ============================================================
     // SAFETY NET: Se a IA usou placeholders de preço mas NÃO incluiu
     // suggestedPlan.pages, tentar extrair as páginas da mensagem.
     // Isso resolve o bug "valor sob consulta" quando Gemini esquece
@@ -338,10 +402,12 @@ function injectDynamicData(string $prompt): string {
 PROMO;
     
     // Injetar preços de add-ons específicos (valores dinâmicos do pricing.json)
-    // Especialista: calcular valor MENSAL (total / 12 para PIX, total * 1.15 / 12 para cartão)
+    // Especialista: R$169 JÁ É o preço parcelado — NÃO aplicar 15% a mais
+    // Para cartão: 169/12 = mensal parcelado
+    // Para PIX: (169/1.15)/12 = mensal à vista (revertendo markup embutido)
     $especialistaTotalAnual = $pricing['service_addons']['specialist_onboarding']['price'] ?? 169;
-    $especialistaMensalCartao = round(($especialistaTotalAnual * 1.15) / 12, 2);
-    $especialistaMensalPix = round($especialistaTotalAnual / 12, 2);
+    $especialistaMensalCartao = round($especialistaTotalAnual / 12, 2); // Já é parcelado
+    $especialistaMensalPix = round(($especialistaTotalAnual / 1.15) / 12, 2); // Reverter markup para PIX
     $precoEspecialista = "R$ " . number_format($especialistaMensalCartao, 2, ',', '.');
     $precoEspecialistaPix = "R$ " . number_format($especialistaMensalPix, 2, ',', '.');
     $precoEspecialistaTotal = "R$ " . number_format($especialistaTotalAnual, 0, ',', '.');
@@ -469,11 +535,16 @@ function formatPricingTable(array $pricing): string {
     }
     
     // Add-ons de serviço
+    // ⚠️ O preço listado em service_addons JÁ É o preço PARCELADO (cartão)
+    // Para PIX à vista: preço ÷ 1.15
     if (isset($pricing['service_addons'])) {
-        $tabela .= "## Add-ons de Serviço\n";
+        $tabela .= "## Add-ons de Serviço (REGRA ESPECIAL: preço já é o parcelado, NÃO aplicar 15%)\n";
         foreach ($pricing['service_addons'] as $key => $addon) {
-            $preco = $addon['price'] ?? 0;
-            $tabela .= "- **{$addon['name']}**: +R$ {$preco}\n";
+            $precoParcelado = $addon['price'] ?? 0;
+            $precoAvista = round($precoParcelado / 1.15, 2);
+            $precoMensalCartao = round($precoParcelado / 12, 2);
+            $precoMensalPix = round($precoAvista / 12, 2);
+            $tabela .= "- **{$addon['name']}**: PARCELADO +R$ {$precoParcelado} total (R$ {$precoMensalCartao}/mês) | PIX À VISTA +R$ {$precoAvista}\n";
         }
         $tabela .= "\n";
     }
@@ -540,7 +611,7 @@ function formatMessagesForGemini(array $messages, string $systemPrompt): array {
     // Adicionar system prompt como primeira mensagem
     $contents[] = [
         'role' => 'user',
-        'parts' => [['text' => $systemPrompt . "\n\n---\nLEMBRETES FINAIS CRÍTICOS:\n\n## FORMATO DE RESPOSTA (ANTI-VAZAMENTO):\n- Sua resposta deve ser UM ÚNICO JSON válido. NADA antes, NADA depois.\n- O campo \"message\" contém APENAS o texto visível ao cliente. ZERO dados técnicos.\n- NUNCA escreva texto fora do JSON. NUNCA separe texto e JSON. O cliente VÊ tudo que você escreve fora do JSON.\n- NUNCA inclua estimatedPrice, monthlyPrice ou cálculos de preço no JSON.\n- suggestedPlan.type DEVE ser \"site_complete\" ou \"landing\". NUNCA \"vitrine\", \"blog\" ou outro valor.\n\n## STAGES:\n- Se minha resposta SUGERE UM PLANO/PACOTE ou LISTA PÁGINAS = stage OBRIGATÓRIO: \"PROPOSTA\"\n- Se minha resposta MENCIONA VALORES ou PLACEHOLDERS de preço = stage OBRIGATÓRIO: \"PRECO\"\n- EXPLORACAO é APENAS quando estou perguntando sobre o negócio, SEM sugerir plano nenhum\n\n## PLACEHOLDERS DE PREÇO (OBRIGATÓRIO):\n- NUNCA escreva valores em R$ para o preço do plano. Use SEMPRE {{PRECO_MENSAL}} para parcela 12x, {{PRECO_AVISTA}} para valor à vista, {{ECONOMIA_AVISTA}} para economia.\n- O backend substitui os placeholders pelo valor real calculado.\n\n## suggestedPlan.pages (CRÍTICO):\n- SEMPRE que mencionar preço, plano ou páginas, suggestedPlan.pages DEVE conter TODAS as páginas propostas\n- NUNCA omita suggestedPlan quando falar de preço\n- Se não enviar pages, o cliente verá 'valor sob consulta' ao invés do preço real"]]
+        'parts' => [['text' => $systemPrompt . "\n\n---\nLEMBRETES FINAIS CRÍTICOS:\n\n## FORMATO DE RESPOSTA (ANTI-VAZAMENTO):\n- Sua resposta deve ser UM ÚNICO JSON válido. NADA antes, NADA depois.\n- O campo \"message\" contém APENAS o texto visível ao cliente. ZERO dados técnicos.\n- NUNCA escreva texto fora do JSON. NUNCA separe texto e JSON. O cliente VÊ tudo que você escreve fora do JSON.\n- NUNCA inclua estimatedPrice, monthlyPrice ou cálculos de preço no JSON.\n- suggestedPlan.type DEVE ser \"site_complete\" ou \"landing\". NUNCA \"vitrine\", \"blog\" ou outro valor.\n\n## STAGES:\n- Se minha resposta SUGERE UM PLANO/PACOTE ou LISTA PÁGINAS = stage OBRIGATÓRIO: \"PROPOSTA\"\n- Se minha resposta MENCIONA VALORES ou PLACEHOLDERS de preço = stage OBRIGATÓRIO: \"PRECO\"\n- EXPLORACAO é APENAS quando estou perguntando sobre o negócio, SEM sugerir plano nenhum\n\n## PLACEHOLDERS DE PREÇO (OBRIGATÓRIO):\n- NUNCA escreva valores em R$ para o preço do plano. Use SEMPRE {{PRECO_MENSAL}} para parcela 12x, {{PRECO_AVISTA}} para valor à vista, {{ECONOMIA_AVISTA}} para economia.\n- O backend substitui os placeholders pelo valor real calculado.\n- NUNCA JAMAIS escreva frases como 'valor sob consulta', 'preço sob consulta', 'a confirmar' ou similares. SEMPRE use {{PRECO_MENSAL}} ou {{PRECO_AVISTA}}.\n\n## suggestedPlan.pages (CRÍTICO):\n- SEMPRE que mencionar preço, plano ou páginas, suggestedPlan.pages DEVE conter TODAS as páginas propostas\n- NUNCA omita suggestedPlan quando falar de preço\n- NUNCA omita suggestedPlan.pages — sem pages, o preço não será calculado"]]
     ];
     $contents[] = [
         'role' => 'model',
@@ -725,19 +796,36 @@ function validateAndCorrectStageAndFinished(array $parsedResponse): array {
     }
     
     if ($isClosingMessage && ($hasPrice || $hasPlanPages)) {
-        error_log('🔧 [validateStage] Forçando FECHAMENTO + finished=true (mensagem de fechamento + preço/plano)');
-        return ['stage' => 'FECHAMENTO', 'finished' => true];
+        // Só permitir fechamento se paymentMethod estiver presente
+        if ($hasPaymentMethod) {
+            error_log('🔧 [validateStage] Forçando FECHAMENTO + finished=true (mensagem de fechamento + preço/plano + paymentMethod)');
+            return ['stage' => 'FECHAMENTO', 'finished' => true];
+        } else {
+            error_log('⚠️ [validateStage] Mensagem de fechamento detectada MAS sem paymentMethod. Bloqueando finished.');
+            return ['stage' => 'PRECO', 'finished' => false];
+        }
     }
     
-    // Se é mensagem de fechamento E já falou preço antes (stage=PRECO) → forçar
+    // Se é mensagem de fechamento E já falou preço antes (stage=PRECO) → forçar APENAS se tem paymentMethod
     if ($isClosingMessage && ($stage === 'PRECO' || $stage === 'FECHAMENTO')) {
-        error_log('🔧 [validateStage] Forçando FECHAMENTO + finished=true (fechamento após preço)');
-        return ['stage' => 'FECHAMENTO', 'finished' => true];
+        if ($hasPaymentMethod) {
+            error_log('🔧 [validateStage] Forçando FECHAMENTO + finished=true (fechamento após preço + paymentMethod)');
+            return ['stage' => 'FECHAMENTO', 'finished' => true];
+        } else {
+            error_log('⚠️ [validateStage] Fechamento sem paymentMethod. Mantendo PRECO.');
+            return ['stage' => 'PRECO', 'finished' => false];
+        }
     }
     
     // ====== REGRA 1: FECHAMENTO (Gemini mandou finished=true) ======
+    // ⚠️ BLOQUEIO: Não permitir finished=true sem paymentMethod definido
     if ($finished) {
-        return ['stage' => 'FECHAMENTO', 'finished' => true];
+        if ($hasPaymentMethod) {
+            return ['stage' => 'FECHAMENTO', 'finished' => true];
+        } else {
+            error_log('⚠️ [validateStage] Gemini marcou finished=true MAS paymentMethod está vazio. Bloqueando.');
+            return ['stage' => 'PRECO', 'finished' => false];
+        }
     }
     
     // ====== REGRA 2: PRECO ======

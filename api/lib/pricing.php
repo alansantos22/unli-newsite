@@ -308,19 +308,21 @@ function compute_price(array $selection, array $cfg): array {
     error_log('📝 [compute_price] Total Páginas Custom: ' . $customTotal);
     
     // Service Addons (Atendimento com Especialista, etc.)
+    // ⚠️ IMPORTANTE: O preço do service addon (ex: R$169) JÁ É o preço final PARCELADO.
+    // Não deve receber o acréscimo de 15%. Calculamos SEPARADO do subtotal base.
+    // Para À VISTA: revertemos o markup (preço_parcelado / 1.15)
     $serviceAddonsConfig = $cfg['service_addons'] ?? [];
-    $serviceTotal = 0;
+    $serviceParceladoTotal = 0; // Soma dos addons — já no preço parcelado
     $breakdown['service_addons'] = [];
     
     if (!empty($selection['service_addons'])) {
         foreach ($selection['service_addons'] as $key => $enabled) {
             if (!$enabled || !isset($serviceAddonsConfig[$key])) continue;
             
-            $servicePrice = floatval($serviceAddonsConfig[$key]['price']);
-            $subtotal += $servicePrice;
-            $serviceTotal += $servicePrice;
+            $servicePrice = floatval($serviceAddonsConfig[$key]['price']); // já é preço parcelado
+            $serviceParceladoTotal += $servicePrice;
             
-            error_log("🎯 [compute_price] Service Addon '$key': $servicePrice");
+            error_log("🎯 [compute_price] Service Addon '$key': $servicePrice (já é preço parcelado)");
             
             $breakdown['service_addons'][] = [
                 'key' => $key,
@@ -329,22 +331,28 @@ function compute_price(array $selection, array $cfg): array {
             ];
         }
     }
-    error_log('🎯 [compute_price] Total Service Addons: ' . $serviceTotal);
+    error_log('🎯 [compute_price] Total Service Addons (parcelado): ' . $serviceParceladoTotal);
     
-    error_log('💰 [compute_price] SUBTOTAL: ' . $subtotal);
+    // $subtotal = base (páginas + conteúdo + vídeos) SEM service addons
+    error_log('💰 [compute_price] SUBTOTAL BASE (sem service addons): ' . $subtotal);
     
     // Cálculos finais
-    // IMPORTANTE: Lógica simples de preços
-    // - À VISTA: subtotal (preço normal, sem taxa)
-    // - PARCELADO (12x): subtotal + 15% (taxa do gateway de pagamento)
+    // - À VISTA: base (sem markup) + service_addons revertidos (÷ 1.15)
+    // - PARCELADO: base × 1.15 + service_addons (já no preço parcelado)
     $markup12 = floatval($rules['installments_12_markup_percent']); // 15%
     $installments = intval($rules['installments']); // 12
+    $markupFactor = 1.0 + $markup12 / 100.0;
     
-    // À vista: preço normal (sem alteração)
-    $avista = round($subtotal, 2);
+    // Service addons revertidos para à vista (remover markup embutido)
+    $serviceAvistaTotal = $serviceParceladoTotal > 0
+        ? round($serviceParceladoTotal / $markupFactor, 2)
+        : 0;
     
-    // Parcelado: preço COM acréscimo de 15%
-    $parcelado_total = round($subtotal * (1.0 + $markup12 / 100.0), 2);
+    // À vista: base (sem markup) + addons revertidos
+    $avista = round($subtotal + $serviceAvistaTotal, 2);
+    
+    // Parcelado: base COM markup + addons (já no preço parcelado)
+    $parcelado_total = round($subtotal * $markupFactor + $serviceParceladoTotal, 2);
     $parcela_12 = round($parcelado_total / $installments, 2);
     
     // Ajuste de centavos na última parcela
@@ -352,8 +360,8 @@ function compute_price(array $selection, array $cfg): array {
     $total_parcelas = $parcela_12 * $installments;
     $diferenca = round($parcelado_total - $total_parcelas, 2);
     
-    error_log('💵 [compute_price] À vista: ' . $avista);
-    error_log('💳 [compute_price] Parcelado: ' . $parcelado_total);
+    error_log('💵 [compute_price] À vista: ' . $avista . ' (base=' . $subtotal . ' + addons_avista=' . $serviceAvistaTotal . ')');
+    error_log('💳 [compute_price] Parcelado: ' . $parcelado_total . ' (base×1.15=' . round($subtotal * $markupFactor, 2) . ' + addons=' . $serviceParceladoTotal . ')');
     error_log('====================================================');
     
     return [

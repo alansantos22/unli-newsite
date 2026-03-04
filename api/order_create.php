@@ -52,13 +52,60 @@ try {
     error_log('========== order_create.php CHAMADA ==========');
     error_log('📥 [order_create] INPUT: ' . json_encode($body, JSON_PRETTY_PRINT));
     
+    // 🚨 LOG OBRIGATÓRIO: Specialist debug (SEMPRE logar, independente de DEBUG_MODE)
+    error_log('🎯 [order_create] SPECIALIST DEBUG - raw service_addons: ' . json_encode($body['service_addons'] ?? 'NOT_PRESENT'));
+    error_log('🎯 [order_create] SPECIALIST DEBUG - specialist_onboarding value: ' . json_encode($body['service_addons']['specialist_onboarding'] ?? 'NOT_SET'));
+    error_log('🎯 [order_create] SPECIALIST DEBUG - type of value: ' . gettype($body['service_addons']['specialist_onboarding'] ?? null));
+    
     // 1. Normalizar seleções (aplicar whitelist)
     $selection = normalize_selection($body, $cfg);
+    
+    // 🚨 LOG OBRIGATÓRIO: Verificar se specialist sobreviveu à normalização
+    error_log('🎯 [order_create] SPECIALIST AFTER NORMALIZE: ' . json_encode($selection['service_addons'] ?? 'NOT_IN_SELECTION'));
+    
+    // 🛡️ SAFETY NET: Se frontend enviou specialist=true mas normalize_selection removeu
+    // (pode acontecer se pricing.json no servidor não tem service_addons)
+    $rawSpecialist = !empty($body['service_addons']['specialist_onboarding']);
+    $normalizedSpecialist = !empty($selection['service_addons']['specialist_onboarding']);
+    if ($rawSpecialist && !$normalizedSpecialist) {
+        error_log('⚠️ [order_create] SPECIALIST PERDIDO NA NORMALIZAÇÃO! Forçando de volta...');
+        if (!isset($selection['service_addons'])) {
+            $selection['service_addons'] = [];
+        }
+        $selection['service_addons']['specialist_onboarding'] = true;
+    }
     
     error_log('✅ [order_create] SELEÇÃO NORMALIZADA: ' . json_encode($selection, JSON_PRETTY_PRINT));
     
     // 2. RECALCULAR preço (não confiar no cliente)
     $pricing = compute_price($selection, $cfg);
+    
+    // 🛡️ SAFETY NET 2: Se specialist está na seleção mas não apareceu no pricing
+    if (!empty($selection['service_addons']['specialist_onboarding'])) {
+        $specialistInPricing = false;
+        foreach ($pricing['breakdown']['service_addons'] ?? [] as $addon) {
+            if (($addon['key'] ?? '') === 'specialist_onboarding') {
+                $specialistInPricing = true;
+            }
+        }
+        if (!$specialistInPricing) {
+            error_log('⚠️ [order_create] SPECIALIST NÃO FOI INCLUÍDO NO PRICING! Forçando...');
+            // R$169 já é o preço parcelado — NÃO aplicar markup adicional
+            $specialistParcelado = 169.0;
+            $markupPct = floatval($cfg['rules']['installments_12_markup_percent'] ?? 15);
+            $markupFactor = 1.0 + $markupPct / 100.0;
+            $specialistAvista = round($specialistParcelado / $markupFactor, 2);
+            $pricing['avista'] = round($pricing['avista'] + $specialistAvista, 2);
+            $pricing['parcelado_total'] = round($pricing['parcelado_total'] + $specialistParcelado, 2);
+            $pricing['parcela_12'] = round($pricing['parcelado_total'] / 12, 2);
+            $pricing['breakdown']['service_addons'][] = [
+                'key' => 'specialist_onboarding',
+                'name' => 'Atendimento com Especialista',
+                'price' => $specialistParcelado
+            ];
+            error_log('✅ [order_create] SPECIALIST FORÇADO! Novo total: parcelado=' . $pricing['parcelado_total'] . ' avista=' . $pricing['avista']);
+        }
+    }
     
     error_log('💰 [order_create] PREÇO CALCULADO: ' . json_encode($pricing, JSON_PRETTY_PRINT));
     

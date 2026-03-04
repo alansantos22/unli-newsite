@@ -280,7 +280,7 @@
               </div>
               <div class="summary-item">
                 <i class="fas fa-credit-card"></i>
-                <span>{{ checkoutPlanData.paymentLabel }}</span>
+                <span>{{ checkoutReactivePrice.label }}</span>
               </div>
             </div>
 
@@ -404,6 +404,7 @@ export default {
       isTyping: false,
       finished: false,
       conversationId: null, // UUID do servidor para rastreamento
+      lastSuggestedPlan: null, // Último suggestedPlan com pages — reenviado ao backend para evitar perda de contexto
       
       // Flag para desenvolvimento customizado (e-commerce/app)
       needsCustomDev: false,
@@ -457,7 +458,9 @@ export default {
         paymentMethod: null, // 'parcelado' ou 'pix_avista'
         packageLabel: '',
         paymentLabel: '',
-        specialistOnboarding: false // se comprou addon de especialista
+        specialistOnboarding: false, // se comprou addon de especialista
+        // Pricing bruto do backend (para recalc reativo com specialist)
+        basePricing: null    // { avista, parcelado_total, parcela_12, subtotal }
       }
     }
   },
@@ -487,6 +490,42 @@ export default {
     specialistPrice() {
       // Valor mensal equivalente do atendimento com especialista (R$ 169 anuais / 12)
       return Math.ceil(169 / 12);
+    },
+
+    /**
+     * Preço reativo do checkout — recalcula quando specialist é toggled
+     * Retorna { label, avista, parcelado_total, parcela_12 }
+     */
+    checkoutReactivePrice() {
+      const base = this.checkoutPlanData.basePricing;
+      const specialist = this.checkoutPlanData.specialistOnboarding;
+      const method = this.checkoutPlanData.paymentMethod;
+      // R$169 JÁ É o preço parcelado do specialist — NÃO aplica 15% a mais
+      const specialistParcelado = 169;
+      const specialistAvista = Math.round((specialistParcelado / 1.15) * 100) / 100;
+
+      if (!base) {
+        // Sem pricing do backend — fallback para label estático
+        return { label: this.checkoutPlanData.paymentLabel };
+      }
+
+      // base.subtotal = páginas + conteúdo (SEM service addons, SEM markup)
+      // Para parcelado: base × 1.15 + addon_parcelado (se ativo)
+      // Para à vista:  base        + addon_avista   (se ativo)
+      const baseSubtotal = base.subtotal || 0;
+      const parceladoTotal = Math.round((baseSubtotal * 1.15 + (specialist ? specialistParcelado : 0)) * 100) / 100;
+      const avista = Math.round((baseSubtotal + (specialist ? specialistAvista : 0)) * 100) / 100;
+      const parcela12 = Math.round((parceladoTotal / 12) * 100) / 100;
+
+      const isParcelado = method !== 'pix_avista';
+      let label;
+      if (isParcelado) {
+        label = `12x de ${parcela12.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} no Cartão`;
+      } else {
+        label = `PIX à Vista ${avista.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
+      }
+
+      return { label, avista, parcelado_total: parceladoTotal, parcela_12: parcela12 };
     }
   },
 
@@ -573,7 +612,8 @@ export default {
               role: m.role === 'assistant' ? 'model' : 'user',
               content: m.content
             })),
-            conversation_id: this.conversationId
+            conversation_id: this.conversationId,
+            last_suggested_plan: this.lastSuggestedPlan // fallback quando IA esquece de incluir pages
           })
         });
         
@@ -613,6 +653,11 @@ export default {
           }
         }
         
+        // Guardar último suggestedPlan com pages para reenviar ao backend (evita perda de contexto)
+        if (data.suggestedPlan?.pages?.length > 0) {
+          this.lastSuggestedPlan = data.suggestedPlan;
+        }
+        
         // Adicionar resposta do assistente
         this.messages.push({
           role: 'assistant',
@@ -630,15 +675,16 @@ export default {
         
         // Verificar se conversa finalizou
         if (data.finished) {
-          this.finished = true;
-          
           // Se tem plano sugerido com método de pagamento, abrir checkout direto
           if (data.suggestedPlan && data.suggestedPlan.paymentMethod) {
+            this.finished = true;
             this.openDirectCheckout(data.suggestedPlan, data.pricing);
-          } else if (data.suggestedPlan && data.suggestedPlan.pages && data.suggestedPlan.pages.length > 0) {
-            // finished=true mas paymentMethod ausente: inferir do texto da mensagem
-            console.warn('⚠️ [SDRChat] finished=true mas paymentMethod ausente. Inferindo do texto...');
-            this.inferPaymentMethodAndCheckout(data);
+          } else {
+            // finished=true mas paymentMethod ausente: NÃO abrir checkout
+            // O backend já foi instruído a bloquear isso, mas como safety net:
+            // manter conversa aberta para que o assistente pergunte a forma de pagamento
+            console.warn('⚠️ [SDRChat] finished=true mas paymentMethod ausente. Mantendo conversa aberta para perguntar forma de pagamento.');
+            this.finished = false; // Manter conversa aberta
           }
         } else {
           // Fallback: detectar mensagem de fechamento mesmo sem finished=true
@@ -1034,12 +1080,17 @@ export default {
       const hasPlan = data.suggestedPlan && data.suggestedPlan.pages && data.suggestedPlan.pages.length > 0;
       
       if ((isClosing && hasPlan) || (isClosing && hasPrice && hasPlan)) {
-        console.warn('⚠️ [SDRChat] Fallback: Mensagem de fechamento detectada sem finished=true. Forçando checkout.');
-        this.finished = true;
-        this.currentStage = 'FECHAMENTO';
-        
-        // Inferir paymentMethod e abrir checkout
-        this.inferPaymentMethodAndCheckout(data);
+        // Só forçar checkout se tem paymentMethod definido
+        const hasPaymentMethod = data.suggestedPlan && data.suggestedPlan.paymentMethod;
+        if (hasPaymentMethod) {
+          console.warn('⚠️ [SDRChat] Fallback: Mensagem de fechamento detectada sem finished=true. Forçando checkout.');
+          this.finished = true;
+          this.currentStage = 'FECHAMENTO';
+          this.openDirectCheckout(data.suggestedPlan, data.pricing);
+        } else {
+          console.warn('⚠️ [SDRChat] Fallback: Mensagem de fechamento detectada MAS sem paymentMethod. Mantendo conversa aberta.');
+          // Não forçar checkout — deixar a IA perguntar a forma de pagamento
+        }
       }
     },
     
@@ -1084,11 +1135,18 @@ export default {
         specialistOnboarding: suggestedPlan.specialistOnboarding || false,
         content: suggestedPlan.content || [],
         video_basic_quantity: suggestedPlan.video_basic_quantity || 0,
-        video_pro_quantity: suggestedPlan.video_pro_quantity || 0
+        video_pro_quantity: suggestedPlan.video_pro_quantity || 0,
+        // Guardar pricing bruto para recalc reativo c/ specialist
+        basePricing: pricing ? {
+          subtotal: pricing.subtotal || pricing.avista || 0,
+          avista: pricing.avista || 0,
+          parcelado_total: pricing.parcelado_total || 0,
+          parcela_12: pricing.parcela_12 || 0
+        } : null
       };
       
       // Limpar form e erros
-      this.checkoutForm = { name: '', email: '', whatsapp: '' };
+      this.checkoutForm = { name: '', email: '', whatsapp: '', document: '' };
       this.checkoutErrors = {};
       
       // Mostrar modal após breve delay para o usuário ler a mensagem de fechamento
@@ -1210,6 +1268,14 @@ export default {
           payment_method: paymentMethod,
           conversation_id: this.conversationId
         };
+        
+        // 🚨 LOG OBRIGATÓRIO: Verificar specialist antes de enviar
+        console.warn('🎯 [SDRChat→Checkout] SPECIALIST DEBUG:', {
+          toggleState: this.checkoutPlanData.specialistOnboarding,
+          typeofToggle: typeof this.checkoutPlanData.specialistOnboarding,
+          sentValue: orderData.service_addons.specialist_onboarding,
+          fullServiceAddons: orderData.service_addons
+        });
         
         console.log('📦 [SDRChat→Checkout] Criando pedido:', orderData);
         

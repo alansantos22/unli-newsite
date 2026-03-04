@@ -168,6 +168,8 @@ export default {
               products: data.products,
               page_addons: data.page_addons,
               content_addons: data.content_addons,
+              service_addons: data.service_addons || {},
+              predefined_packages: data.predefined_packages || {},
               pricing_rules: data.pricing_rules,
               limits: data.limits
             };
@@ -230,6 +232,13 @@ export default {
           cash_discount_percent: 15,
           installments_12_markup_percent: 15,
           installments: 12
+        },
+        service_addons: {
+          specialist_onboarding: {
+            name: 'Atendimento com Especialista',
+            price: 169,
+            description: 'Onboarding personalizado com atendente humano'
+          }
         }
       };
     },
