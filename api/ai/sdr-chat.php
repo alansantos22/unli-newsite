@@ -402,14 +402,13 @@ function injectDynamicData(string $prompt): string {
 PROMO;
     
     // Injetar preços de add-ons específicos (valores dinâmicos do pricing.json)
-    // Especialista: R$169 JÁ É o preço parcelado — NÃO aplicar 15% a mais
-    // Para cartão: 169/12 = mensal parcelado
-    // Para PIX: (169/1.15)/12 = mensal à vista (revertendo markup embutido)
+    // Especialista: R$169 é o preço FIXO do addon — sem desconto para PIX, sem acréscimo para cartão
+    // Sempre 169/12 = mensal equivalente, independente da forma de pagamento
     $especialistaTotalAnual = $pricing['service_addons']['specialist_onboarding']['price'] ?? 169;
-    $especialistaMensalCartao = round($especialistaTotalAnual / 12, 2); // Já é parcelado
-    $especialistaMensalPix = round(($especialistaTotalAnual / 1.15) / 12, 2); // Reverter markup para PIX
+    $especialistaMensalCartao = round($especialistaTotalAnual / 12, 2);
+    $especialistaMensalPix = $especialistaMensalCartao; // Mesmo valor — sem desconto
     $precoEspecialista = "R$ " . number_format($especialistaMensalCartao, 2, ',', '.');
-    $precoEspecialistaPix = "R$ " . number_format($especialistaMensalPix, 2, ',', '.');
+    $precoEspecialistaPix = $precoEspecialista; // Mesmo placeholder
     $precoEspecialistaTotal = "R$ " . number_format($especialistaTotalAnual, 0, ',', '.');
     
     // Vídeos

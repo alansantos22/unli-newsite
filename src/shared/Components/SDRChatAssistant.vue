@@ -177,6 +177,29 @@
       
 
       
+      <!-- Quick-replies: Pergunta sobre Atendimento com Especialista -->
+      <transition name="fade">
+        <div v-if="isSpecialistQuestion" class="specialist-quick-replies">
+          <button
+            class="specialist-btn specialist-btn--yes"
+            @click="sendQuickMessage('Quero o atendimento com especialista')"
+          >
+            <i class="fas fa-headset"></i>
+            <div class="specialist-btn-content">
+              <span class="specialist-btn-title">Quero o atendimento humano</span>
+              <span class="specialist-btn-desc">Um especialista cuida do onboarding com você</span>
+            </div>
+          </button>
+          <button
+            class="specialist-btn specialist-btn--no"
+            @click="sendQuickMessage('Prefiro preencher o formulário sozinho')"
+          >
+            <i class="fas fa-file-alt"></i>
+            <span>Prefiro preencher sozinho</span>
+          </button>
+        </div>
+      </transition>
+
       <!-- Botão WhatsApp para Desenvolvimento Customizado (e-commerce/apps) -->
       <transition name="fade">
         <button 
@@ -482,6 +505,18 @@ export default {
       return this.messages.length >= 4;
     },
     
+    /**
+     * Detecta se a última mensagem do assistente está perguntando sobre o Especialista.
+     * Quando true, mostra os botões de resposta rápida.
+     */
+    isSpecialistQuestion() {
+      if (this.finished || this.isLoading || this.isTyping) return false;
+      const lastMsg = [...this.messages].reverse().find(m => m.role === 'assistant');
+      if (!lastMsg) return false;
+      const content = lastMsg.content || '';
+      return content.includes('Atendimento com Especialista') && content.includes('?');
+    },
+    
     stageProgress() {
       const currentIndex = this.stageOrder.indexOf(this.currentStage);
       return ((currentIndex + 1) / this.stageOrder.length) * 100;
@@ -500,9 +535,9 @@ export default {
       const base = this.checkoutPlanData.basePricing;
       const specialist = this.checkoutPlanData.specialistOnboarding;
       const method = this.checkoutPlanData.paymentMethod;
-      // R$169 JÁ É o preço parcelado do specialist — NÃO aplica 15% a mais
+      // R$169 é o preço fixo do specialist — sem descontos para PIX nem acréscimos para cartão
       const specialistParcelado = 169;
-      const specialistAvista = Math.round((specialistParcelado / 1.15) * 100) / 100;
+      const specialistAvista = 169; // Mesmo valor fixo, sem desconto PIX
 
       if (!base) {
         // Sem pricing do backend — fallback para label estático
@@ -2058,6 +2093,100 @@ $text-muted: rgba(255, 255, 255, 0.5);
     opacity: 0.5;
     cursor: not-allowed;
   }
+}
+
+// ==================
+// SPECIALIST QUICK-REPLIES
+// ==================
+.specialist-quick-replies {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 4px 4px;
+}
+
+.specialist-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  transition: all 0.25s ease;
+  text-align: left;
+
+  &--yes {
+    padding: 13px 18px;
+    background: linear-gradient(135deg, rgba($secondary, 0.22), rgba($primary, 0.15));
+    border: 1.5px solid rgba($secondary, 0.55);
+    color: lighten($secondary, 15%);
+    font-size: 14px;
+    animation: specialist-pulse 3s ease-in-out infinite;
+
+    i {
+      font-size: 18px;
+      flex-shrink: 0;
+      color: $secondary;
+    }
+
+    &:hover {
+      background: linear-gradient(135deg, rgba($secondary, 0.38), rgba($primary, 0.25));
+      border-color: $secondary;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba($secondary, 0.3);
+      animation: none;
+    }
+
+    &:active { transform: translateY(0); }
+  }
+
+  &--no {
+    padding: 10px 18px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: $text-secondary;
+    font-size: 13px;
+    font-weight: 500;
+
+    i {
+      font-size: 15px;
+      flex-shrink: 0;
+      color: $text-muted;
+    }
+
+    &:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.25);
+      color: $text-primary;
+    }
+  }
+}
+
+.specialist-btn-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.specialist-btn-title {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.specialist-btn-desc {
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.75;
+  line-height: 1.3;
+}
+
+@keyframes specialist-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba($secondary, 0); }
+  50% { box-shadow: 0 0 0 5px rgba($secondary, 0.15); }
 }
 
 // Botão WhatsApp para desenvolvimento customizado
