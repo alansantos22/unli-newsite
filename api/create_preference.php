@@ -254,22 +254,42 @@ try {
     $amountInCents = (int) round($precoFinal * 100);
     
     // Configurar parcelas para cartão de crédito
-    $installmentsConfig = [];
-    if ($isParcelado && $maxParcelas > 1) {
-        // Permitir parcelamento de 1 até $maxParcelas
-        for ($i = 1; $i <= $maxParcelas; $i++) {
-            $installmentsConfig[] = [
-                "number" => $i,
+    // Parcelado = fixado em 12x (não oferecer escolha de 1-12)
+    if ($isParcelado) {
+        $installmentsConfig = [
+            [
+                "number" => 12,
                 "total" => $amountInCents
-            ];
-        }
+            ]
+        ];
     } else {
-        $installmentsConfig[] = [
-            "number" => 1,
-            "total" => $amountInCents
+        $installmentsConfig = [
+            [
+                "number" => 1,
+                "total" => $amountInCents
+            ]
         ];
     }
     
+    // Documento do cliente (CPF/CNPJ) — carregar da ordem salva ou do request
+    $rawDocument = $data['payer_document'] ?? $order['briefing']['document'] ?? '';
+    $documentDigits = preg_replace('/\D/', '', $rawDocument);
+    $documentType = strlen($documentDigits) === 14 ? 'CNPJ' : 'CPF';
+
+    // Montar objeto customer (incluir documento se disponível)
+    $customerData = [
+        "name" => $payerName,
+        "email" => $payerEmail,
+        "type" => "individual",
+        "phones" => [
+            "mobile_phone" => formatPhoneForPagarme($data['payer_phone'] ?? $order['briefing']['whatsapp'] ?? '')
+        ]
+    ];
+    if (!empty($documentDigits)) {
+        $customerData["document"] = $documentDigits;
+        $customerData["document_type"] = $documentType;
+    }
+
     $pagarmeOrder = [
         "items" => [
             [
@@ -279,14 +299,7 @@ try {
                 "code" => $orderId
             ]
         ],
-        "customer" => [
-            "name" => $payerName,
-            "email" => $payerEmail,
-            "type" => "individual",
-            "phones" => [
-                "mobile_phone" => formatPhoneForPagarme($data['payer_phone'] ?? '')
-            ]
-        ],
+        "customer" => $customerData,
         "payments" => [
             [
                 "payment_method" => "checkout",

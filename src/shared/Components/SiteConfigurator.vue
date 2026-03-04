@@ -2246,6 +2246,8 @@ export default {
               order_id: result.order_id,
               payer_name: this.briefing.customer_name || 'Cliente',
               payer_email: this.briefing.email || 'cliente@exemplo.com',
+              payer_phone: (this.briefing.whatsapp || '').replace(/\D/g, ''),
+              payer_document: (this.briefing.document || '').replace(/\D/g, ''),
               payment_type: this.paymentMethod === 'cash' ? 'avista' : 'prazo'
               // SEGURANÇA: selection será carregada da ordem salva para garantir consistência total
             };

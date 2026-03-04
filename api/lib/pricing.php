@@ -468,6 +468,7 @@ function sanitize_briefing(array $briefing): array {
         'page_contents' => is_array($briefing['page_contents'] ?? null) 
             ? array_map('strip_tags', $briefing['page_contents']) 
             : [],
-        'image_links' => strip_tags(trim($briefing['image_links'] ?? ''))
+        'image_links' => strip_tags(trim($briefing['image_links'] ?? '')),
+        'document' => preg_replace('/\D/', '', $briefing['document'] ?? '') // CPF/CNPJ (somente dígitos)
     ];
 }

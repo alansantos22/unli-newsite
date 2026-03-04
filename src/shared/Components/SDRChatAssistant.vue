@@ -318,6 +318,17 @@
                 />
                 <span v-if="checkoutErrors.whatsapp" class="mini-error">{{ checkoutErrors.whatsapp }}</span>
               </div>
+              <div class="mini-form-group">
+                <input
+                  type="text"
+                  v-model="checkoutForm.document"
+                  @input="formatCheckoutDocument"
+                  placeholder="CPF ou CNPJ (opcional)"
+                  maxlength="18"
+                  :class="{ 'has-error': checkoutErrors.document }"
+                />
+                <span v-if="checkoutErrors.document" class="mini-error">{{ checkoutErrors.document }}</span>
+              </div>
 
               <!-- Toggle Atendimento com Especialista -->
               <div class="specialist-toggle-box" :class="{ 'selected': checkoutPlanData.specialistOnboarding }">
@@ -435,7 +446,8 @@ export default {
       checkoutForm: {
         name: '',
         email: '',
-        whatsapp: ''
+        whatsapp: '',
+        document: '' // CPF/CNPJ (opcional) — pré-carregado para Pagar.me
       },
       checkoutErrors: {},
       // Dados do plano selecionado no chat (preenchido quando finished=true)
@@ -1098,6 +1110,24 @@ export default {
       console.log('📋 [SDRChat] Specialist onboarding toggled:', this.checkoutPlanData.specialistOnboarding);
     },
     
+    formatCheckoutDocument() {
+      let digits = this.checkoutForm.document.replace(/\D/g, '');
+      if (digits.length > 14) digits = digits.slice(0, 14);
+      if (digits.length <= 11) {
+        // Máscara CPF: 000.000.000-00
+        digits = digits.replace(/(\d{3})(\d)/, '$1.$2')
+                       .replace(/(\d{3})(\d)/, '$1.$2')
+                       .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+      } else {
+        // Máscara CNPJ: 00.000.000/0000-00
+        digits = digits.replace(/(\d{2})(\d)/, '$1.$2')
+                       .replace(/(\d{3})(\d)/, '$1.$2')
+                       .replace(/(\d{3})(\d)/, '$1/$2')
+                       .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+      }
+      this.checkoutForm.document = digits;
+    },
+
     formatCheckoutWhatsApp() {
       let value = this.checkoutForm.whatsapp.replace(/\D/g, '');
       if (value.length > 11) value = value.slice(0, 11);
@@ -1174,7 +1204,8 @@ export default {
           briefing: {
             customer_name: this.checkoutForm.name.trim(),
             email: this.checkoutForm.email.trim(),
-            whatsapp: this.checkoutForm.whatsapp
+            whatsapp: this.checkoutForm.whatsapp,
+            document: this.checkoutForm.document.replace(/\D/g, '') // CPF/CNPJ limpo
           },
           payment_method: paymentMethod,
           conversation_id: this.conversationId
@@ -1226,6 +1257,7 @@ export default {
           payer_name: this.checkoutForm.name.trim(),
           payer_email: this.checkoutForm.email.trim(),
           payer_phone: this.checkoutForm.whatsapp.replace(/\D/g, ''), // Apenas números
+          payer_document: this.checkoutForm.document.replace(/\D/g, ''), // CPF/CNPJ sem máscara
           payment_type: paymentMethod
         };
         
