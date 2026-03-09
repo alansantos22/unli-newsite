@@ -285,20 +285,12 @@ try {
     $amountInCents = (int) round($precoFinal * 100);
     
     // Configurar parcelas para cartão de crédito
-    // Parcelado = fixado em 12x (não oferecer escolha de 1-12)
-    if ($isParcelado) {
-        $installmentsConfig = [
-            [
-                "number" => 12,
-                "total" => $amountInCents
-            ]
-        ];
-    } else {
-        $installmentsConfig = [
-            [
-                "number" => 1,
-                "total" => $amountInCents
-            ]
+    // Usuário pode dividir de 1x até 12x
+    $installmentsConfig = [];
+    for ($i = 1; $i <= 12; $i++) {
+        $installmentsConfig[] = [
+            "number" => $i,
+            "total" => $amountInCents
         ];
     }
     
