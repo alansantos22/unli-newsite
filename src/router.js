@@ -53,5 +53,45 @@ export default [
             hideHeader: true,
             hideFooter: true
         }
+    },
+
+    // ============================================
+    // SDR Panel Routes
+    // ============================================
+    {
+        path: "/sdr",
+        name: "SDRLogin",
+        component: () => import("./pages/SDRPanel/SDRLogin.vue"),
+        meta: { hideHeader: true, hideFooter: true }
+    },
+    {
+        path: "/sdr/dashboard",
+        name: "SDRDashboard",
+        component: () => import("./pages/SDRPanel/SDRDashboard.vue"),
+        meta: { hideHeader: true, hideFooter: true, requiresSDR: true }
+    },
+    {
+        path: "/sdr/calculadora",
+        name: "SDRCalculadora",
+        component: () => import("./pages/SDRPanel/SDRCalculadora.vue"),
+        meta: { hideHeader: true, hideFooter: true, requiresSDR: true }
+    },
+    {
+        path: "/sdr/nova-venda",
+        name: "SDRNovaVenda",
+        component: () => import("./pages/SDRPanel/SDRNovaVenda.vue"),
+        meta: { hideHeader: true, hideFooter: true, requiresSDR: true }
+    },
+    {
+        path: "/sdr/clientes",
+        name: "SDRClientes",
+        component: () => import("./pages/SDRPanel/SDRClientes.vue"),
+        meta: { hideHeader: true, hideFooter: true, requiresSDR: true }
+    },
+    {
+        path: "/sdr/cliente/:id",
+        name: "SDRClienteDetalhe",
+        component: () => import("./pages/SDRPanel/SDRClienteDetalhe.vue"),
+        meta: { hideHeader: true, hideFooter: true, requiresSDR: true }
     }
 ]

@@ -1132,6 +1132,16 @@ export default {
     openDirectCheckout(suggestedPlan, pricing = null) {
       console.log('🛒 [SDRChat] Abrindo checkout direto com plano:', suggestedPlan, '| Pricing backend:', pricing);
       
+      // === MODO MANUAL: Redirecionar para WhatsApp ===
+      if (process.env.VUE_APP_MANUAL_MODE === 'true') {
+        const { redirectToWhatsApp } = require('@/core/composables/useWhatsAppRedirect').useWhatsAppRedirect();
+        const pages = suggestedPlan.pages || [];
+        const type = suggestedPlan.type || 'site_complete';
+        const productLabel = type === 'landing' ? 'Landing Page' : 'Site Completo';
+        redirectToWhatsApp(productLabel, pages, pricing);
+        return;
+      }
+      
       // Mapear dados do plano
       const pages = suggestedPlan.pages || [];
       const paymentMethod = suggestedPlan.paymentMethod; // 'parcelado' ou 'pix_avista'

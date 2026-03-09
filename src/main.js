@@ -38,6 +38,17 @@ app.use(VueGtag, config);
 app.use(router);
 app.use(store);
 
+// SDR Panel auth guard
+router.beforeEach((to, from, next) => {
+    if (to.meta.requiresSDR) {
+        const token = sessionStorage.getItem('sdr_token');
+        if (!token) {
+            return next({ name: 'SDRLogin' });
+        }
+    }
+    next();
+});
+
 // SPA page view tracking — Google Analytics + Microsoft Clarity
 router.afterEach((to) => {
     // Google Analytics

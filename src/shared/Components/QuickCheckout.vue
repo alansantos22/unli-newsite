@@ -163,6 +163,10 @@
                 <i class="fas fa-spinner fa-spin"></i>
                 Processando...
               </template>
+              <template v-else-if="isManualMode">
+                <i class="fab fa-whatsapp"></i>
+                Falar com Especialista
+              </template>
               <template v-else>
                 <i class="fas fa-lock"></i>
                 Pagar {{ paymentMethod === 'cash' ? formatCurrency(pricing.cashPrice) : formatCurrency(pricing.installmentTotal) }}
@@ -171,7 +175,12 @@
 
             <p class="checkout-note">
               <i class="fas fa-info-circle"></i>
-              Você será redirecionado para o gateway de pagamento seguro para finalizar.
+              <template v-if="isManualMode">
+                Você será redirecionado para o WhatsApp para finalizar com nosso especialista.
+              </template>
+              <template v-else>
+                Você será redirecionado para o gateway de pagamento seguro para finalizar.
+              </template>
             </p>
           </form>
         </div>
@@ -355,6 +364,9 @@ export default {
   },
 
   computed: {
+    isManualMode() {
+      return process.env.VUE_APP_MANUAL_MODE === 'true';
+    },
     packageInfo() {
       // Usar config se disponível, senão fallback
       if (this.pricingConfig?.predefined_packages?.[this.packageKey]) {
@@ -474,6 +486,15 @@ export default {
     
     async submitCheckout() {
       if (!this.validateForm()) return;
+      
+      // === MODO MANUAL: Redirecionar para WhatsApp ===
+      if (process.env.VUE_APP_MANUAL_MODE === 'true') {
+        const { redirectToWhatsApp } = require('@/core/composables/useWhatsAppRedirect').useWhatsAppRedirect();
+        const pages = this.packageInfo.pages || [];
+        const productLabel = this.product === 'landing' ? 'Landing Page' : 'Site Completo';
+        redirectToWhatsApp(productLabel, pages);
+        return;
+      }
       
       this.isSubmitting = true;
       

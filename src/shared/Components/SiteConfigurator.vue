@@ -638,10 +638,34 @@
         <!-- Etapa 2: Finalizar Pedido (Checkout Simplificado) -->
         <!-- Etapa 3 quando não há initialProduct, Etapa 2 quando há -->
         <div v-else-if="currentStep === (initialProduct ? 2 : 3)" class="step-content step-checkout">
-          <h2 class="step-title">Finalizar Pedido</h2>
+
+          <!-- Sucesso SDR -->
+          <div v-if="sdrSaleResult" class="sdr-sale-success">
+            <div class="sdr-success-icon"><i class="fas fa-check-circle"></i></div>
+            <h2>Venda Registrada! ✅</h2>
+            <p>Pedido <strong>#{{ sdrSaleResult.order_id }}</strong> criado para <strong>{{ briefing.customer_name }}</strong></p>
+            <div class="sdr-success-link">
+              <label>Link de Onboarding do Cliente:</label>
+              <div class="sdr-link-row">
+                <input type="text" :value="sdrSaleResult.onboarding_link" readonly />
+                <button type="button" @click="() => { $copyText ? $copyText(sdrSaleResult.onboarding_link) : navigator.clipboard.writeText(sdrSaleResult.onboarding_link) }" class="btn-copy-link">
+                  <i class="fas fa-copy"></i> Copiar
+                </button>
+              </div>
+            </div>
+            <div class="sdr-success-actions">
+              <router-link to="/sdr/clientes" class="btn-sdr-clients"><i class="fas fa-list"></i> Ver Clientes</router-link>
+              <button type="button" @click="sdrSaleResult = null; briefing.customer_name = ''; briefing.company_name = ''; briefing.email = ''; briefing.whatsapp = ''; briefing.document = ''; currentStep = 1" class="btn-sdr-new"><i class="fas fa-plus"></i> Nova Venda</button>
+            </div>
+          </div>
+
+          <template v-else>
+
+          <h2 class="step-title">{{ sdrMode ? 'Dados do Cliente' : 'Finalizar Pedido' }}</h2>
           <p class="step-description">
-            Apenas mais alguns dados para processar seu pagamento.
-            <strong>Você receberá um link por e-mail para configurar seu site após o pagamento.</strong>
+            <template v-if="sdrMode">Preencha os dados do cliente para registrar a venda no painel SDR.</template>
+            <template v-else>Apenas mais alguns dados para processar seu pagamento.
+            <strong>Você receberá um link por e-mail para configurar seu site após o pagamento.</strong></template>
           </p>
 
           <!-- Alertas de Validação -->
@@ -660,21 +684,22 @@
             <div class="form-section">
               <h3 class="form-section-title">
                 <i class="fas fa-user"></i>
-                Seus Dados para Contato
+                {{ sdrMode ? 'Dados do Cliente' : 'Seus Dados para Contato' }}
               </h3>
               
               <div class="info-box">
                 <i class="fas fa-info-circle"></i>
-                <p>Enviaremos um <strong>link</strong> para este e-mail onde você poderá configurar todo o conteúdo do seu site de forma rápida e guiada.</p>
+                <p v-if="sdrMode">Os dados serão cadastrados no seu painel SDR e um <strong>link de onboarding</strong> será gerado para o cliente.</p>
+                <p v-else>Enviaremos um <strong>link</strong> para este e-mail onde você poderá configurar todo o conteúdo do seu site de forma rápida e guiada.</p>
               </div>
 
               <div class="form-row">
                 <div class="form-group">
-                  <label>Seu Nome Completo *</label>
+                  <label>{{ sdrMode ? 'Nome do Cliente *' : 'Seu Nome Completo *' }}</label>
                   <input 
                     type="text" 
                     v-model="briefing.customer_name"
-                    placeholder="Ex: João Silva"
+                    :placeholder="sdrMode ? 'Ex: João Silva' : 'Ex: João Silva'"
                     minlength="3"
                     required
                   >
@@ -685,12 +710,28 @@
                   <input 
                     type="email" 
                     v-model="briefing.email"
-                    placeholder="seu@email.com"
+                    placeholder="email@cliente.com"
                     required
                   >
-                  <small class="field-hint">
+                  <small v-if="!sdrMode" class="field-hint">
                     💡 Você receberá o link de configuração neste e-mail
                   </small>
+                </div>
+              </div>
+
+              <!-- Empresa (apenas SDR mode) -->
+              <div v-if="sdrMode" class="form-row">
+                <div class="form-group">
+                  <label>Nome da Empresa *</label>
+                  <input 
+                    type="text" 
+                    v-model="briefing.company_name"
+                    placeholder="Ex: Silva Consultoria LTDA"
+                    required
+                  >
+                </div>
+                <div class="form-group">
+                  <!-- espaço intencional -->
                 </div>
               </div>
 
@@ -875,11 +916,11 @@
                       :disabled="isSubmitting"
                     >
                       <span class="btn-main-text">
-                        <i class="fas fa-lock"></i>
-                        {{ isSubmitting ? 'Processando...' : 'Pagar Plano Anual (Pix)' }}
+                        <i :class="sdrMode ? 'fab fa-whatsapp' : 'fas fa-lock'"></i>
+                        {{ isSubmitting ? 'Registrando...' : (sdrMode ? 'Registrar Venda (PIX à vista)' : 'Pagar Plano Anual (Pix)') }}
                       </span>
                       <span class="btn-sub-text">
-                        Economize {{ formatPrice(getPixExtraSavings()) }} hoje
+                        {{ sdrMode ? 'Cria o pedido no painel SDR' : 'Economize ' + formatPrice(getPixExtraSavings()) + ' hoje' }}
                       </span>
                     </button>
                   </div>
@@ -908,11 +949,11 @@
                       :disabled="isSubmitting"
                     >
                       <span class="btn-main-text">
-                        <i class="fas fa-lock"></i>
-                        {{ isSubmitting ? 'Processando...' : 'Assinar Plano Anual (12x)' }}
+                        <i :class="sdrMode ? 'fab fa-whatsapp' : 'fas fa-lock'"></i>
+                        {{ isSubmitting ? 'Registrando...' : (sdrMode ? 'Registrar Venda (12x Cartão)' : 'Assinar Plano Anual (12x)') }}
                       </span>
                       <span class="btn-sub-text">
-                        Compra segura e protegida
+                        {{ sdrMode ? 'Cria o pedido no painel SDR' : 'Compra segura e protegida' }}
                       </span>
                     </button>
                   </div>
@@ -929,7 +970,7 @@
             </div>
             
             <!-- Nota sobre renovação (transparência) -->
-            <div class="renewal-notice">
+            <div v-if="!sdrMode" class="renewal-notice">
               <i class="fas fa-info-circle"></i>
               <div class="notice-content">
                 <strong>Plano de 12 meses:</strong> 
@@ -938,6 +979,7 @@
               </div>
             </div>
           </form>
+          </template> <!-- end v-else sdrSaleResult -->
         </div>
       </transition>
     </div>
@@ -1187,6 +1229,10 @@ export default {
       type: String,
       default: null,
       validator: (value) => !value || ['landing', 'site_complete'].includes(value)
+    },
+    sdrMode: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -1212,6 +1258,7 @@ export default {
       // O briefing completo será coletado via OnboardingWizard após o pagamento
       briefing: {
         customer_name: '',
+        company_name: '', // Usado no modo SDR
         email: '',
         whatsapp: '',
         document: '' // CPF/CNPJ opcional
@@ -1249,7 +1296,10 @@ export default {
       showAllIncludedItems: false,
       
       // Mensagens de erro do sistema
-      systemError: null
+      systemError: null,
+
+      // Resultado da venda SDR (modo SDR)
+      sdrSaleResult: null
     };
   },
   async mounted() {
@@ -1991,6 +2041,11 @@ export default {
       if (!this.briefing.customer_name || this.briefing.customer_name.trim().length < 3) {
         errors.push('Nome completo é obrigatório (mínimo 3 caracteres)');
       }
+
+      // Validar empresa (SDR mode)
+      if (this.sdrMode && (!this.briefing.company_name || this.briefing.company_name.trim().length < 2)) {
+        errors.push('Nome da empresa é obrigatório');
+      }
       
       // Validar email
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -2135,6 +2190,12 @@ export default {
       this.formErrors = [];
       
       this.isSubmitting = true;
+
+      // === MODO SDR: registrar venda no painel em vez de ir ao Pagar.me ===
+      if (this.sdrMode) {
+        await this.submitOrderSDR();
+        return;
+      }
       
       try {
         // VALIDAR preços no servidor antes de enviar
@@ -2366,6 +2427,72 @@ export default {
       }
     },
     
+    async submitOrderSDR() {
+      const token = sessionStorage.getItem('sdr_token');
+      if (!token) {
+        sessionStorage.setItem('sdr_pending_return', '/sdr/calculadora');
+        this.$router.push('/sdr');
+        this.isSubmitting = false;
+        return;
+      }
+
+      const pagesAsObject = {};
+      this.selectedPages.forEach(function(pageKey) { pagesAsObject[pageKey] = 1; });
+
+      const saleBody = {
+        customer_name: this.briefing.customer_name,
+        company_name: this.briefing.company_name || this.briefing.customer_name,
+        email: this.briefing.email,
+        whatsapp: this.briefing.whatsapp,
+        notes: '',
+        payment_method_manual: this.paymentMethod === 'cash' ? 'PIX' : 'Cartão 12x',
+        payment_status: 'pending',
+        selection: {
+          product: this.selectedProduct,
+          pages: pagesAsObject,
+          content: this.selectedContentAddons,
+          custom_pages: this.customPages,
+          video_basic_quantity: this.videoBasicQuantity,
+          video_pro_quantity: this.videoProQuantity,
+          payment_method: this.paymentMethod === 'cash' ? 'avista' : 'prazo'
+        }
+      };
+
+      try {
+        const response = await fetch('/api/sdr/sale.php?action=create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify(saleBody)
+        });
+
+        if (response.status === 401) {
+          sessionStorage.removeItem('sdr_token');
+          sessionStorage.setItem('sdr_pending_return', '/sdr/calculadora');
+          this.$router.push('/sdr');
+          return;
+        }
+
+        const result = await response.json();
+
+        if (result.ok) {
+          this.sdrSaleResult = result;
+          this.scrollToTop();
+        } else {
+          var errMsg = result.error || (result.errors ? result.errors.join(', ') : 'Erro ao registrar venda');
+          this.systemError = '\u274C ' + errMsg;
+          this.scrollToTop();
+        }
+      } catch (e) {
+        this.systemError = '\u274C Erro de conexão: ' + e.message;
+        this.scrollToTop();
+      } finally {
+        this.isSubmitting = false;
+      }
+    },
+
     async submitCustomRequest() {
       this.isSubmittingCustom = true;
       
@@ -6554,6 +6681,112 @@ body {
           cursor: not-allowed;
         }
       }
+    }
+  }
+}
+
+// ========== SDR SALE SUCCESS STATE ==========
+.sdr-sale-success {
+  text-align: center;
+  padding: 40px 20px;
+  animation: fadeIn 0.4s;
+
+  .sdr-success-icon {
+    font-size: 4rem;
+    color: #10b981;
+    margin-bottom: 16px;
+  }
+
+  h2 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #1f2937;
+    margin-bottom: 8px;
+  }
+
+  p {
+    font-size: 1rem;
+    color: #6b7280;
+    margin-bottom: 24px;
+  }
+
+  .sdr-success-link {
+    background: #f3f4f6;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 24px;
+    text-align: left;
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .sdr-link-row {
+      display: flex;
+      gap: 8px;
+
+      input {
+        flex: 1;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        background: #fff;
+        color: #374151;
+      }
+
+      .btn-copy-link {
+        padding: 10px 16px;
+        background: #8b5cf6;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        white-space: nowrap;
+
+        &:hover { background: #7c3aed; }
+      }
+    }
+  }
+
+  .sdr-success-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+
+    a.btn-sdr-clients, button.btn-sdr-new {
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    a.btn-sdr-clients {
+      background: #ede9fe;
+      color: #7c3aed;
+      border: 2px solid #c4b5fd;
+      &:hover { background: #ddd6fe; }
+    }
+
+    button.btn-sdr-new {
+      background: #10b981;
+      color: #fff;
+      border: none;
+      &:hover { background: #059669; }
     }
   }
 }
