@@ -51,11 +51,11 @@
             <ul class="footer-list contact-list">
               <li>
                 <i class="fas fa-envelope"></i>
-                <a href="mailto:alanreis@unli.com.br" class="footer-link">alanreis@unli.com.br</a>
+                <a href="mailto:renatom@unli.com.br" class="footer-link">renatom@unli.com.br</a>
               </li>
               <li>
                 <i class="fab fa-whatsapp"></i>
-                <a href="https://wa.me/5511968354238" class="footer-link" target="_blank">+55 (11) 96835-4238</a>
+                <a :href="`https://wa.me/${whatsappSDR}`" class="footer-link" target="_blank">{{ whatsappDisplay }}</a>
               </li>
             </ul>
           </div>
@@ -85,6 +85,7 @@ export default {
   name: 'FooterModern',
   setup() {
     const currentYear = ref(new Date().getFullYear());
+    const whatsappSDR = process.env.VUE_APP_WHATSAPP_SDR || '5511911019666';
 
     const navLinks = [
       { href: '#aboutUs', label: 'Quem Somos' },
@@ -104,14 +105,16 @@ export default {
     const socialLinks = [
       { name: 'Instagram', url: 'https://www.instagram.com/unligames/', icon: 'fab fa-instagram' },
       { name: 'LinkedIn', url: 'https://www.linkedin.com/company/unli-games/?viewAsMember=true', icon: 'fab fa-linkedin-in' },
-      { name: 'WhatsApp', url: 'https://wa.me/5511968354238', icon: 'fab fa-whatsapp' }
+      { name: 'WhatsApp', url: `https://wa.me/${whatsappSDR}`, icon: 'fab fa-whatsapp' }
     ];
 
     return {
       currentYear,
       navLinks,
       servicesLinks,
-      socialLinks
+      socialLinks,
+      whatsappSDR,
+      whatsappDisplay: whatsappSDR.replace(/^55(\d{2})(\d{5})(\d{4})$/, '+55 ($1) $2-$3')
     };
   }
 };

@@ -50,7 +50,7 @@
           </div>
           
           <div class="header-right">
-            <a href="https://wa.me/5511968354238?text=Olá! Estou no configurador e preciso de ajuda." 
+            <a :href="`https://wa.me/${whatsappSDR}?text=${encodeURIComponent('Olá! Estou no configurador e preciso de ajuda.')}`" 
                class="btn-help"
                target="_blank"
                rel="noopener noreferrer">
@@ -82,7 +82,7 @@
             Pagamento 100% seguro • Suporte dedicado • Garantia de qualidade
           </p>
           <p class="footer-help">
-            Dúvidas? <a href="https://wa.me/5511968354238" target="_blank">Fale conosco no WhatsApp</a>
+            Dúvidas? <a :href="`https://wa.me/${whatsappSDR}`" target="_blank">Fale conosco no WhatsApp</a>
           </p>
         </div>
       </footer>
@@ -149,6 +149,11 @@ export default {
   },
   mounted() {
     console.log('🔍 [ConfiguradorPage] Mounted - selectedPlan final:', this.selectedPlan);
+  },
+  computed: {
+    whatsappSDR() {
+      return process.env.VUE_APP_WHATSAPP_SDR || '5511911019666';
+    }
   },
   methods: {
     // ==================

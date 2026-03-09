@@ -33,6 +33,12 @@
           <h3>Meus Clientes</h3>
           <p>Ver lista de clientes</p>
         </router-link>
+
+        <router-link to="/sdr/configuracoes" class="action-card">
+          <div class="action-icon">⚙️</div>
+          <h3>Configurações</h3>
+          <p>Alterar e-mail e senha</p>
+        </router-link>
       </div>
 
       <!-- Últimos clientes -->

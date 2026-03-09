@@ -160,17 +160,38 @@ export default {
     const submitStatus = ref(''); // 'success' or 'error'
     const submitMessage = ref('');
 
+    const sendToPhpMail = async (data) => {
+      const response = await fetch('https://unli.com.br/phpmail.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          email: data.email,
+          telefone: data.phone || '',
+          assunto: 'Contato pelo site - ' + (data.name || ''),
+          mensagem: data.message
+        })
+      });
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Erro ao enviar mensagem');
+      }
+      return result;
+    };
+
     const handleSubmit = async () => {
       isSubmitting.value = true;
       submitStatus.value = '';
       submitMessage.value = '';
 
       try {
-        // Emit form data to parent
+        // Emit form data to parent (for any extra handling)
         emit('submit', { ...formData });
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Enviar para o phpmail.php
+        await sendToPhpMail(formData);
 
         // Success
         submitStatus.value = 'success';
@@ -184,7 +205,7 @@ export default {
 
       } catch (error) {
         submitStatus.value = 'error';
-        submitMessage.value = 'Erro ao enviar mensagem. Tente novamente.';
+        submitMessage.value = 'Erro ao enviar mensagem. Tente novamente ou entre em contato pelo WhatsApp.';
       } finally {
         isSubmitting.value = false;
         

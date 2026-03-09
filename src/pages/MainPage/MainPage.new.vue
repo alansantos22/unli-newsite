@@ -125,7 +125,7 @@
               <i class="fas fa-calendar-alt"></i>
               Agendar Consultoria Grátis
             </a>
-            <a href="https://wa.me/5511968354238?text=Olá! Gostaria de saber mais sobre gamificação" target="_blank" class="btn-cta-secondary">
+            <a :href="`https://wa.me/${whatsappSDR}?text=${encodeURIComponent('Olá! Gostaria de saber mais sobre gamificação')}`" target="_blank" class="btn-cta-secondary">
               <i class="fab fa-whatsapp"></i>
               Falar no WhatsApp
             </a>
@@ -203,7 +203,7 @@
     />
 
     <!-- WhatsApp Flutuante -->
-    <a href="https://wa.me/5511968354238?text=Olá! Gostaria de saber mais sobre os serviços da Unli Studio" 
+    <a :href="`https://wa.me/${whatsappSDR}?text=${encodeURIComponent('Olá! Gostaria de saber mais sobre os serviços da Unli Studio')}`" 
        target="_blank" 
        class="whatsapp-float"
        title="Falar no WhatsApp">
@@ -501,8 +501,8 @@ export default {
 
     // Contact Data
     const contactData = [
-      { icon: 'fas fa-envelope', label: 'Email', value: 'alanreis@unli.com.br' },
-      { icon: 'fab fa-whatsapp', label: 'WhatsApp', value: '+55 (11) 96835-4238' }
+      { icon: 'fas fa-envelope', label: 'Email', value: 'renatom@unli.com.br' },
+      { icon: 'fab fa-whatsapp', label: 'WhatsApp', value: process.env.VUE_APP_WHATSAPP_SDR || '5511911019666' }
     ];
 
     // Methods
@@ -591,36 +591,15 @@ export default {
     };
 
     const handleContactSubmit = async (formData) => {
-      console.log('Formulário enviado:', formData);
-      
-      try {
-        const response = await fetch('https://unli.com.br/PHPMail/phpmail.php', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
-            email: formData.email,
-            telefone: formData.phone,
-            assunto: 'Contato pelo site',
-            mensagem: formData.message
-          })
-        });
-
-        if (response.ok) {
-          alert('Mensagem enviada com sucesso! Entraremos em contato em breve.');
-          return { success: true };
-        } else {
-          throw new Error('Erro ao enviar mensagem');
-        }
-      } catch (error) {
-        console.error('Erro:', error);
-        alert('Erro ao enviar mensagem. Tente novamente mais tarde.');
-        return { success: false, error: error.message };
-      }
+      // O ContactSection.vue agora envia direto para o phpmail.php
+      // Este handler fica disponível para lógica adicional se necessário
+      console.log('Formulário de contato enviado:', formData);
     };
 
+    const whatsappSDR = process.env.VUE_APP_WHATSAPP_SDR || '5511911019666';
+
     return {
+      whatsappSDR,
       heroData,
       clientsData,
       benefitsData,

@@ -490,9 +490,13 @@ export default {
       // === MODO MANUAL: Redirecionar para WhatsApp ===
       if (process.env.VUE_APP_MANUAL_MODE === 'true') {
         const { redirectToWhatsApp } = require('@/core/composables/useWhatsAppRedirect').useWhatsAppRedirect();
-        const pages = this.packageInfo.pages || [];
-        const productLabel = this.product === 'landing' ? 'Landing Page' : 'Site Completo';
-        redirectToWhatsApp(productLabel, pages);
+        redirectToWhatsApp({
+          packageName: this.packageInfo.name || (this.product === 'landing' ? 'Landing Page' : 'Site Completo'),
+          pages: this.packageInfo.pages || [],
+          priceAvista: this.pricing.cashPrice,
+          parcela12: this.pricing.installmentPrice,
+          customerName: this.formData.name
+        });
         return;
       }
       

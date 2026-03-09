@@ -643,7 +643,7 @@
     </div>
 
     <!-- WhatsApp Flutuante -->
-    <a href="https://wa.me/5511968354238?text=Olá! Vi a página da consultoria de gamificação e gostaria de agendar o diagnóstico gratuito." 
+    <a :href="`https://wa.me/${whatsappSDR}?text=${encodeURIComponent('Olá! Vi a página da consultoria de gamificação e gostaria de agendar o diagnóstico gratuito.')}`" 
        target="_blank" 
        class="whatsapp-float"
        title="Falar no WhatsApp">
@@ -677,7 +677,7 @@ export default {
         {
           icon: 'fab fa-whatsapp',
           label: 'WhatsApp',
-          value: '+55 (11) 96835-4238',
+          value: '+55 (11) 9 1101-9666',
           iconBg: 'linear-gradient(135deg, #25d366 0%, #128c7e 100%)'
         },
         {
@@ -687,6 +687,11 @@ export default {
           iconBg: 'linear-gradient(135deg, #4f7aff 0%, #3d5fd9 100%)'
         }
       ]
+    }
+  },
+  computed: {
+    whatsappSDR() {
+      return process.env.VUE_APP_WHATSAPP_SDR || '5511911019666';
     }
   },
   mounted() {

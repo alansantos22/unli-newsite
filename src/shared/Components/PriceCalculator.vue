@@ -378,7 +378,8 @@ export default {
     handleContact() {
       this.trackCalculatorEvent('contact_whatsapp', this.totalPrice);
       const message = this.buildWhatsAppMessage();
-      window.open(`https://wa.me/5511999999999?text=${encodeURIComponent(message)}`, '_blank');
+      const whatsappNumber = process.env.VUE_APP_WHATSAPP_SDR || '5511911019666';
+      window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank');
     },
     
     buildWhatsAppMessage() {

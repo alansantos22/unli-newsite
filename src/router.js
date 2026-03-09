@@ -93,5 +93,11 @@ export default [
         name: "SDRClienteDetalhe",
         component: () => import("./pages/SDRPanel/SDRClienteDetalhe.vue"),
         meta: { hideHeader: true, hideFooter: true, requiresSDR: true }
+    },
+    {
+        path: "/sdr/configuracoes",
+        name: "SDRConfiguracoes",
+        component: () => import("./pages/SDRPanel/SDRConfiguracoes.vue"),
+        meta: { hideHeader: true, hideFooter: true, requiresSDR: true }
     }
 ]

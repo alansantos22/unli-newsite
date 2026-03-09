@@ -80,11 +80,11 @@
           <h3><i class="fas fa-question-circle"></i> Precisa de Ajuda?</h3>
           <p>Se o problema persistir, entre em contato conosco:</p>
           <div class="contact-options">
-            <a href="mailto:contato@unli.com.br" class="contact-btn">
+            <a href="mailto:renatom@unli.com.br" class="contact-btn">
               <i class="fas fa-envelope"></i>
               E-mail
             </a>
-            <a href="https://wa.me/5511999999999" class="contact-btn" target="_blank">
+            <a :href="`https://wa.me/${whatsappSDR}`" class="contact-btn" target="_blank">
               <i class="fab fa-whatsapp"></i>
               WhatsApp
             </a>
@@ -119,6 +119,8 @@ import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
+
+const whatsappSDR = process.env.VUE_APP_WHATSAPP_SDR || '5511911019666'
 
 // State
 const isValidating = ref(true)

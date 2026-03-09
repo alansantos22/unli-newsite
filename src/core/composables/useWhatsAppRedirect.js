@@ -5,7 +5,7 @@
  * ao WhatsApp do SDR ao invés do checkout de pagamento.
  */
 
-const WHATSAPP_NUMBER = process.env.VUE_APP_WHATSAPP_SDR || '5511968354238';
+const WHATSAPP_NUMBER = process.env.VUE_APP_WHATSAPP_SDR || '5511911019666';
 
 /**
  * Formata valor em Reais

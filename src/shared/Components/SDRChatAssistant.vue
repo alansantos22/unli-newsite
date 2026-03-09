@@ -461,7 +461,7 @@ export default {
       typingDelay: { min: 1500, max: 2500 },
       
       // WhatsApp para projetos customizados
-      whatsappCustomDev: '5511999999999', // Substituir pelo número real
+      whatsappCustomDev: process.env.VUE_APP_WHATSAPP_SDR || '5511911019666',
       
       // Checkout direto via chat
       showCheckoutModal: false,
@@ -1137,8 +1137,13 @@ export default {
         const { redirectToWhatsApp } = require('@/core/composables/useWhatsAppRedirect').useWhatsAppRedirect();
         const pages = suggestedPlan.pages || [];
         const type = suggestedPlan.type || 'site_complete';
-        const productLabel = type === 'landing' ? 'Landing Page' : 'Site Completo';
-        redirectToWhatsApp(productLabel, pages, pricing);
+        const packageName = type === 'landing' ? 'Landing Page' : (suggestedPlan.packageName || 'Site Completo');
+        redirectToWhatsApp({
+          packageName,
+          pages,
+          priceAvista: pricing?.avista,
+          parcela12: pricing?.parcela12
+        });
         return;
       }
       

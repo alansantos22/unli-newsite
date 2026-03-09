@@ -325,7 +325,11 @@
                 <li><i class="fas fa-check"></i> <strong>Área do cliente para editar seus conteúdos</strong></li>
             </ul>
 
-            <router-link to="/configurador?plan=landing" class="pricing-button secondary">
+            <a v-if="isManualMode" :href="whatsappLink('Landing Page (Página Única) - R$ 57,40/mês')" target="_blank" class="pricing-button secondary">
+              <i class="fab fa-whatsapp"></i>
+              Quero minha Landing Page
+            </a>
+            <router-link v-else to="/configurador?plan=landing" class="pricing-button secondary">
               <i class="fas fa-rocket"></i>
               Quero minha Landing Page
             </router-link>
@@ -363,7 +367,11 @@
               <li><i class="fas fa-check"></i> Formulários para contato</li>
             </ul>
 
-            <router-link to="/configurador?plan=site_complete" class="pricing-button">
+            <a v-if="isManualMode" :href="whatsappLink('Site Multi-Páginas (Expansível) - A partir de R$ 59,32/mês')" target="_blank" class="pricing-button">
+              <i class="fab fa-whatsapp"></i>
+              Configurar meu site
+            </a>
+            <router-link v-else to="/configurador?plan=site_complete" class="pricing-button">
               <i class="fas fa-cog"></i>
               Configurar meu site
             </router-link>
@@ -396,7 +404,11 @@
 
             <p class="pricing-custom-note">* Dentro do escopo acordado em contrato</p>
 
-            <a href="#contact" class="pricing-button">
+            <a v-if="isManualMode" :href="whatsappLink('Projeto Sob Medida - Sob Proposta')" target="_blank" class="pricing-button">
+              <i class="fab fa-whatsapp"></i>
+              Consultar Especialistas
+            </a>
+            <a v-else href="#contact" class="pricing-button">
               <i class="fas fa-users"></i>
               Consultar Especialistas
             </a>
@@ -705,8 +717,8 @@
               </div>
               <h3 class="info-title">WhatsApp</h3>
               <p class="info-text">Atendimento rápido e direto</p>
-              <a href="https://wa.me/5511968354238" class="info-link" target="_blank">
-                (11) 96835-4238
+              <a :href="`https://wa.me/${whatsappSDR}`" class="info-link" target="_blank">
+                {{ whatsappDisplay }}
               </a>
             </div>
 
@@ -716,8 +728,8 @@
               </div>
               <h3 class="info-title">E-mail</h3>
               <p class="info-text">Resposta em até 24h</p>
-              <a href="mailto:alanreis@unli.com.br" class="info-link">
-                alanreis@unli.com.br
+              <a href="mailto:renatom@unli.com.br" class="info-link">
+                renatom@unli.com.br
               </a>
             </div>
 
@@ -802,7 +814,7 @@
     </section>
 
     <!-- WhatsApp Flutuante -->
-    <a href="https://wa.me/5511968354238?text=Olá! Vi a página de Site Vitrine e gostaria de saber mais sobre os planos." 
+    <a :href="`https://wa.me/${whatsappSDR}?text=${encodeURIComponent('Olá! Vi a página de Site Vitrine e gostaria de saber mais sobre os planos.')}`" 
        class="whatsapp-float"
        target="_blank"
        rel="noopener noreferrer"
@@ -828,12 +840,27 @@ export default {
       isSubmitting: false
     };
   },
+  computed: {
+    isManualMode() {
+      return process.env.VUE_APP_MANUAL_MODE === 'true';
+    },
+    whatsappSDR() {
+      return process.env.VUE_APP_WHATSAPP_SDR || '5511911019666';
+    },
+    whatsappDisplay() {
+      return this.whatsappSDR.replace(/^55(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+    }
+  },
   mounted() {
     this.initScrollAnimations();
     this.initSmoothScroll();
     this.scrollPricingToFeatured();
   },
   methods: {
+    whatsappLink(planName) {
+      const msg = `Olá! Tenho interesse no pacote *${planName}*. Gostaria de mais informações.`;
+      return `https://wa.me/${this.whatsappSDR}?text=${encodeURIComponent(msg)}`;
+    },
     // Scroll carrossel de preços até o card popular (meio) no mobile
     scrollPricingToFeatured() {
       this.$nextTick(() => {
@@ -887,12 +914,33 @@ export default {
     async handleSubmit() {
       this.isSubmitting = true;
       
-      // Simular envio (integrar com backend real)
-      setTimeout(() => {
-        alert('Mensagem enviada com sucesso! Entraremos em contato em breve.');
-        this.resetForm();
+      try {
+        const response = await fetch('https://unli.com.br/phpmail.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            email: this.form.email,
+            telefone: this.form.phone || '',
+            assunto: 'Contato Site Vitrine - ' + (this.form.interest || 'Geral'),
+            mensagem: `Nome: ${this.form.name}\nInteresse: ${this.form.interest}\n\n${this.form.message}`
+          })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          alert('Mensagem enviada com sucesso! Entraremos em contato em breve.');
+          this.resetForm();
+        } else {
+          throw new Error(result.error || 'Erro ao enviar');
+        }
+      } catch (error) {
+        console.error('Erro ao enviar mensagem:', error);
+        alert('Erro ao enviar mensagem. Tente novamente ou entre em contato pelo WhatsApp.');
+      } finally {
         this.isSubmitting = false;
-      }, 1500);
+      }
     },
 
     resetForm() {

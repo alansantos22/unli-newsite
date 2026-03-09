@@ -961,7 +961,50 @@
               </div>
             </div>
 
-            <!-- Botão de Voltar (Navegação Simples) -->
+              <!-- Atendimento com Especialista (somente SDR mode) -->
+              <div v-if="sdrMode" class="specialist-toggle-sdr">
+                <label class="specialist-sdr-card" :class="{ active: specialistOnboarding }">
+                  <div class="specialist-sdr-info">
+                    <div class="specialist-sdr-header">
+                      <span class="specialist-sdr-title">
+                        <i class="fas fa-headset"></i>
+                        Onboarding com Especialista
+                      </span>
+                      <span class="specialist-sdr-price">+R$ {{ (config.service_addons && config.service_addons.specialist_onboarding ? config.service_addons.specialist_onboarding.price : 169).toFixed(2).replace('.', ',') }}</span>
+                    </div>
+                    <p class="specialist-sdr-desc">Atendimento personalizado por um humano ao invés do assistente virtual. Processo de onboarding guiado 1-a-1.</p>
+                  </div>
+                  <div class="specialist-sdr-toggle">
+                    <input type="checkbox" v-model="specialistOnboarding" id="sdr-specialist-toggle" />
+                    <span class="toggle-track">
+                      <span class="toggle-thumb"></span>
+                    </span>
+                  </div>
+                </label>
+
+                <!-- Resumo com especialista -->
+                <div v-if="specialistOnboarding" class="specialist-price-summary">
+                  <div class="sps-row">
+                    <span>Subtotal do site</span>
+                    <span>R$ {{ subtotal.toFixed(2).replace('.', ',') }}</span>
+                  </div>
+                  <div class="sps-row specialist">
+                    <span>+ Onboarding Especialista</span>
+                    <span>R$ {{ specialistPrice.toFixed(2).replace('.', ',') }}</span>
+                  </div>
+                  <div class="sps-divider"></div>
+                  <div class="sps-row total">
+                    <span>Total à vista (PIX)</span>
+                    <strong>R$ {{ sdrCashTotal.toFixed(2).replace('.', ',') }}</strong>
+                  </div>
+                  <div class="sps-row total">
+                    <span>Total parcelado (12x)</span>
+                    <strong>R$ {{ sdrInstallmentValue.toFixed(2).replace('.', ',') }}/mês</strong>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Botão de Voltar (Navegação Simples) -->
             <div class="step-navigation-back">
               <button type="button" class="btn-back" @click="previousStep">
                 <i class="fas fa-arrow-left"></i>
@@ -1299,7 +1342,10 @@ export default {
       systemError: null,
 
       // Resultado da venda SDR (modo SDR)
-      sdrSaleResult: null
+      sdrSaleResult: null,
+
+      // Atendimento com especialista (modo SDR)
+      specialistOnboarding: false
     };
   },
   async mounted() {
@@ -1564,6 +1610,28 @@ export default {
       return this.serverValidatedPricing?.source || 'local';
     },
     
+    // Preço do especialista (somente modo SDR)
+    specialistPrice() {
+      if (!this.specialistOnboarding) return 0;
+      return this.config?.service_addons?.specialist_onboarding?.price || 169;
+    },
+
+    // Total SDR à vista (base + especialista sem markup)
+    sdrCashTotal() {
+      return this.subtotal + this.specialistPrice;
+    },
+
+    // Total SDR parcelado (base × 1.15 + especialista já parcelado)
+    sdrInstallmentTotal() {
+      return Math.round(
+        (this.subtotal * 1.15 + this.specialistPrice) * 100
+      ) / 100;
+    },
+
+    sdrInstallmentValue() {
+      return Math.round((this.sdrInstallmentTotal / 12) * 100) / 100;
+    },
+
     // Economia em R$ (diferença entre valor parcelado e à vista)
     savingsAmount() {
       // Diferença entre parcelado e à vista (taxa de 15%)
@@ -2196,6 +2264,21 @@ export default {
         await this.submitOrderSDR();
         return;
       }
+
+      // === MODO MANUAL: Redirecionar para WhatsApp ===
+      if (process.env.VUE_APP_MANUAL_MODE === 'true') {
+        const { redirectToWhatsApp } = require('@/core/composables/useWhatsAppRedirect').useWhatsAppRedirect();
+        const pages = Object.keys(this.selectedPages || {}).filter(k => this.selectedPages[k]);
+        redirectToWhatsApp({
+          packageName: this.currentProductName || 'Site Completo',
+          pages,
+          priceAvista: this.cashPrice,
+          parcela12: this.installmentPerMonth,
+          customerName: this.briefing.customer_name
+        });
+        this.isSubmitting = false;
+        return;
+      }
       
       try {
         // VALIDAR preços no servidor antes de enviar
@@ -2454,7 +2537,10 @@ export default {
           custom_pages: this.customPages,
           video_basic_quantity: this.videoBasicQuantity,
           video_pro_quantity: this.videoProQuantity,
-          payment_method: this.paymentMethod === 'cash' ? 'avista' : 'prazo'
+          payment_method: this.paymentMethod === 'cash' ? 'avista' : 'prazo',
+          service_addons: {
+            specialist_onboarding: this.specialistOnboarding
+          }
         }
       };
 
@@ -7008,6 +7094,144 @@ body {
     
     i {
       font-size: 0.9rem;
+    }
+  }
+}
+
+// Specialist onboarding SDR toggle
+.specialist-toggle-sdr {
+  margin: 20px 0 16px;
+
+  .specialist-sdr-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 18px;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    background: #f9fafb;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+
+    &.active {
+      border-color: #7c3aed;
+      background: #faf5ff;
+    }
+
+    .specialist-sdr-info {
+      flex: 1;
+
+      .specialist-sdr-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 4px;
+
+        .specialist-sdr-title {
+          font-weight: 600;
+          font-size: 0.95rem;
+          color: #1f2937;
+
+          i {
+            color: #7c3aed;
+            margin-right: 4px;
+          }
+        }
+
+        .specialist-sdr-price {
+          font-size: 0.8rem;
+          font-weight: 700;
+          color: #7c3aed;
+          background: #ede9fe;
+          padding: 2px 8px;
+          border-radius: 99px;
+          white-space: nowrap;
+        }
+      }
+
+      .specialist-sdr-desc {
+        font-size: 0.82rem;
+        color: #6b7280;
+        margin: 0;
+        line-height: 1.4;
+      }
+    }
+
+    .specialist-sdr-toggle {
+      flex-shrink: 0;
+
+      input[type="checkbox"] {
+        display: none;
+      }
+
+      .toggle-track {
+        display: inline-flex;
+        align-items: center;
+        width: 44px;
+        height: 24px;
+        border-radius: 99px;
+        background: #d1d5db;
+        position: relative;
+        transition: background 0.2s;
+
+        .toggle-thumb {
+          width: 18px;
+          height: 18px;
+          background: #fff;
+          border-radius: 50%;
+          position: absolute;
+          left: 3px;
+          transition: left 0.2s;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+      }
+    }
+  }
+
+  // When card is active, style the toggle
+  .specialist-sdr-card.active .toggle-track {
+    background: #7c3aed;
+
+    .toggle-thumb {
+      left: 23px;
+    }
+  }
+
+  // Price summary breakdown
+  .specialist-price-summary {
+    margin-top: 10px;
+    padding: 12px 14px;
+    background: #faf5ff;
+    border: 1px solid #ede9fe;
+    border-radius: 10px;
+    font-size: 0.85rem;
+
+    .sps-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 3px 0;
+      color: #374151;
+
+      &.specialist {
+        color: #7c3aed;
+        font-weight: 500;
+      }
+
+      &.total {
+        font-size: 0.92rem;
+        color: #111827;
+
+        strong {
+          font-weight: 700;
+        }
+      }
+    }
+
+    .sps-divider {
+      border-bottom: 1px solid #ddd6fe;
+      margin: 6px 0;
     }
   }
 }

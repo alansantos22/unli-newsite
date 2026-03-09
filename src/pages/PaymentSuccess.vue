@@ -381,7 +381,7 @@ export default {
     
     contactSupport() {
       // Número do WhatsApp da empresa (substitua pelo número real)
-      const whatsappNumber = '5511999999999' // Substitua pelo seu número
+      const whatsappNumber = process.env.VUE_APP_WHATSAPP_SDR || '5511911019666'
       const message = `Olá! Acabei de realizar uma compra (Pedido: ${this.getOrderIdFromUrl()}) e preciso de ajuda.`
       const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`
       window.open(whatsappUrl, '_blank')
