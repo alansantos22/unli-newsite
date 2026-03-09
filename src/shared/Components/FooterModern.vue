@@ -103,7 +103,7 @@ export default {
     ];
 
     const socialLinks = [
-      { name: 'Instagram', url: 'https://www.instagram.com/unligames/', icon: 'fab fa-instagram' },
+      { name: 'Instagram', url: 'https://www.instagram.com/unlistudio/', icon: 'fab fa-instagram' },
       { name: 'LinkedIn', url: 'https://www.linkedin.com/company/unli-games/?viewAsMember=true', icon: 'fab fa-linkedin-in' },
       { name: 'WhatsApp', url: `https://wa.me/${whatsappSDR}`, icon: 'fab fa-whatsapp' }
     ];
