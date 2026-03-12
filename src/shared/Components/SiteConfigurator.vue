@@ -731,7 +731,22 @@
                   >
                 </div>
                 <div class="form-group">
-                  <!-- espaço intencional -->
+                  <label>Código do Afiliado (opcional)</label>
+                  <div class="affiliate-code-input">
+                    <input 
+                      type="text" 
+                      v-model="affiliateHash"
+                      placeholder="Ex: a1b2c3d4e5f6g7h8"
+                      maxlength="16"
+                      @blur="validateAffiliateHash"
+                    >
+                    <span v-if="affiliateValidation === 'valid'" class="aff-valid">
+                      <i class="fas fa-check-circle"></i> {{ affiliateName }}
+                    </span>
+                    <span v-else-if="affiliateValidation === 'invalid'" class="aff-invalid">
+                      <i class="fas fa-times-circle"></i> Código inválido
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -1345,7 +1360,12 @@ export default {
       sdrSaleResult: null,
 
       // Atendimento com especialista (modo SDR)
-      specialistOnboarding: false
+      specialistOnboarding: false,
+
+      // Código do afiliado (modo SDR)
+      affiliateHash: '',
+      affiliateValidation: null, // null | 'valid' | 'invalid'
+      affiliateName: ''
     };
   },
   async mounted() {
@@ -2509,6 +2529,28 @@ export default {
         this.isSubmitting = false;
       }
     },
+
+    async validateAffiliateHash() {
+      if (!this.affiliateHash || this.affiliateHash.length < 8) {
+        this.affiliateValidation = '';
+        this.affiliateName = '';
+        return;
+      }
+      try {
+        var resp = await fetch('/api/affiliate/referral.php?action=validate_hash&hash=' + encodeURIComponent(this.affiliateHash));
+        var data = await resp.json();
+        if (data.ok && data.valid) {
+          this.affiliateValidation = 'valid';
+          this.affiliateName = data.name || '';
+        } else {
+          this.affiliateValidation = 'invalid';
+          this.affiliateName = '';
+        }
+      } catch (e) {
+        this.affiliateValidation = 'invalid';
+        this.affiliateName = '';
+      }
+    },
     
     async submitOrderSDR() {
       const token = sessionStorage.getItem('sdr_token');
@@ -2541,7 +2583,8 @@ export default {
           service_addons: {
             specialist_onboarding: this.specialistOnboarding
           }
-        }
+        },
+        affiliate_hash: this.affiliateHash || null
       };
 
       try {
@@ -7233,6 +7276,54 @@ body {
       border-bottom: 1px solid #ddd6fe;
       margin: 6px 0;
     }
+  }
+}
+
+.affiliate-code-input {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f0fdf4;
+  border-radius: 8px;
+  border: 1px solid #bbf7d0;
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #166534;
+    margin-bottom: 6px;
+  }
+
+  input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #86efac;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: monospace;
+    letter-spacing: 1px;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+
+    &:focus {
+      border-color: #22c55e;
+      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15);
+    }
+  }
+
+  .aff-valid {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #16a34a;
+    font-weight: 500;
+  }
+
+  .aff-invalid {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #dc2626;
+    font-weight: 500;
   }
 }
 </style>

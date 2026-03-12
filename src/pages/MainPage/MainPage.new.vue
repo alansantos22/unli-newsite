@@ -125,7 +125,7 @@
               <i class="fas fa-calendar-alt"></i>
               Agendar Consultoria Grátis
             </a>
-            <a :href="`https://wa.me/${whatsappSDR}?text=${encodeURIComponent('Olá! Gostaria de saber mais sobre gamificação')}`" target="_blank" class="btn-cta-secondary">
+            <a :href="`https://wa.me/${whatsappSDR}?text=${encodeURIComponent('Olá! Gostaria de saber mais sobre gamificação' + affiliateSuffix)}`" target="_blank" class="btn-cta-secondary">
               <i class="fab fa-whatsapp"></i>
               Falar no WhatsApp
             </a>
@@ -203,7 +203,7 @@
     />
 
     <!-- WhatsApp Flutuante -->
-    <a :href="`https://wa.me/${whatsappSDR}?text=${encodeURIComponent('Olá! Gostaria de saber mais sobre os serviços da Unli Studio')}`" 
+    <a :href="`https://wa.me/${whatsappSDR}?text=${encodeURIComponent('Olá! Gostaria de saber mais sobre os serviços da Unli Studio' + affiliateSuffix)}`" 
        target="_blank" 
        class="whatsapp-float"
        title="Falar no WhatsApp">
@@ -598,8 +598,13 @@ export default {
 
     const whatsappSDR = process.env.VUE_APP_WHATSAPP_SDR || '5511911019666';
 
+    // Detectar cookie de afiliado para incluir nos links WhatsApp
+    const affMatch = document.cookie.match(/(?:^|; )unli_aff=([a-f0-9]{16})/);
+    const affiliateSuffix = affMatch ? `\n\n\ud83d\udcce Indicado pelo afiliado: ${affMatch[1]}` : '';
+
     return {
       whatsappSDR,
+      affiliateSuffix,
       heroData,
       clientsData,
       benefitsData,

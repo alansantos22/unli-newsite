@@ -99,5 +99,27 @@ export default [
         name: "SDRConfiguracoes",
         component: () => import("./pages/SDRPanel/SDRConfiguracoes.vue"),
         meta: { hideHeader: true, hideFooter: true, requiresSDR: true }
+    },
+
+    // ============================================
+    // Affiliate Panel Routes
+    // ============================================
+    {
+        path: "/afiliados",
+        name: "AffiliateLogin",
+        component: () => import("./pages/AffiliatePanel/AffiliateLogin.vue"),
+        meta: { hideHeader: true, hideFooter: true }
+    },
+    {
+        path: "/afiliados/registro",
+        name: "AffiliateRegister",
+        component: () => import("./pages/AffiliatePanel/AffiliateRegister.vue"),
+        meta: { hideHeader: true, hideFooter: true }
+    },
+    {
+        path: "/afiliados/dashboard",
+        name: "AffiliateDashboard",
+        component: () => import("./pages/AffiliatePanel/AffiliateDashboard.vue"),
+        meta: { hideHeader: true, hideFooter: true, requiresAffiliate: true }
     }
 ]

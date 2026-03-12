@@ -1,3 +1,5 @@
+import { useAffiliateTracking } from './useAffiliateTracking';
+
 /**
  * useWhatsAppRedirect - Composable para gerar link do WhatsApp com mensagem personalizada
  * 
@@ -65,6 +67,13 @@ function buildMessage({ packageName, pages, priceAvista, parcela12, customerName
   }
   
   msg += `\nGostaria de finalizar minha compra!`;
+
+  // Append affiliate tracking suffix if present
+  const { getWhatsAppSuffix } = useAffiliateTracking();
+  const affSuffix = getWhatsAppSuffix();
+  if (affSuffix) {
+    msg += '\n' + affSuffix;
+  }
   
   return msg;
 }

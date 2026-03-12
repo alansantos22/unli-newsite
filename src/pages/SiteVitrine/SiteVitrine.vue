@@ -814,7 +814,7 @@
     </section>
 
     <!-- WhatsApp Flutuante -->
-    <a :href="`https://wa.me/${whatsappSDR}?text=${encodeURIComponent('Olá! Vi a página de Site Vitrine e gostaria de saber mais sobre os planos.')}`" 
+    <a :href="`https://wa.me/${whatsappSDR}?text=${encodeURIComponent('Olá! Vi a página de Site Vitrine e gostaria de saber mais sobre os planos.' + affiliateSuffix)}`" 
        class="whatsapp-float"
        target="_blank"
        rel="noopener noreferrer"
@@ -849,6 +849,10 @@ export default {
     },
     whatsappDisplay() {
       return this.whatsappSDR.replace(/^55(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+    },
+    affiliateSuffix() {
+      const match = document.cookie.match(/(?:^|; )unli_aff=([a-f0-9]{16})/);
+      return match ? `\n\n\ud83d\udcce Indicado pelo afiliado: ${match[1]}` : '';
     }
   },
   mounted() {
@@ -858,7 +862,8 @@ export default {
   },
   methods: {
     whatsappLink(planName) {
-      const msg = `Olá! Tenho interesse no pacote *${planName}*. Gostaria de mais informações.`;
+      const affSuffix = this.affiliateSuffix;
+      const msg = `Olá! Tenho interesse no pacote *${planName}*. Gostaria de mais informações.${affSuffix}`;
       return `https://wa.me/${this.whatsappSDR}?text=${encodeURIComponent(msg)}`;
     },
     // Scroll carrossel de preços até o card popular (meio) no mobile

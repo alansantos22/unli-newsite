@@ -144,7 +144,8 @@ function require_sdr_auth() {
         exit;
     }
     
-    $stmt = $pdo->prepare("SELECT id, name, email, whatsapp, is_active FROM sdr_users WHERE id = ?");
+    $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+    $stmt = $pdo->prepare("SELECT id, name, email, whatsapp, is_active FROM {$prefix}sdr_users WHERE id = ?");
     $stmt->execute([$payload['sdr_id']]);
     $sdr = $stmt->fetch();
     

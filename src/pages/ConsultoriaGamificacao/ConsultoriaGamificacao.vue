@@ -643,7 +643,7 @@
     </div>
 
     <!-- WhatsApp Flutuante -->
-    <a :href="`https://wa.me/${whatsappSDR}?text=${encodeURIComponent('Olá! Vi a página da consultoria de gamificação e gostaria de agendar o diagnóstico gratuito.')}`" 
+    <a :href="`https://wa.me/${whatsappSDR}?text=${encodeURIComponent('Olá! Vi a página da consultoria de gamificação e gostaria de agendar o diagnóstico gratuito.' + affiliateSuffix)}`" 
        target="_blank" 
        class="whatsapp-float"
        title="Falar no WhatsApp">
@@ -692,6 +692,10 @@ export default {
   computed: {
     whatsappSDR() {
       return process.env.VUE_APP_WHATSAPP_SDR || '5511911019666';
+    },
+    affiliateSuffix() {
+      const match = document.cookie.match(/(?:^|; )unli_aff=([a-f0-9]{16})/);
+      return match ? `\n\n\ud83d\udcce Indicado pelo afiliado: ${match[1]}` : '';
     }
   },
   mounted() {

@@ -46,6 +46,12 @@ router.beforeEach((to, from, next) => {
             return next({ name: 'SDRLogin' });
         }
     }
+    if (to.meta.requiresAffiliate) {
+        const token = sessionStorage.getItem('affiliate_token');
+        if (!token) {
+            return next({ name: 'AffiliateLogin' });
+        }
+    }
     next();
 });
 

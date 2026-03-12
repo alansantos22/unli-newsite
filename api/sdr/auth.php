@@ -116,7 +116,8 @@ function handle_login() {
         return;
     }
     
-    $stmt = $pdo->prepare("SELECT id, name, email, password_hash, whatsapp, is_active FROM sdr_users WHERE email = ?");
+    $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+    $stmt = $pdo->prepare("SELECT id, name, email, password_hash, whatsapp, is_active FROM {$prefix}sdr_users WHERE email = ?");
     $stmt->execute([$email]);
     $user = $stmt->fetch();
     
@@ -146,7 +147,7 @@ function handle_login() {
     ]);
     
     // Atualizar last_login
-    $stmt = $pdo->prepare("UPDATE sdr_users SET last_login = NOW() WHERE id = ?");
+    $stmt = $pdo->prepare("UPDATE {$prefix}sdr_users SET last_login = NOW() WHERE id = ?");
     $stmt->execute([$user['id']]);
     
     echo json_encode([

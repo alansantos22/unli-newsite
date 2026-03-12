@@ -222,7 +222,20 @@ if (isset($_GET['create_sdr']) && $_GET['create_sdr'] === '1') {
         $stmt = $pdo->prepare("SELECT id FROM {$sdrTable} WHERE email = ?");
         $stmt->execute([$sdrEmail]);
         if ($stmt->rowCount() > 0) {
-            log_msg("SDR com email {$sdrEmail} já existe em {$sdrTable}, pulando...", 'warning');
+            // Se force=1, atualizar a senha
+            if (isset($_GET['force']) && $_GET['force'] === '1') {
+                try {
+                    $hash = password_hash($sdrPass, PASSWORD_BCRYPT);
+                    $stmt = $pdo->prepare("UPDATE {$sdrTable} SET password_hash = ?, name = ?, whatsapp = ? WHERE email = ?");
+                    $stmt->execute([$hash, $sdrName, $sdrWhatsapp, $sdrEmail]);
+                    log_msg("SDR '{$sdrName}' atualizado com nova senha! (email: {$sdrEmail})", 'success');
+                } catch (PDOException $e) {
+                    log_msg("Erro ao atualizar SDR: " . $e->getMessage(), 'error');
+                    $errors++;
+                }
+            } else {
+                log_msg("SDR com email {$sdrEmail} já existe em {$sdrTable}, pulando... (use &force=1 para atualizar senha)", 'warning');
+            }
         } else {
             try {
                 $hash = password_hash($sdrPass, PASSWORD_BCRYPT);

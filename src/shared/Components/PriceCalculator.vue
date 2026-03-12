@@ -189,6 +189,7 @@ export default {
   name: 'PriceCalculator',
   data() {
     return {
+      affiliateRef: null,
       // Tipos de site
       siteTypes: [
         {
@@ -264,6 +265,11 @@ export default {
       ],
       selectedComplexFeatures: []
     };
+  },
+  created() {
+    // Detectar cookie de afiliado
+    const match = document.cookie.match(/(?:^|; )unli_aff=([a-f0-9]{16})/);
+    if (match) this.affiliateRef = match[1];
   },
   computed: {
     showExtraPages() {
@@ -415,6 +421,11 @@ export default {
       }
       
       message += `\nGostaria de mais informações!`;
+      
+      // Incluir código de afiliado se existir
+      if (this.affiliateRef) {
+        message += `\n\n📎 Indicado pelo afiliado: ${this.affiliateRef}`;
+      }
       
       return message;
     },

@@ -134,6 +134,25 @@ function handle_create($sdr, $body) {
     $email = trim($body['email']);
     $whatsapp = preg_replace('/[^0-9+() -]/', '', trim($body['whatsapp']));
     $sdrNotes = trim($body['notes'] ?? '');
+
+    // Verificar afiliado se hash fornecido
+    $affiliateId = null;
+    $affiliateHash = null;
+    if (!empty($body['affiliate_hash'])) {
+        $affiliateHash = preg_replace('/[^a-f0-9]/', '', strtolower(trim($body['affiliate_hash'])));
+        if (strlen($affiliateHash) >= 8) {
+            $affStmt = $pdo->prepare("SELECT id, commission_rate FROM {$prefix}affiliate_users WHERE affiliate_hash = ? AND is_active = 1 LIMIT 1");
+            $affStmt->execute([$affiliateHash]);
+            $affiliate = $affStmt->fetch(PDO::FETCH_ASSOC);
+            if ($affiliate) {
+                $affiliateId = (int)$affiliate['id'];
+            } else {
+                $affiliateHash = null;
+            }
+        } else {
+            $affiliateHash = null;
+        }
+    }
     
     $stmt = $pdo->prepare("
         INSERT INTO {$prefix}orders (
@@ -142,8 +161,9 @@ function handle_create($sdr, $body) {
             payment_status, payment_method_manual,
             onboarding_token, onboarding_status,
             sdr_id, sdr_notes,
+            affiliate_id, affiliate_hash,
             created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente', ?, ?, NOW(), NOW())
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente', ?, ?, ?, ?, NOW(), NOW())
     ");
     
     $stmt->execute([
@@ -157,10 +177,31 @@ function handle_create($sdr, $body) {
         $paymentMethodManual,
         $token,
         $sdr['sdr_id'],
-        $sdrNotes
+        $sdrNotes,
+        $affiliateId,
+        $affiliateHash
     ]);
     
     $orderId = (int)$pdo->lastInsertId();
+
+    // Se tem afiliado vinculado, criar registro de referral
+    if ($affiliateId) {
+        try {
+            $commRate = $affiliate['commission_rate'] ?? 0.05;
+            $commAmount = round($totalAmount * $commRate, 2);
+            $refStmt = $pdo->prepare("
+                INSERT INTO {$prefix}affiliate_referrals (affiliate_id, order_id, order_amount, commission_rate, commission_amount, status, created_at)
+                VALUES (?, ?, ?, ?, ?, 'pending', NOW())
+            ");
+            $refStmt->execute([$affiliateId, $orderId, $totalAmount, $commRate, $commAmount]);
+
+            // Atualizar total_sales_amount do afiliado
+            $pdo->prepare("UPDATE {$prefix}affiliate_users SET total_sales_amount = total_sales_amount + ? WHERE id = ?")
+                ->execute([$totalAmount, $affiliateId]);
+        } catch (Exception $e) {
+            error_log("[SDR Sale] Erro ao registrar referral de afiliado: " . $e->getMessage());
+        }
+    }
     
     $baseUrl = defined('SITE_BASE_URL') ? SITE_BASE_URL : 'https://unli.com.br';
     $onboardingLink = "{$baseUrl}/setup?token={$token}";

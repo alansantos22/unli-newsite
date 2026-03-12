@@ -93,7 +93,8 @@ function handle_change_email() {
     }
 
     // Verificar se o e-mail já está em uso por outro SDR
-    $stmt = $pdo->prepare("SELECT id FROM sdr_users WHERE email = ? AND id != ?");
+    $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+    $stmt = $pdo->prepare("SELECT id FROM {$prefix}sdr_users WHERE email = ? AND id != ?");
     $stmt->execute([$email, $sdr['sdr_id']]);
     if ($stmt->fetch()) {
         http_response_code(409);
@@ -101,7 +102,7 @@ function handle_change_email() {
         return;
     }
 
-    $stmt = $pdo->prepare("UPDATE sdr_users SET email = ? WHERE id = ?");
+    $stmt = $pdo->prepare("UPDATE {$prefix}sdr_users SET email = ? WHERE id = ?");
     $stmt->execute([$email, $sdr['sdr_id']]);
 
     echo json_encode(['ok' => true, 'message' => 'E-mail atualizado com sucesso']);
@@ -144,7 +145,8 @@ function handle_change_password() {
         return;
     }
 
-    $stmt = $pdo->prepare("SELECT password_hash FROM sdr_users WHERE id = ?");
+    $prefix2 = defined('DB_PREFIX') ? DB_PREFIX : '';
+    $stmt = $pdo->prepare("SELECT password_hash FROM {$prefix2}sdr_users WHERE id = ?");
     $stmt->execute([$sdr['sdr_id']]);
     $user = $stmt->fetch();
 
@@ -155,7 +157,7 @@ function handle_change_password() {
     }
 
     $new_hash = password_hash($new_pass, PASSWORD_BCRYPT);
-    $stmt = $pdo->prepare("UPDATE sdr_users SET password_hash = ? WHERE id = ?");
+    $stmt = $pdo->prepare("UPDATE {$prefix2}sdr_users SET password_hash = ? WHERE id = ?");
     $stmt->execute([$new_hash, $sdr['sdr_id']]);
 
     echo json_encode(['ok' => true, 'message' => 'Senha atualizada com sucesso']);

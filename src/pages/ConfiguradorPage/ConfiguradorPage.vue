@@ -50,7 +50,7 @@
           </div>
           
           <div class="header-right">
-            <a :href="`https://wa.me/${whatsappSDR}?text=${encodeURIComponent('Olá! Estou no configurador e preciso de ajuda.')}`" 
+            <a :href="`https://wa.me/${whatsappSDR}?text=${encodeURIComponent('Olá! Estou no configurador e preciso de ajuda.' + affiliateSuffix)}`" 
                class="btn-help"
                target="_blank"
                rel="noopener noreferrer">
@@ -153,6 +153,10 @@ export default {
   computed: {
     whatsappSDR() {
       return process.env.VUE_APP_WHATSAPP_SDR || '5511911019666';
+    },
+    affiliateSuffix() {
+      const match = document.cookie.match(/(?:^|; )unli_aff=([a-f0-9]{16})/);
+      return match ? `\n\n📎 Indicado pelo afiliado: ${match[1]}` : '';
     }
   },
   methods: {
