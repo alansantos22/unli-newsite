@@ -440,7 +440,7 @@
             <div class="pricing-value-container">
               <div class="pricing-value">
                 <span class="currency">R$</span>
-                <span class="amount">16.990</span>
+                <span class="amount">20.990</span>
               </div>
               <div class="pricing-period">à vista</div>
               <div class="pricing-savings">
@@ -497,12 +497,12 @@
             <div class="pricing-value-container">
               <div class="pricing-value">
                 <span class="currency">R$</span>
-                <span class="amount">1.899</span>
+                <span class="amount">2.299</span>
               </div>
               <div class="pricing-period">por mês</div>
               <div class="pricing-total">
                 <i class="fas fa-calculator"></i>
-                Total: R$ 18.990 (10x)
+                Total: R$ 22.990 (10x)
               </div>
             </div>
             <div class="pricing-features">
@@ -671,7 +671,7 @@ export default {
         {
           icon: 'fas fa-envelope',
           label: 'Email',
-          value: 'contato@unlistudio.com.br',
+          value: 'renatom@unlistudio.com.br',
           iconBg: 'linear-gradient(135deg, #e67e22 0%, #d35400 100%)'
         },
         {

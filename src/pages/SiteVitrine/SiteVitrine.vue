@@ -23,7 +23,7 @@
           <div class="hero-price-highlight">
             <div class="price-box">
               <span class="price-label">Investimento Anual</span>
-              <span class="price-value">~R$ 49,90<span class="price-period">/Mês</span></span>
+              <span class="price-value">~R$ 59,90<span class="price-period">/Mês</span></span>
               <span class="price-subtext">R$ 599/ano a vista</span>
             </div>
           </div>

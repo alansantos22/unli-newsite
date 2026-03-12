@@ -30,7 +30,7 @@
               v-else
               :href="item.href" 
               class="nav-link"
-              @click="handleNavClick"
+              @click="(e) => handleNavClick(e, item)"
             >
               {{ item.label }}
             </a>
@@ -40,7 +40,7 @@
 
       <!-- CTA Button Desktop -->
       <div class="header-actions">
-        <a href="#contact" class="btn-cta" @click="handleNavClick">
+        <a href="#contact" class="btn-cta" @click="(e) => handleNavClick(e, { href: '#contact' })">
           <span>Iniciar Projeto</span>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M1 8h14M8 1l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -78,13 +78,13 @@
               v-else
               :href="item.href" 
               class="mobile-nav-link"
-              @click="closeMobileMenu"
+              @click="(e) => handleNavClick(e, item)"
             >
               {{ item.label }}
             </a>
           </li>
           <li class="mobile-nav-item mobile-cta">
-            <a href="#contact" class="btn-cta-mobile" @click="closeMobileMenu">
+            <a href="#contact" class="btn-cta-mobile" @click="(e) => handleNavClick(e, { href: '#contact' })">
               Iniciar Projeto
             </a>
           </li>
@@ -96,10 +96,13 @@
 
 <script>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 
 export default {
   name: 'HeaderModern',
   setup() {
+    const router = useRouter();
+    const route = useRoute();
     const headerRef = ref(null);
     const isScrolled = ref(false);
     const isMobileMenuOpen = ref(false);
@@ -132,9 +135,19 @@ export default {
       document.body.style.overflow = '';
     };
 
-    const handleNavClick = () => {
-      // Scroll suave já é nativo do browser com CSS
+    const handleNavClick = (e, item) => {
       closeMobileMenu();
+      // Se for link de âncora e não estiver na home, navegar para home + hash
+      if (item && item.href && item.href.startsWith('#') && route.path !== '/') {
+        e.preventDefault();
+        router.push({ path: '/', hash: item.href });
+      } else if (item && item.href && item.href.startsWith('#') && route.path === '/') {
+        e.preventDefault();
+        const el = document.querySelector(item.href);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
     };
 
     onMounted(() => {
