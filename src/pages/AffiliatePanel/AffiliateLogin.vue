@@ -114,7 +114,8 @@ export default {
 
 <style lang="scss" scoped>
 .aff-login {
-  min-height: 100vh;
+  min-height: calc(100vh - 80px);
+  margin-top: 80px;
   display: flex;
   align-items: center;
   justify-content: center;

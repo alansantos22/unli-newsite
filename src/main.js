@@ -7,7 +7,7 @@ import '@fortawesome/fontawesome-free/css/all.css';
 
 import App from './App.vue'
 import routes from './router';
-import { config, pageView } from './plugins/analytics';
+import { config, pageView, fbPageView } from './plugins/analytics';
 
 //Stores
 import store from './core/store/store'
@@ -55,10 +55,13 @@ router.beforeEach((to, from, next) => {
     next();
 });
 
-// SPA page view tracking — Google Analytics + Microsoft Clarity
+// SPA page view tracking — Google Analytics + Meta Pixel + Microsoft Clarity
 router.afterEach((to) => {
     // Google Analytics
     pageView(to.name || to.path, to.fullPath);
+
+    // Meta Pixel
+    fbPageView();
 
     // Microsoft Clarity
     if (typeof window.clarity === 'function') {

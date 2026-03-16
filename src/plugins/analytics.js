@@ -27,6 +27,17 @@ export const trackEvent = (eventName, params = {}) => {
   window.gtag('event', eventName, params);
 };
 
+// Meta Pixel helpers
+export const fbPageView = () => {
+  if (typeof window.fbq !== 'function') return;
+  window.fbq('track', 'PageView');
+};
+
+export const fbTrackEvent = (eventName, params = {}) => {
+  if (typeof window.fbq !== 'function') return;
+  window.fbq('track', eventName, params);
+};
+
 export const trackContact = (method = 'whatsapp') => {
   trackEvent('contact', { method });
 };

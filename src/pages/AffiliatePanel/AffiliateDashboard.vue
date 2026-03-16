@@ -277,9 +277,13 @@
               <label>Valor da venda (R$)</label>
               <input type="number" v-model.number="simValue" min="0" step="100" placeholder="Ex: 1500" />
             </div>
-            <div class="sim-result">
-              <span class="sim-label">Sua comissão ({{ data.affiliate?.commission_rate || 5 }}%):</span>
-              <span class="sim-amount">R$ {{ formatNumber(simValue * (data.affiliate?.commission_rate || 5) / 100) }}</span>
+            <div class="sim-result" v-if="simTier">
+              <div class="sim-tier-badge">
+                <span class="sim-tier-icon">{{ simTier.icon }}</span>
+                <span class="sim-tier-name">{{ simTier.name }}</span>
+              </div>
+              <span class="sim-label">Comissão ({{ simTier.commission }}%):</span>
+              <span class="sim-amount">R$ {{ formatNumber(simValue * simTier.commission / 100) }}</span>
             </div>
           </div>
         </div>
@@ -289,7 +293,6 @@
           <div>
             <p>Comissões pagas em até <strong>30 dias úteis</strong> após a venda ser confirmada.</p>
             <p>Pagamos a partir do <strong>5º dia útil</strong> de cada mês (por enquanto, feito manualmente via PIX).</p>
-            <p>O SDR que atender o cliente também recebe <strong>10%</strong> de comissão (separado da sua).</p>
           </div>
         </div>
       </div>
@@ -350,8 +353,9 @@
           <ul>
             <li>Cada liga aumenta a comissão em <strong>1.25%</strong></li>
             <li>Começa em <strong>5%</strong> (Bronze 1) e vai até <strong>15%</strong> (Diamante 2)</li>
-            <li>Para manter o título, é necessário manter o volume de vendas a cada <strong>3 meses</strong></li>
-            <li>Se ficar 3 meses sem atingir o valor da sua liga, você cai de título</li>
+            <li>Para subir de liga, basta bater a meta <strong>1 vez</strong></li>
+            <li>Para manter o título, é preciso bater a mesma meta em <strong>pelo menos 1 dos 3 meses</strong> — contando o mês em que a meta foi batida</li>
+            <li>Se nos <strong>3 meses</strong> (incluindo o mês em que subiu) não bater novamente, você cai para a última maior meta já atingida</li>
             <li>Você será avisado quando seu título estiver em risco</li>
           </ul>
         </div>
@@ -408,6 +412,15 @@ export default {
       const needed = this.data.tier_status.next_tier.min_sales;
       const current = this.data.stats?.total_sales_amount || 0;
       return Math.min(100, Math.round((current / needed) * 100));
+    },
+    simTier() {
+      if (!this.allTiers.length) return null;
+      const sorted = [...this.allTiers].sort((a, b) => a.min_sales - b.min_sales);
+      let result = sorted[0];
+      for (const tier of sorted) {
+        if (this.simValue >= tier.min_sales) result = tier;
+      }
+      return result;
     }
   },
   async created() {
@@ -532,7 +545,8 @@ $gold: #F59E0B;
 
 .aff-dashboard {
   display: flex;
-  min-height: 100vh;
+  min-height: calc(100vh - 80px);
+  margin-top: 80px;
   background: linear-gradient(135deg, $dark 0%, #161B22 50%, #0D4429 100%);
   color: #fff;
 }
@@ -540,7 +554,7 @@ $gold: #F59E0B;
 // Sidebar
 .aff-sidebar {
   position: fixed;
-  top: 0;
+  top: 80px;
   left: 0;
   width: 240px;
   height: 100vh;
@@ -679,7 +693,7 @@ $gold: #F59E0B;
   flex: 1;
   margin-left: 240px;
   padding: 32px;
-  min-height: 100vh;
+  min-height: calc(100vh - 80px);
 
   @media (max-width: 768px) {
     margin-left: 0;
@@ -1183,6 +1197,21 @@ $gold: #F59E0B;
     flex-direction: column;
     gap: 4px;
 
+    .sim-tier-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+
+      .sim-tier-icon { font-size: 18px; }
+      .sim-tier-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: $green;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    }
     .sim-label {
       font-size: 13px;
       color: rgba(255, 255, 255, 0.5);
