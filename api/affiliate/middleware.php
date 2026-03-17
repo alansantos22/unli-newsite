@@ -22,14 +22,14 @@ require_once __DIR__ . '/../sdr/middleware.php';
 
 function get_tier_config() {
     return [
-        'bronze_1'   => ['name' => 'Liga Bronze 1',   'min_sales' => 0,     'commission' => 5.00,  'icon' => '🥉'],
-        'bronze_2'   => ['name' => 'Liga Bronze 2',   'min_sales' => 800,   'commission' => 6.25,  'icon' => '🥉'],
-        'prata_1'    => ['name' => 'Liga Prata 1',    'min_sales' => 3000,  'commission' => 7.50,  'icon' => '🥈'],
-        'prata_2'    => ['name' => 'Liga Prata 2',    'min_sales' => 6500,  'commission' => 8.75,  'icon' => '🥈'],
-        'ouro_1'     => ['name' => 'Liga Ouro 1',     'min_sales' => 12000, 'commission' => 10.00, 'icon' => '🥇'],
-        'ouro_2'     => ['name' => 'Liga Ouro 2',     'min_sales' => 20000, 'commission' => 11.25, 'icon' => '🥇'],
-        'diamante_1' => ['name' => 'Liga Diamante 1', 'min_sales' => 35000, 'commission' => 12.50, 'icon' => '💎'],
-        'diamante_2' => ['name' => 'Liga Diamante 2', 'min_sales' => 50000, 'commission' => 15.00, 'icon' => '💎'],
+        'bronze_1'   => ['name' => 'O Recruta',       'min_sales' => 0,     'commission' => 8.00,  'icon' => '🥉'],
+        'bronze_2'   => ['name' => 'O Sobrevivente',   'min_sales' => 1000,  'commission' => 9.00,  'icon' => '🥉'],
+        'prata_1'    => ['name' => 'O Especialista',   'min_sales' => 4000,  'commission' => 11.00, 'icon' => '🥈'],
+        'prata_2'    => ['name' => 'O Estrategista',   'min_sales' => 8000,  'commission' => 12.00, 'icon' => '🥈'],
+        'ouro_1'     => ['name' => 'O Elite',          'min_sales' => 15000, 'commission' => 13.50, 'icon' => '🥇'],
+        'ouro_2'     => ['name' => 'O Influenciador',  'min_sales' => 30000, 'commission' => 14.00, 'icon' => '🥇'],
+        'diamante_1' => ['name' => 'O Mestre',         'min_sales' => 50000, 'commission' => 14.50, 'icon' => '💎'],
+        'diamante_2' => ['name' => 'A Lenda',          'min_sales' => 80000, 'commission' => 15.00, 'icon' => '💎'],
     ];
 }
 

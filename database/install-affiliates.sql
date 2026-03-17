@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS `affiliate_users` (
   `pix_key` VARCHAR(150) DEFAULT NULL COMMENT 'Chave PIX para receber comissões',
   `affiliate_hash` VARCHAR(32) NOT NULL UNIQUE COMMENT 'Hash único do afiliado (usado nos links)',
   `tier` VARCHAR(30) NOT NULL DEFAULT 'bronze_1' COMMENT 'Título/liga atual',
-  `commission_rate` DECIMAL(5,2) NOT NULL DEFAULT 5.00 COMMENT 'Percentual de comissão atual',
+  `commission_rate` DECIMAL(5,2) NOT NULL DEFAULT 8.00 COMMENT 'Percentual de comissão atual',
   `total_sales_amount` DECIMAL(12,2) NOT NULL DEFAULT 0.00 COMMENT 'Montante total vendido (acumulado)',
   `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '1=ativo, 0=desativado',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -144,6 +144,16 @@ function handle_summary() {
         ];
     }
 
+    // Total de badges
+    $badgeCount = 0;
+    try {
+        $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM {$prefix}affiliate_user_badges WHERE affiliate_id = ?");
+        $stmt->execute([$aid]);
+        $badgeCount = (int)$stmt->fetch()['total'];
+    } catch (PDOException $e) {
+        // Tabela pode não existir ainda
+    }
+
     // Links de afiliado
     $baseUrl = defined('SITE_BASE_URL') ? SITE_BASE_URL : 'https://unli.com.br';
     $hash = $affiliate['affiliate_hash'];
@@ -173,6 +183,7 @@ function handle_summary() {
             'pending_commission' => $pendingCommission,
             'paid_commission' => $paidCommission,
             'last_3_months_sales' => $last3MonthsSales,
+            'badge_count' => $badgeCount,
         ],
         'tier_status' => [
             'at_risk' => $tierAtRisk,
@@ -269,14 +280,52 @@ function handle_ranking() {
 
     $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
     $stmt = $pdo->prepare("
-        SELECT first_name, last_name, tier, commission_rate, total_sales_amount
-        FROM {$prefix}affiliate_users 
-        WHERE is_active = 1 AND total_sales_amount > 0
-        ORDER BY total_sales_amount DESC
+        SELECT u.id, u.first_name, u.last_name, u.tier, u.commission_rate, u.total_sales_amount
+        FROM {$prefix}affiliate_users u
+        WHERE u.is_active = 1 AND u.total_sales_amount > 0
+        ORDER BY u.total_sales_amount DESC
         LIMIT 50
     ");
     $stmt->execute();
     $ranking = $stmt->fetchAll();
+
+    // Buscar badges de cada afiliado no ranking
+    $badgeCounts = [];
+    $badgeDetails = [];
+    try {
+        $ids = array_column($ranking, 'id');
+        if (!empty($ids)) {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            // Count
+            $stmt = $pdo->prepare("SELECT affiliate_id, COUNT(*) as total FROM {$prefix}affiliate_user_badges WHERE affiliate_id IN ({$placeholders}) GROUP BY affiliate_id");
+            $stmt->execute($ids);
+            foreach ($stmt->fetchAll() as $row) {
+                $badgeCounts[(int)$row['affiliate_id']] = (int)$row['total'];
+            }
+            // Top 5 badges de cada um
+            $stmt = $pdo->prepare("
+                SELECT ub.affiliate_id, b.icon_emoji, b.title, b.type
+                FROM {$prefix}affiliate_user_badges ub
+                JOIN {$prefix}affiliate_badges b ON b.id = ub.badge_id
+                WHERE ub.affiliate_id IN ({$placeholders}) AND b.is_active = 1
+                ORDER BY ub.awarded_at DESC
+            ");
+            $stmt->execute($ids);
+            foreach ($stmt->fetchAll() as $row) {
+                $affId = (int)$row['affiliate_id'];
+                if (!isset($badgeDetails[$affId])) $badgeDetails[$affId] = [];
+                if (count($badgeDetails[$affId]) < 5) {
+                    $badgeDetails[$affId][] = [
+                        'icon' => $row['icon_emoji'],
+                        'title' => $row['title'],
+                        'type' => $row['type']
+                    ];
+                }
+            }
+        }
+    } catch (PDOException $e) {
+        // Tabelas de badges podem não existir ainda
+    }
 
     $tiers = get_tier_config();
     $result = [];
@@ -284,13 +333,17 @@ function handle_ranking() {
     
     foreach ($ranking as $row) {
         $tierData = $tiers[$row['tier']] ?? $tiers['bronze_1'];
+        $affId = (int)$row['id'];
         $result[] = [
             'position' => $position++,
+            'id' => $affId,
             'name' => $row['first_name'] . ' ' . $row['last_name'],
             'tier' => $row['tier'],
             'tier_name' => $tierData['name'],
             'tier_icon' => $tierData['icon'],
-            'score' => (float)$row['total_sales_amount']
+            'score' => (float)$row['total_sales_amount'],
+            'badge_count' => $badgeCounts[$affId] ?? 0,
+            'badges' => $badgeDetails[$affId] ?? []
         ];
     }
 

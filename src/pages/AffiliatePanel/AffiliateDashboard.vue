@@ -19,6 +19,12 @@
         <button :class="['nav-item', { active: activeTab === 'calculator' }]" @click="activeTab = 'calculator'">
           <i class="fas fa-calculator"></i> Simulador
         </button>
+        <button :class="['nav-item', { active: activeTab === 'missions' }]" @click="activeTab = 'missions'">
+          <i class="fas fa-crosshairs"></i> Missões
+        </button>
+        <button :class="['nav-item', { active: activeTab === 'badges' }]" @click="activeTab = 'badges'">
+          <i class="fas fa-award"></i> Conquistas
+        </button>
         <button :class="['nav-item', { active: activeTab === 'ranking' }]" @click="activeTab = 'ranking'">
           <i class="fas fa-trophy"></i> Ranking
         </button>
@@ -297,13 +303,136 @@
         </div>
       </div>
 
+      <!-- Missões Tab -->
+      <div v-else-if="activeTab === 'missions'" class="tab-content">
+        <h2><i class="fas fa-crosshairs"></i> Missões da Semana</h2>
+        <p class="tab-description" v-if="missionsWeek.start">
+          Semana de {{ formatDate(missionsWeek.start) }} a {{ formatDate(missionsWeek.end) }}
+          <span v-if="missionsWeek.days_left > 0" class="days-left-badge">
+            {{ missionsWeek.days_left }} dia{{ missionsWeek.days_left > 1 ? 's' : '' }} restante{{ missionsWeek.days_left > 1 ? 's' : '' }}
+          </span>
+        </p>
+        <p class="tab-description" v-else>Missões resetam toda segunda-feira. Complete para ganhar XP e bônus!</p>
+
+        <div v-if="missions.length > 0" class="missions-grid">
+          <div v-for="mission in missions" :key="mission.id" :class="['mission-card', { completed: mission.completed == 1 }]">
+            <div class="mission-header">
+              <span class="mission-icon">{{ mission.icon_emoji || '🎯' }}</span>
+              <span :class="['mission-category', 'cat-' + mission.category]">
+                {{ categoryLabels[mission.category] || mission.category }}
+              </span>
+              <span v-if="mission.completed == 1" class="mission-done-badge">
+                <i class="fas fa-check-circle"></i> Completa
+              </span>
+            </div>
+            <h3 class="mission-title">{{ mission.title }}</h3>
+            <p class="mission-desc">{{ mission.description }}</p>
+            <div class="mission-progress">
+              <div class="mission-progress-bar">
+                <div class="mission-progress-fill" :style="{ width: mission.progress_percent + '%' }"></div>
+              </div>
+              <span class="mission-progress-text">
+                {{ formatMissionValue(mission.current_value, mission.target_unit) }}
+                / {{ formatMissionValue(mission.target_value, mission.target_unit) }}
+              </span>
+            </div>
+            <div class="mission-reward">
+              <i class="fas fa-gift"></i>
+              <span v-if="mission.reward_type === 'xp'">+{{ mission.reward_value }} XP</span>
+              <span v-else-if="mission.reward_type === 'commission_bonus'">+{{ mission.reward_value }}% comissão</span>
+              <span v-else>Medalha especial</span>
+            </div>
+          </div>
+        </div>
+        <div v-else class="empty-state">
+          <i class="fas fa-crosshairs"></i>
+          <p>Nenhuma missão disponível no momento. Em breve teremos missões para você!</p>
+        </div>
+
+        <div v-if="missions.length > 0" class="missions-summary">
+          <div class="missions-summary-card">
+            <span class="summary-number">{{ missionsCompleted }}</span>
+            <span class="summary-label">Completas</span>
+          </div>
+          <div class="missions-summary-card">
+            <span class="summary-number">{{ missions.length - missionsCompleted }}</span>
+            <span class="summary-label">Pendentes</span>
+          </div>
+          <div class="missions-summary-card">
+            <span class="summary-number">{{ missions.length }}</span>
+            <span class="summary-label">Total</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conquistas/Badges Tab -->
+      <div v-else-if="activeTab === 'badges'" class="tab-content">
+        <h2><i class="fas fa-award"></i> Minhas Conquistas</h2>
+        <p class="tab-description">Medalhas permanentes que mostram sua trajetória como afiliado.</p>
+
+        <!-- Minhas medalhas -->
+        <div v-if="myBadges.length > 0" class="badges-shelf">
+          <h3 class="badges-section-title">
+            <i class="fas fa-star"></i> Sua Estante de Medalhas ({{ myBadges.length }})
+          </h3>
+          <div class="badges-grid">
+            <div v-for="badge in myBadges" :key="badge.id" class="badge-card earned">
+              <div class="badge-icon-big">{{ badge.icon_emoji || '🏅' }}</div>
+              <div class="badge-info">
+                <h4>{{ badge.title }}</h4>
+                <p>{{ badge.description }}</p>
+                <span class="badge-date">
+                  <i class="fas fa-calendar-check"></i> {{ formatDate(badge.awarded_at) }}
+                </span>
+              </div>
+              <span :class="['badge-type-tag', 'type-' + badge.type]">
+                {{ badgeTypeLabels[badge.type] || badge.type }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div v-else class="empty-state">
+          <i class="fas fa-award"></i>
+          <p>Você ainda não conquistou nenhuma medalha. Continue vendendo e participando para desbloquear!</p>
+        </div>
+
+        <!-- Catálogo completo -->
+        <div v-if="allBadges.length > 0" class="badges-catalog">
+          <h3 class="badges-section-title">
+            <i class="fas fa-book-open"></i> Catálogo de Conquistas
+          </h3>
+          <div v-for="(badges, type) in allBadgesGrouped" :key="type" class="badge-type-group">
+            <h4 class="badge-type-title" v-if="badges.length > 0">
+              {{ badgeTypeLabels[type] || type }}
+            </h4>
+            <div class="badges-grid" v-if="badges.length > 0">
+              <div v-for="badge in badges" :key="badge.id"
+                   :class="['badge-card', { earned: isBadgeEarned(badge.id), locked: !isBadgeEarned(badge.id) }]">
+                <div class="badge-icon-big">{{ badge.icon_emoji || '🏅' }}</div>
+                <div class="badge-info">
+                  <h4>{{ badge.title }}</h4>
+                  <p>{{ badge.description }}</p>
+                </div>
+                <div v-if="isBadgeEarned(badge.id)" class="badge-earned-check">
+                  <i class="fas fa-check-circle"></i>
+                </div>
+                <div v-else class="badge-locked-icon">
+                  <i class="fas fa-lock"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Ranking Tab -->
       <div v-else-if="activeTab === 'ranking'" class="tab-content">
         <h2><i class="fas fa-trophy"></i> Ranking de Afiliados</h2>
         <p class="tab-description">Os melhores afiliados ranqueados por valor total vendido.</p>
 
         <div v-if="ranking.length > 0" class="ranking-list">
-          <div v-for="(item, idx) in ranking" :key="idx" :class="['ranking-item', { 'top-3': item.position <= 3 }]">
+          <div v-for="(item, idx) in ranking" :key="idx" :class="['ranking-item', { 'top-3': item.position <= 3 }]"
+               @click="openProfile(item.id)" style="cursor: pointer;">
             <div class="rank-position">
               <span v-if="item.position === 1">🥇</span>
               <span v-else-if="item.position === 2">🥈</span>
@@ -313,6 +442,12 @@
             <div class="rank-info">
               <span class="rank-name">{{ item.name }}</span>
               <span class="rank-tier">{{ item.tier_icon }} {{ item.tier_name }}</span>
+            </div>
+            <div v-if="item.badges && item.badges.length > 0" class="rank-badges">
+              <span v-for="(badge, bi) in item.badges" :key="bi" class="rank-badge-icon" :title="badge.title">
+                {{ badge.icon }}
+              </span>
+              <span v-if="item.badge_count > 5" class="rank-badge-more">+{{ item.badge_count - 5 }}</span>
             </div>
             <div class="rank-score">
               R$ {{ formatNumber(item.score) }}
@@ -362,6 +497,54 @@
       </div>
     </main>
 
+    <!-- Profile Modal -->
+    <div v-if="showProfileModal" class="profile-modal-overlay" @click="showProfileModal = false">
+      <div class="profile-modal" @click.stop>
+        <button class="profile-close" @click="showProfileModal = false">
+          <i class="fas fa-times"></i>
+        </button>
+        <div v-if="profileData" class="profile-content">
+          <div class="profile-header-card">
+            <span class="profile-tier-icon">{{ profileData.profile.tier_icon }}</span>
+            <div class="profile-info">
+              <h3>{{ profileData.profile.name }}</h3>
+              <span class="profile-tier-name">{{ profileData.profile.tier_name }}</span>
+              <span class="profile-member-since">
+                <i class="fas fa-calendar-alt"></i>
+                Membro há {{ profileData.profile.member_days }} dias
+              </span>
+            </div>
+          </div>
+          <div class="profile-stats-row">
+            <div class="profile-stat">
+              <span class="profile-stat-value">R$ {{ formatNumber(profileData.profile.total_sales) }}</span>
+              <span class="profile-stat-label">Vendas</span>
+            </div>
+            <div class="profile-stat">
+              <span class="profile-stat-value">{{ profileData.badge_count }}</span>
+              <span class="profile-stat-label">Medalhas</span>
+            </div>
+          </div>
+          <div v-if="profileData.badges.length > 0" class="profile-badges-section">
+            <h4><i class="fas fa-award"></i> Conquistas</h4>
+            <div class="profile-badges-grid">
+              <div v-for="badge in profileData.badges" :key="badge.id" class="profile-badge-item">
+                <span class="profile-badge-icon">{{ badge.icon_emoji || '🏅' }}</span>
+                <span class="profile-badge-title">{{ badge.title }}</span>
+              </div>
+            </div>
+          </div>
+          <div v-else class="profile-no-badges">
+            <p>Ainda sem conquistas desbloqueadas.</p>
+          </div>
+        </div>
+        <div v-else class="loading-state" style="height: auto; padding: 40px;">
+          <i class="fas fa-spinner fa-spin"></i>
+          <p>Carregando perfil...</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Copy Toast -->
     <div v-if="showCopyToast" class="copy-toast">
       <i class="fas fa-check-circle"></i> Copiado!
@@ -385,13 +568,34 @@ export default {
       referralFilter: '',
       ranking: [],
       allTiers: [],
+      missions: [],
+      missionsWeek: {},
+      missionsCompleted: 0,
+      myBadges: [],
+      allBadges: [],
+      allBadgesGrouped: {},
+      showProfileModal: false,
+      profileData: null,
       simValue: 1500,
       showCopyToast: false,
+      categoryLabels: {
+        explorer: 'Explorador',
+        lead_hunter: 'Caçador de Leads',
+        closer: 'Fechador',
+        consistency: 'Consistência'
+      },
+      badgeTypeLabels: {
+        event: '🎓 Eventos',
+        achievement: '📈 Conquistas',
+        legacy: '🛡️ Legado'
+      },
       tabs: [
         { id: 'dashboard', icon: 'fas fa-home', label: 'Dashboard' },
         { id: 'referrals', icon: 'fas fa-users', label: 'Indicações' },
         { id: 'links', icon: 'fas fa-link', label: 'Meus Links' },
         { id: 'calculator', icon: 'fas fa-calculator', label: 'Simulador' },
+        { id: 'missions', icon: 'fas fa-crosshairs', label: 'Missões' },
+        { id: 'badges', icon: 'fas fa-award', label: 'Conquistas' },
         { id: 'ranking', icon: 'fas fa-trophy', label: 'Ranking' },
         { id: 'tiers', icon: 'fas fa-medal', label: 'Ligas' }
       ],
@@ -437,6 +641,8 @@ export default {
     activeTab(tab) {
       if (tab === 'referrals' && this.referrals.length === 0) this.loadReferrals(1);
       if (tab === 'ranking' && this.ranking.length === 0) this.loadRanking();
+      if (tab === 'missions' && this.missions.length === 0) this.loadMissions();
+      if (tab === 'badges' && this.myBadges.length === 0) this.loadBadges();
     }
   },
   methods: {
@@ -495,6 +701,69 @@ export default {
       } catch (e) {
         console.error('Erro ao carregar tiers:', e);
       }
+    },
+
+    async loadMissions() {
+      const { authHeaders } = useAffiliateAuth();
+      try {
+        const res = await fetch('/api/affiliate/badges.php?action=missions', { headers: authHeaders() });
+        const result = await res.json();
+        if (result.ok) {
+          this.missions = result.missions;
+          this.missionsWeek = result.week;
+          this.missionsCompleted = result.completed;
+        }
+      } catch (e) {
+        console.error('Erro ao carregar missões:', e);
+      }
+    },
+
+    async loadBadges() {
+      const { authHeaders } = useAffiliateAuth();
+      try {
+        // Carregar minhas badges e catálogo em paralelo
+        const [myRes, allRes] = await Promise.all([
+          fetch('/api/affiliate/badges.php?action=badges', { headers: authHeaders() }),
+          fetch('/api/affiliate/badges.php?action=all_badges', { headers: authHeaders() })
+        ]);
+        const myResult = await myRes.json();
+        const allResult = await allRes.json();
+        if (myResult.ok) {
+          this.myBadges = myResult.badges;
+        }
+        if (allResult.ok) {
+          this.allBadges = allResult.badges;
+          this.allBadgesGrouped = allResult.grouped;
+        }
+      } catch (e) {
+        console.error('Erro ao carregar badges:', e);
+      }
+    },
+
+    isBadgeEarned(badgeId) {
+      return this.myBadges.some(b => b.id === badgeId || b.id === String(badgeId));
+    },
+
+    async openProfile(affiliateId) {
+      this.showProfileModal = true;
+      this.profileData = null;
+      const { authHeaders } = useAffiliateAuth();
+      try {
+        const res = await fetch(`/api/affiliate/badges.php?action=profile&id=${encodeURIComponent(affiliateId)}`, { headers: authHeaders() });
+        const result = await res.json();
+        if (result.ok) {
+          this.profileData = result;
+        }
+      } catch (e) {
+        console.error('Erro ao carregar perfil:', e);
+      }
+    },
+
+    formatMissionValue(value, unit) {
+      const val = Number(value);
+      if (unit === 'currency') return 'R$ ' + this.formatNumber(val);
+      if (unit === 'days') return val + ' dia' + (val !== 1 ? 's' : '');
+      return Math.floor(val);
     },
 
     handleLogout() {
@@ -1436,5 +1705,435 @@ $gold: #F59E0B;
 
   i { font-size: 48px; margin-bottom: 16px; display: block; }
   p { font-size: 15px; margin: 0; }
+}
+
+// ============================================
+// MISSÕES
+// ============================================
+
+.days-left-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  background: rgba($gold, 0.15);
+  color: $gold;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.missions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.mission-card {
+  padding: 20px;
+  background: $card-bg;
+  border: 1px solid $border;
+  border-radius: 14px;
+  transition: transform 0.2s, border-color 0.2s;
+
+  &:hover { transform: translateY(-2px); }
+
+  &.completed {
+    border-color: rgba($green, 0.3);
+    background: rgba($green, 0.04);
+  }
+
+  .mission-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .mission-icon { font-size: 24px; }
+
+  .mission-category {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 6px;
+
+    &.cat-explorer { background: rgba(59, 130, 246, 0.15); color: #60A5FA; }
+    &.cat-lead_hunter { background: rgba(139, 92, 246, 0.15); color: #A78BFA; }
+    &.cat-closer { background: rgba($gold, 0.15); color: $gold; }
+    &.cat-consistency { background: rgba($green, 0.15); color: $green; }
+  }
+
+  .mission-done-badge {
+    margin-left: auto;
+    color: $green;
+    font-size: 13px;
+    font-weight: 600;
+    i { margin-right: 4px; }
+  }
+
+  .mission-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 6px;
+  }
+
+  .mission-desc {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0 0 14px;
+    line-height: 1.5;
+  }
+
+  .mission-progress {
+    margin-bottom: 12px;
+
+    .mission-progress-bar {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 6px;
+
+      .mission-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, $green, $gold);
+        border-radius: 8px;
+        transition: width 0.5s ease;
+      }
+    }
+
+    .mission-progress-text {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+      font-weight: 600;
+    }
+  }
+
+  .mission-reward {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: $gold;
+    font-weight: 600;
+
+    i { font-size: 14px; }
+  }
+}
+
+.missions-summary {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+
+  .missions-summary-card {
+    flex: 1;
+    text-align: center;
+    padding: 16px;
+    background: $card-bg;
+    border: 1px solid $border;
+    border-radius: 12px;
+
+    .summary-number {
+      display: block;
+      font-size: 28px;
+      font-weight: 900;
+      color: $green;
+    }
+
+    .summary-label {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+  }
+}
+
+// ============================================
+// BADGES / CONQUISTAS
+// ============================================
+
+.badges-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 16px;
+
+  i { color: $gold; }
+}
+
+.badges-shelf { margin-bottom: 32px; }
+
+.badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.badge-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: $card-bg;
+  border: 1px solid $border;
+  border-radius: 14px;
+  transition: transform 0.2s;
+  position: relative;
+
+  &:hover { transform: translateY(-2px); }
+
+  &.earned {
+    border-color: rgba($gold, 0.3);
+    background: rgba($gold, 0.04);
+  }
+
+  &.locked {
+    opacity: 0.5;
+  }
+
+  .badge-icon-big {
+    font-size: 36px;
+    flex-shrink: 0;
+    width: 48px;
+    text-align: center;
+  }
+
+  .badge-info {
+    flex: 1;
+    min-width: 0;
+
+    h4 {
+      font-size: 14px;
+      font-weight: 700;
+      margin: 0 0 4px;
+    }
+
+    p {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .badge-date {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.4);
+      margin-top: 4px;
+    }
+  }
+
+  .badge-type-tag {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+
+    &.type-event { background: rgba(99, 102, 241, 0.2); color: #818CF8; }
+    &.type-achievement { background: rgba($gold, 0.2); color: $gold; }
+    &.type-legacy { background: rgba($green, 0.2); color: $green; }
+  }
+
+  .badge-earned-check {
+    color: $green;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .badge-locked-icon {
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+}
+
+.badges-catalog {
+  margin-top: 16px;
+
+  .badge-type-group {
+    margin-bottom: 24px;
+  }
+
+  .badge-type-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid $border;
+  }
+}
+
+// Badges no ranking
+.rank-badges {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: 8px;
+
+  .rank-badge-icon {
+    font-size: 16px;
+    cursor: default;
+  }
+
+  .rank-badge-more {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    margin-left: 4px;
+    font-weight: 600;
+  }
+}
+
+// ============================================
+// PROFILE MODAL
+// ============================================
+
+.profile-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.profile-modal {
+  background: #1e293b;
+  border: 1px solid $border;
+  border-radius: 20px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 32px;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.profile-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 8px;
+
+  &:hover { color: #fff; }
+}
+
+.profile-header-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+
+  .profile-tier-icon {
+    font-size: 48px;
+  }
+
+  .profile-info {
+    display: flex;
+    flex-direction: column;
+
+    h3 {
+      font-size: 20px;
+      font-weight: 800;
+      margin: 0 0 4px;
+    }
+
+    .profile-tier-name {
+      color: $green;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .profile-member-since {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.4);
+      margin-top: 4px;
+      i { margin-right: 4px; }
+    }
+  }
+}
+
+.profile-stats-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+
+  .profile-stat {
+    flex: 1;
+    text-align: center;
+    padding: 16px;
+    background: $card-bg;
+    border: 1px solid $border;
+    border-radius: 12px;
+
+    .profile-stat-value {
+      display: block;
+      font-size: 22px;
+      font-weight: 800;
+      color: $green;
+    }
+
+    .profile-stat-label {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+  }
+}
+
+.profile-badges-section {
+  h4 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 12px;
+    i { color: $gold; }
+  }
+}
+
+.profile-badges-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  .profile-badge-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba($gold, 0.08);
+    border: 1px solid rgba($gold, 0.2);
+    border-radius: 8px;
+
+    .profile-badge-icon { font-size: 18px; }
+    .profile-badge-title { font-size: 12px; font-weight: 600; }
+  }
+}
+
+.profile-no-badges {
+  text-align: center;
+  padding: 24px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 14px;
 }
 </style>
