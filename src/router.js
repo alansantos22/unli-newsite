@@ -108,18 +108,18 @@ export default [
         path: "/afiliados",
         name: "AffiliateLogin",
         component: () => import("./pages/AffiliatePanel/AffiliateLogin.vue"),
-        meta: { hideHeader: true, hideFooter: true }
+        meta: { hideFooter: true }
     },
     {
         path: "/afiliados/registro",
         name: "AffiliateRegister",
         component: () => import("./pages/AffiliatePanel/AffiliateRegister.vue"),
-        meta: { hideHeader: true, hideFooter: true }
+        meta: { hideFooter: true }
     },
     {
         path: "/afiliados/dashboard",
         name: "AffiliateDashboard",
         component: () => import("./pages/AffiliatePanel/AffiliateDashboard.vue"),
-        meta: { hideHeader: true, hideFooter: true, requiresAffiliate: true }
+        meta: { hideFooter: true, requiresAffiliate: true }
     }
 ]

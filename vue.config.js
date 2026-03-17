@@ -24,6 +24,28 @@ module.exports = defineConfig({
             '@img': path.resolve('src/assets/img')
         },
     },
+    optimization: {
+      splitChunks: {
+        cacheGroups: {
+          // Separa three.js em chunk próprio (160KB+) - só carrega quando necessário
+          three: {
+            test: /[\\/]node_modules[\\/]three[\\/]/,
+            name: 'three',
+            chunks: 'async',
+            priority: 20,
+            enforce: true
+          },
+          // Separa Font Awesome em chunk próprio (async para não bloquear render)
+          fontawesome: {
+            test: /[\\/]node_modules[\\/]@fortawesome[\\/]/,
+            name: 'fontawesome',
+            chunks: 'async',
+            priority: 15,
+            enforce: true
+          }
+        }
+      }
+    },
     plugins: [
         new ImageMinimizerPlugin({
             minimizer: {

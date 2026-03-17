@@ -76,13 +76,12 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted } from 'vue';
-import Crystal3D from './Crystal3D.vue';
+import { ref, onMounted, onUnmounted, defineAsyncComponent } from 'vue';
 
 export default {
   name: 'ExperiencePreview',
   components: {
-    Crystal3D
+    Crystal3D: defineAsyncComponent(() => import(/* webpackChunkName: "crystal3d" */ './Crystal3D.vue'))
   },
   setup() {
     const hubActive = ref(false);

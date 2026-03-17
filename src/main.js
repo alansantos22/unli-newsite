@@ -2,12 +2,12 @@ import * as Vue from 'vue';
 import * as VueRouter from 'vue-router';
 import VueGtag from 'vue-gtag-next';
 
-// Font Awesome Icons
-import '@fortawesome/fontawesome-free/css/all.css';
-
 import App from './App.vue'
 import routes from './router';
 import { config, pageView, fbPageView } from './plugins/analytics';
+
+// Font Awesome: carregado de forma assíncrona para não bloquear renderização
+import(/* webpackChunkName: "fontawesome" */ '@fortawesome/fontawesome-free/css/all.css');
 
 //Stores
 import store from './core/store/store'

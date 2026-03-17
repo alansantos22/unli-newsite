@@ -38,8 +38,11 @@
         </ul>
       </nav>
 
-      <!-- CTA Button Desktop -->
+      <!-- CTA Buttons Desktop -->
       <div class="header-actions">
+        <router-link to="/afiliados/registro" class="btn-affiliate">
+          <span>Seja um Afiliado</span>
+        </router-link>
         <a href="#contact" class="btn-cta" @click="(e) => handleNavClick(e, { href: '#contact' })">
           <span>Iniciar Projeto</span>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -82,6 +85,11 @@
             >
               {{ item.label }}
             </a>
+          </li>
+          <li class="mobile-nav-item mobile-cta">
+            <router-link to="/afiliados/registro" class="btn-affiliate-mobile" @click="closeMobileMenu">
+              Seja um Afiliado
+            </router-link>
           </li>
           <li class="mobile-nav-item mobile-cta">
             <a href="#contact" class="btn-cta-mobile" @click="(e) => handleNavClick(e, { href: '#contact' })">
@@ -454,6 +462,51 @@ export default {
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba($p-color, 0.3);
+  }
+}
+
+.btn-affiliate {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  background: transparent;
+  color: $p-color;
+  font-family: $font-primary;
+  font-size: $text-sm;
+  font-weight: $weight-semibold;
+  text-decoration: none;
+  border-radius: 50px;
+  border: 2px solid $p-color;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba($p-color, 0.08);
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.btn-affiliate-mobile {
+  display: block;
+  text-align: center;
+  padding: 1rem 2rem;
+  background: transparent;
+  color: $p-color;
+  font-family: $font-primary;
+  font-size: $text-base;
+  font-weight: $weight-semibold;
+  text-decoration: none;
+  border-radius: 50px;
+  border: 2px solid $p-color;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba($p-color, 0.08);
+    transform: translateY(-2px);
   }
 }
 

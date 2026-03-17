@@ -1,7 +1,7 @@
 <template>
   <div class="site-vitrine-page">
     <!-- Hero Section -->
-    <section class="hero-section" data-scroll>
+    <section class="hero-section" data-scroll-skip>
       <div class="hero-background">
         <div class="hero-overlay"></div>
       </div>
@@ -23,8 +23,8 @@
           <div class="hero-price-highlight">
             <div class="price-box">
               <span class="price-label">Investimento Anual</span>
-              <span class="price-value">~R$ 59,90<span class="price-period">/Mês</span></span>
-              <span class="price-subtext">R$ 599/ano a vista</span>
+              <span class="price-value">R$ 59,90<span class="price-period">/Mês</span></span>
+              <span class="price-subtext">ou R$ 599/ano à vista</span>
             </div>
           </div>
 
@@ -58,11 +58,18 @@
         <div class="hero-visual">
           <div class="mockup-container">
             <div class="mockup-glow"></div>
-            <img 
-              src="@/assets/img/criacao-sites/notebook.png" 
-              alt="Mockup de site profissional" 
-              class="mockup-image"
-            />
+            <picture>
+              <source :srcset="require('@/assets/img/criacao-sites/notebook.webp')" type="image/webp">
+              <img 
+                src="@/assets/img/criacao-sites/notebook.png" 
+                alt="Mockup de site profissional" 
+                class="mockup-image"
+                width="600"
+                height="400"
+                loading="eager"
+                fetchpriority="high"
+              />
+            </picture>
           </div>
         </div>
       </div>
@@ -126,6 +133,30 @@
                 <i class="fas fa-external-link-alt"></i> Fonte: Adobe State of Content
               </a>
             </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Prova Social / Números -->
+    <section class="social-proof-section" data-scroll>
+      <div class="section-container">
+        <div class="stats-grid">
+          <div class="stat-item" data-scroll>
+            <div class="stat-number">5+</div>
+            <div class="stat-label">Anos de empresa</div>
+          </div>
+          <div class="stat-item" data-scroll>
+            <div class="stat-number">100+</div>
+            <div class="stat-label">Projetos entregues</div>
+          </div>
+          <div class="stat-item" data-scroll>
+            <div class="stat-number">10</div>
+            <div class="stat-label">Dias para entrega</div>
+          </div>
+          <div class="stat-item" data-scroll>
+            <div class="stat-number">24/7</div>
+            <div class="stat-label">Monitoramento ativo</div>
           </div>
         </div>
       </div>
@@ -513,133 +544,21 @@
           </p>
         </div>
 
-        <div class="faq-grid">
-          <div class="faq-column">
-            <div class="faq-item" data-scroll>
-              <div class="faq-question">
-                <i class="fas fa-question-circle"></i>
-                <h3>Posso cancelar?</h3>
-              </div>
-              <div class="faq-answer">
-                Sim. Você pode cancelar em até <strong>7 dias</strong> após a compra 
-                e receber reembolso integral, desde que o site ainda não tenha sido publicado. 
-                O estorno é processado em até <strong>30 dias</strong> após o cancelamento, 
-                a depender da empresa de pagamentos.
-              </div>
-            </div>
-
-            <div class="faq-item" data-scroll>
-              <div class="faq-question">
-                <i class="fas fa-question-circle"></i>
-                <h3>Isso é um site completo?</h3>
-              </div>
-              <div class="faq-answer">
-                Sim! É um site vitrine profissional <strong>single page</strong> 
-                (uma página) com todas as seções necessárias: apresentação, 
-                serviços, diferenciais, prova social, FAQ e contato. Ideal para 
-                empresas que precisam de presença online rápida e eficiente.
-              </div>
-            </div>
-
-            <div class="faq-item" data-scroll>
-              <div class="faq-question">
-                <i class="fas fa-question-circle"></i>
-                <h3>Posso pedir um e-commerce?</h3>
-              </div>
-              <div class="faq-answer">
-                E-commerce não está incluído no plano de site vitrine. 
-                Sites com carrinho de compras, checkout e gestão de pedidos 
-                são <strong>projetos sob proposta</strong> devido à complexidade. 
-                Entre em contato para orçamento personalizado.
-              </div>
-            </div>
-
-            <div class="faq-item" data-scroll>
-              <div class="faq-question">
-                <i class="fas fa-question-circle"></i>
-                <h3>Vocês fazem os textos do site?</h3>
-              </div>
-              <div class="faq-answer">
-                O plano inclui desenvolvimento com os <strong>textos fornecidos 
-                por você</strong>. Se precisar de ajuda com copywriting, 
-                podemos indicar <strong>parceiros sob consulta</strong>. 
-                Guiamos você com checklist do que precisa enviar.
-              </div>
-            </div>
-
-            <div class="faq-item" data-scroll>
-              <div class="faq-question">
-                <i class="fas fa-question-circle"></i>
-                <h3>Quanto tempo leva para ficar pronto?</h3>
-              </div>
-              <div class="faq-answer">
-                <strong>Até 10 dias úteis</strong> após confirmação do pagamento 
-                e envio completo dos materiais. O prazo começa quando você 
-                envia textos, imagens e dados solicitados no checklist.
-              </div>
-            </div>
-          </div>
-
-          <div class="faq-column">
-            <div class="faq-item" data-scroll>
-              <div class="faq-question">
-                <i class="fas fa-question-circle"></i>
-                <h3>Preciso ter domínio próprio?</h3>
-              </div>
-              <div class="faq-answer">
-                Não! O <strong>domínio está incluso</strong> no plano anual. 
-                Você escolhe o nome (.com.br ou .com) e nós cuidamos do 
-                registro e configuração. Tudo incluso, sem custos extras.
-              </div>
-            </div>
-
-            <div class="faq-item" data-scroll>
-              <div class="faq-question">
-                <i class="fas fa-question-circle"></i>
-                <h3>O site funciona no celular?</h3>
-              </div>
-              <div class="faq-answer">
-                Sim! Todos os sites são <strong>100% responsivos</strong>, 
-                ou seja, funcionam perfeitamente em celulares, tablets e 
-                computadores. Design adaptado para cada dispositivo.
-              </div>
-            </div>
-
-            <div class="faq-item" data-scroll>
-              <div class="faq-question">
-                <i class="fas fa-question-circle"></i>
-                <h3>Posso adicionar mais páginas depois?</h3>
-              </div>
-              <div class="faq-answer">
-                Sim! Use nosso <strong>configurador automatizado</strong> 
-                para adicionar quantas páginas precisar. Escolha o que deseja, 
-                preencha os dados e pronto. Sem reunião necessária.
-              </div>
-            </div>
-
-            <div class="faq-item" data-scroll>
-              <div class="faq-question">
-                <i class="fas fa-question-circle"></i>
-                <h3>O que é "suporte de disponibilidade"?</h3>
-              </div>
-              <div class="faq-answer">
-                É o suporte técnico para manter seu site <strong>sempre online 
-                e funcionando</strong>. Cuidamos de instabilidades, quedas e 
-                erros técnicos. Mudanças de conteúdo/layout são tratadas 
-                como alterações (1 inclusa por ano).
-              </div>
-            </div>
-
-            <div class="faq-item" data-scroll>
-              <div class="faq-question">
-                <i class="fas fa-question-circle"></i>
-                <h3>E depois de 1 ano, preciso renovar?</h3>
-              </div>
-              <div class="faq-answer">
-                Sim. O plano é <strong>anual</strong> e inclui domínio, 
-                hospedagem e SSL. Após 1 ano, você renova para manter o 
-                site no ar. Avisamos com antecedência e o processo é simples.
-              </div>
+        <div class="faq-list">
+          <div 
+            v-for="(faq, index) in faqs" 
+            :key="index" 
+            class="faq-item" 
+            :class="{ open: openFaqs.includes(index) }" 
+            data-scroll
+          >
+            <button class="faq-question" @click="toggleFaq(index)" :aria-expanded="String(openFaqs.includes(index))">
+              <i class="fas fa-question-circle"></i>
+              <h3>{{ faq.question }}</h3>
+              <i class="fas fa-chevron-down faq-chevron" aria-hidden="true"></i>
+            </button>
+            <div class="faq-answer">
+              <div class="faq-answer-inner" v-html="faq.answer"></div>
             </div>
           </div>
         </div>
@@ -752,6 +671,7 @@
                     id="name" 
                     v-model="form.name"
                     placeholder="Seu nome"
+                    autocomplete="name"
                     required
                   >
                 </div>
@@ -763,6 +683,7 @@
                     id="email" 
                     v-model="form.email"
                     placeholder="seu@email.com"
+                    autocomplete="email"
                     required
                   >
                 </div>
@@ -776,6 +697,7 @@
                     id="phone" 
                     v-model="form.phone"
                     placeholder="(00) 00000-0000"
+                    autocomplete="tel"
                     required
                   >
                 </div>
@@ -813,6 +735,17 @@
       </div>
     </section>
 
+    <!-- Toast Notification -->
+    <transition name="toast-fade">
+      <div v-if="toast.show" class="toast-notification" :class="toast.type">
+        <i :class="toast.type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
+        <span>{{ toast.message }}</span>
+        <button class="toast-close" @click="toast.show = false" aria-label="Fechar notificação">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </transition>
+
     <!-- WhatsApp Flutuante -->
     <a :href="`https://wa.me/${whatsappSDR}?text=${encodeURIComponent('Olá! Vi a página de Site Vitrine e gostaria de saber mais sobre os planos.' + affiliateSuffix)}`" 
        class="whatsapp-float"
@@ -837,7 +770,55 @@ export default {
         interest: '',
         message: ''
       },
-      isSubmitting: false
+      isSubmitting: false,
+      openFaqs: [],
+      toast: {
+        show: false,
+        message: '',
+        type: 'success'
+      },
+      faqs: [
+        {
+          question: 'Posso cancelar?',
+          answer: 'Sim. Você pode cancelar em até <strong>7 dias</strong> após a compra e receber reembolso integral, desde que o site ainda não tenha sido publicado. O estorno é processado em até <strong>30 dias</strong> após o cancelamento, a depender da empresa de pagamentos.'
+        },
+        {
+          question: 'Isso é um site completo?',
+          answer: 'Sim! É um site vitrine profissional <strong>single page</strong> (uma página) com todas as seções necessárias: apresentação, serviços, diferenciais, prova social, FAQ e contato. Ideal para empresas que precisam de presença online rápida e eficiente.'
+        },
+        {
+          question: 'Posso pedir um e-commerce?',
+          answer: 'E-commerce não está incluído no plano de site vitrine. Sites com carrinho de compras, checkout e gestão de pedidos são <strong>projetos sob proposta</strong> devido à complexidade. Entre em contato para orçamento personalizado.'
+        },
+        {
+          question: 'Vocês fazem os textos do site?',
+          answer: 'O plano inclui desenvolvimento com os <strong>textos fornecidos por você</strong>. Se precisar de ajuda com copywriting, podemos indicar <strong>parceiros sob consulta</strong>. Guiamos você com checklist do que precisa enviar.'
+        },
+        {
+          question: 'Quanto tempo leva para ficar pronto?',
+          answer: '<strong>Até 10 dias úteis</strong> após confirmação do pagamento e envio completo dos materiais. O prazo começa quando você envia textos, imagens e dados solicitados no checklist.'
+        },
+        {
+          question: 'Preciso ter domínio próprio?',
+          answer: 'Não! O <strong>domínio está incluso</strong> no plano anual. Você escolhe o nome (.com.br ou .com) e nós cuidamos do registro e configuração. Tudo incluso, sem custos extras.'
+        },
+        {
+          question: 'O site funciona no celular?',
+          answer: 'Sim! Todos os sites são <strong>100% responsivos</strong>, ou seja, funcionam perfeitamente em celulares, tablets e computadores. Design adaptado para cada dispositivo.'
+        },
+        {
+          question: 'Posso adicionar mais páginas depois?',
+          answer: 'Sim! Use nosso <strong>configurador automatizado</strong> para adicionar quantas páginas precisar. Escolha o que deseja, preencha os dados e pronto. Sem reunião necessária.'
+        },
+        {
+          question: 'O que é "suporte de disponibilidade"?',
+          answer: 'É o suporte técnico para manter seu site <strong>sempre online e funcionando</strong>. Cuidamos de instabilidades, quedas e erros técnicos. Mudanças de conteúdo/layout são tratadas como alterações (1 inclusa por ano).'
+        },
+        {
+          question: 'E depois de 1 ano, preciso renovar?',
+          answer: 'Sim. O plano é <strong>anual</strong> e inclui domínio, hospedagem e SSL. Após 1 ano, você renova para manter o site no ar. Avisamos com antecedência e o processo é simples.'
+        }
+      ]
     };
   },
   computed: {
@@ -858,7 +839,27 @@ export default {
   mounted() {
     this.initScrollAnimations();
     this.initSmoothScroll();
-    this.scrollPricingToFeatured();
+    // Defer layout-triggering scroll to avoid forced reflow during render
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(() => this.scrollPricingToFeatured());
+    } else {
+      setTimeout(() => this.scrollPricingToFeatured(), 200);
+    }
+  },
+  beforeUnmount() {
+    // Cleanup IntersectionObserver
+    if (this._scrollObserver) {
+      this._scrollObserver.disconnect();
+      this._scrollObserver = null;
+    }
+    // Cleanup smooth scroll listeners
+    if (this._smoothScrollHandler && this.$el) {
+      this.$el.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.removeEventListener('click', this._smoothScrollHandler);
+      });
+    }
+    // Cleanup toast timer
+    clearTimeout(this._toastTimer);
   },
   methods: {
     whatsappLink(planName) {
@@ -882,37 +883,56 @@ export default {
       });
     },
 
+    toggleFaq(index) {
+      const i = this.openFaqs.indexOf(index);
+      if (i === -1) {
+        this.openFaqs.push(index);
+      } else {
+        this.openFaqs.splice(i, 1);
+      }
+    },
+
+    showToast(message, type = 'success') {
+      this.toast = { show: true, message, type };
+      clearTimeout(this._toastTimer);
+      this._toastTimer = setTimeout(() => {
+        this.toast.show = false;
+      }, 5000);
+    },
+
     initScrollAnimations() {
       const observerOptions = {
         threshold: 0.1,
         rootMargin: '0px 0px -50px 0px'
       };
 
-      const observer = new IntersectionObserver((entries) => {
+      this._scrollObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             entry.target.classList.add('animate-in');
+            this._scrollObserver.unobserve(entry.target);
           }
         });
       }, observerOptions);
 
-      document.querySelectorAll('[data-scroll]').forEach(el => {
-        observer.observe(el);
+      this.$el.querySelectorAll('[data-scroll]').forEach(el => {
+        this._scrollObserver.observe(el);
       });
     },
     
     initSmoothScroll() {
-      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-          e.preventDefault();
-          const target = document.querySelector(this.getAttribute('href'));
-          if (target) {
-            target.scrollIntoView({
-              behavior: 'smooth',
-              block: 'start'
-            });
-          }
-        });
+      this._smoothScrollHandler = function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      };
+      this.$el.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', this._smoothScrollHandler);
       });
     },
 
@@ -935,14 +955,14 @@ export default {
 
         const result = await response.json();
         if (result.success) {
-          alert('Mensagem enviada com sucesso! Entraremos em contato em breve.');
+          this.showToast('Mensagem enviada com sucesso! Entraremos em contato em breve.', 'success');
           this.resetForm();
         } else {
           throw new Error(result.error || 'Erro ao enviar');
         }
       } catch (error) {
         console.error('Erro ao enviar mensagem:', error);
-        alert('Erro ao enviar mensagem. Tente novamente ou entre em contato pelo WhatsApp.');
+        this.showToast('Erro ao enviar mensagem. Tente novamente ou entre em contato pelo WhatsApp.', 'error');
       } finally {
         this.isSubmitting = false;
       }
@@ -985,6 +1005,12 @@ export default {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+// Hero is always visible (no fade-in delay = faster LCP)
+[data-scroll-skip] {
+  opacity: 1;
+  transform: none;
 }
 
 // ==========================================
@@ -1360,6 +1386,53 @@ export default {
           color: $p-color;
           text-decoration: underline;
         }
+      }
+    }
+  }
+}
+
+// ==========================================
+// SOCIAL PROOF SECTION
+// ==========================================
+.social-proof-section {
+  padding: 60px 20px;
+  background: linear-gradient(135deg, $gray-darkness 0%, $black 100%);
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 40px;
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+
+    @media (max-width: 768px) {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 32px;
+    }
+  }
+
+  .stat-item {
+    .stat-number {
+      font-size: 3rem;
+      font-weight: 900;
+      color: $p-color;
+      line-height: 1.2;
+      margin-bottom: 8px;
+
+      @media (max-width: 768px) {
+        font-size: 2.2rem;
+      }
+    }
+
+    .stat-label {
+      font-size: 1rem;
+      font-weight: 500;
+      color: $gray;
+      letter-spacing: 0.02em;
+
+      @media (max-width: 768px) {
+        font-size: 0.9rem;
       }
     }
   }
@@ -2105,10 +2178,10 @@ export default {
   padding: 100px 20px;
   background: $white;
 
-  .faq-grid {
+  .faq-list {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 32px;
+    gap: 16px;
     margin-top: 60px;
 
     @media (max-width: 968px) {
@@ -2117,52 +2190,87 @@ export default {
   }
 
   .faq-item {
-    padding: 32px;
+    padding: 24px 32px;
     background: $gray-lightness;
     border-radius: 16px;
     border: 2px solid transparent;
     transition: all 0.3s ease;
-    margin: 20px 0;
+    align-self: start;
 
     &:hover {
+      border-color: rgba($p-color, 0.3);
+    }
+
+    &.open {
       border-color: $p-color;
       background: $white;
       box-shadow: $shadow-lg;
+
+      .faq-question .faq-chevron {
+        transform: rotate(180deg);
+      }
+
+      .faq-answer {
+        max-height: 300px;
+        opacity: 1;
+        margin-top: 16px;
+      }
     }
 
     .faq-question {
       display: flex;
-      align-items: start;
+      align-items: center;
       gap: 16px;
-      margin-bottom: 16px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      width: 100%;
+      text-align: left;
+      font-family: inherit;
 
       i {
         flex-shrink: 0;
         font-size: 1.5rem;
         color: $p-color;
-        margin-top: 4px;
       }
 
       h3 {
-        font-size: 1.25rem;
+        font-size: 1.15rem;
         font-weight: 700;
         color: $gray-darkness;
+        flex: 1;
+        margin: 0;
+      }
+
+      .faq-chevron {
+        font-size: 1rem;
+        color: $gray-medium;
+        transition: transform 0.3s ease;
       }
     }
 
     .faq-answer {
-      padding-left: 40px;
-      font-size: 1rem;
-      color: $gray-medium;
-      line-height: 1.8;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease, opacity 0.3s ease, margin-top 0.3s ease;
+      margin-top: 0;
 
-      strong {
-        color: $p-color;
-        font-weight: 600;
-      }
+      .faq-answer-inner {
+        padding-left: 40px;
+        font-size: 1rem;
+        color: $gray-medium;
+        line-height: 1.8;
 
-      @media (max-width: 968px) {
-        padding-left: 0;
+        :deep(strong) {
+          color: $p-color;
+          font-weight: 600;
+        }
+
+        @media (max-width: 968px) {
+          padding-left: 0;
+        }
       }
     }
   }
@@ -2766,6 +2874,73 @@ export default {
   }
 }
 
+// ==========================================
+// TOAST NOTIFICATION
+// ==========================================
+.toast-notification {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: $white;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  max-width: 420px;
+
+  @media (max-width: 768px) {
+    top: 16px;
+    right: 16px;
+    left: 16px;
+    max-width: none;
+  }
+
+  &.success {
+    background: linear-gradient(135deg, #27ae60 0%, #219a52 100%);
+  }
+
+  &.error {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  }
+
+  i:first-child {
+    font-size: 1.3rem;
+    flex-shrink: 0;
+  }
+
+  .toast-close {
+    background: none;
+    border: none;
+    color: rgba($white, 0.8);
+    cursor: pointer;
+    padding: 4px;
+    margin-left: 8px;
+    flex-shrink: 0;
+    font-size: 1rem;
+    transition: color 0.2s;
+
+    &:hover {
+      color: $white;
+    }
+  }
+}
+
+.toast-fade-enter-active,
+.toast-fade-leave-active {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toast-fade-enter-from,
+.toast-fade-leave-to {
+  opacity: 0;
+  transform: translateX(40px);
+}
+
 // Hint de carrossel – oculto no desktop
 .pricing-scroll-hint {
   display: none;
@@ -3017,9 +3192,12 @@ export default {
 
   // ----- FAQ: padding interno menor -----
   .faq-section {
+    .faq-list {
+      grid-template-columns: 1fr;
+    }
+
     .faq-item {
-      padding: 24px 18px;
-      margin: 12px 0;
+      padding: 18px 16px;
     }
   }
 

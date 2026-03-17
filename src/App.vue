@@ -1,10 +1,10 @@
 <template>
   <div class="containerMain">
-    <AppHeader />
+    <AppHeader v-if="showHeader" />
     <main>
       <router-view />
     </main>
-    <AppFooter />
+    <AppFooter v-if="showFooter" />
   </div>
 </template>
 

@@ -250,11 +250,12 @@
               <tr>
                 <th>Liga</th>
                 <th>Comissão</th>
-                <th>Site Vitrine (R$ 500)</th>
-                <th>Multi-páginas (R$ 800)</th>
-                <th>Consultoria (R$ 1.500)</th>
-                <th>Pacote Autoridade (R$ 1.997)</th>
-                <th>Ecossistema Digital (R$ 2.997)</th>
+                <th>Site Vitrine (R$ 599)</th>
+                <th>Multi-páginas (R$ 926)</th>
+                <th>Pacote Autoridade (R$ 1.174)</th>
+                <th>Ecossistema Digital (R$ 1.972)</th>
+                <th>Consultoria (R$ 20.990)</th>
+                <th>Transformação Digital Empresarial (R$ 50.000)</th>
               </tr>
             </thead>
             <tbody>
@@ -265,11 +266,12 @@
                   <span v-if="tier.key === data.affiliate?.tier" class="you-badge">Você</span>
                 </td>
                 <td class="commission-cell">{{ tier.commission }}%</td>
-                <td>R$ {{ formatNumber(500 * tier.commission / 100) }}</td>
-                <td>R$ {{ formatNumber(800 * tier.commission / 100) }}</td>
-                <td>R$ {{ formatNumber(1500 * tier.commission / 100) }}</td>
-                <td>R$ {{ formatNumber(1997 * tier.commission / 100) }}</td>
-                <td>R$ {{ formatNumber(2997 * tier.commission / 100) }}</td>
+                <td>R$ {{ formatNumber(599 * tier.commission / 100) }}</td>
+                <td>R$ {{ formatNumber(926 * tier.commission / 100) }}</td>
+                <td>R$ {{ formatNumber(1174 * tier.commission / 100) }}</td>
+                <td>R$ {{ formatNumber(1972 * tier.commission / 100) }}</td>
+                <td>R$ {{ formatNumber(20990 * tier.commission / 100) }}</td>
+                <td>R$ {{ formatNumber(50000 * tier.commission / 100) }}</td>
               </tr>
             </tbody>
           </table>
@@ -962,7 +964,7 @@ $gold: #F59E0B;
   flex: 1;
   margin-left: 240px;
   padding: 32px;
-  min-height: calc(100vh - 80px);
+  min-height: 100vh;
 
   @media (max-width: 768px) {
     margin-left: 0;

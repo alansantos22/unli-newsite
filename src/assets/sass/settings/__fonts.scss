@@ -2,11 +2,8 @@
 // TIPOGRAFIA MODERNA E PROFISSIONAL
 // ==========================================
 
-// Import fonts
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+// Fonts agora carregadas via <link> no index.html para evitar render-blocking
+// Não usar @import url() aqui - bloqueia renderização do CSS inteiro
 
 // ==========================================
 // FONT FAMILIES

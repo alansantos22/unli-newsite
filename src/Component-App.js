@@ -1,12 +1,19 @@
-import AppHeader from '@/shared/Components/HeaderModern.vue';
-import AppFooter from '@/shared/Components/FooterModern.vue';
+import { defineAsyncComponent } from 'vue';
 import { useAffiliateTracking } from '@/core/composables/useAffiliateTracking';
 
 export default {
   name: 'App',
   components: {
-      AppHeader,
-      AppFooter
+      AppHeader: defineAsyncComponent(() => import('@/shared/Components/HeaderModern.vue')),
+      AppFooter: defineAsyncComponent(() => import('@/shared/Components/FooterModern.vue'))
+  },
+  computed: {
+    showHeader() {
+      return !this.$route.meta?.hideHeader;
+    },
+    showFooter() {
+      return !this.$route.meta?.hideFooter;
+    }
   },
   created() {
     // Detectar parâmetro ?ref= de afiliado e salvar no cookie
