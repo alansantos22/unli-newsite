@@ -52,6 +52,12 @@ router.beforeEach((to, from, next) => {
             return next({ name: 'AffiliateLogin' });
         }
     }
+    if (to.meta.requiresAdmin) {
+        const token = sessionStorage.getItem('admin_token');
+        if (!token) {
+            return next({ name: 'AdminLogin' });
+        }
+    }
     next();
 });
 

@@ -549,8 +549,7 @@
             v-for="(faq, index) in faqs" 
             :key="index" 
             class="faq-item" 
-            :class="{ open: openFaqs.includes(index) }" 
-            data-scroll
+            :class="{ open: openFaqs.includes(index) }"
           >
             <button class="faq-question" @click="toggleFaq(index)" :aria-expanded="String(openFaqs.includes(index))">
               <i class="fas fa-question-circle"></i>

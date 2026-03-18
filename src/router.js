@@ -121,5 +121,21 @@ export default [
         name: "AffiliateDashboard",
         component: () => import("./pages/AffiliatePanel/AffiliateDashboard.vue"),
         meta: { hideFooter: true, requiresAffiliate: true }
+    },
+
+    // ============================================
+    // Admin Panel Routes (Torre de Controle)
+    // ============================================
+    {
+        path: "/admin",
+        name: "AdminLogin",
+        component: () => import("./pages/AdminPanel/AdminLogin.vue"),
+        meta: { hideHeader: true, hideFooter: true }
+    },
+    {
+        path: "/admin/dashboard",
+        name: "AdminDashboard",
+        component: () => import("./pages/AdminPanel/AdminDashboard.vue"),
+        meta: { hideHeader: true, hideFooter: true, requiresAdmin: true }
     }
 ]
