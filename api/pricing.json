@@ -4,13 +4,13 @@
   "products": {
     "landing": {
       "name": "Landing Page",
-      "base_price": 599,
+      "base_price": 779,
       "description": "Página única focada em conversão. Ideal para campanhas, anúncios ou produto/serviço específico.",
       "allows_extra_pages": false
     },
     "site_complete": {
       "name": "Site Completo",
-      "base_price": 619,
+      "base_price": 805,
       "description": "Site institucional com mais páginas além da principal (ex.: Sobre, Serviços, Portfólio). Ideal para presença completa da empresa.",
       "allows_extra_pages": true
     }
@@ -18,39 +18,39 @@
   "page_addons": {
     "about": {
       "name": "Sobre Nós",
-      "price": 59,
+      "price": 77,
       "description": "História, missão, valores e equipe da empresa"
     },
     "services": {
       "name": "Serviços",
-      "price": 119,
+      "price": 155,
       "description": "Apresentação detalhada dos serviços oferecidos"
     },
     "portfolio": {
       "name": "Portfólio",
-      "price": 159,
+      "price": 207,
       "description": "Galeria de projetos e trabalhos realizados"
     },
     "faq": {
       "name": "FAQ",
-      "price": 89,
+      "price": 116,
       "description": "Perguntas frequentes e respostas"
     },
     "contact": {
       "name": "Contato",
-      "price": 129,
+      "price": 168,
       "description": "Formulário de contato e informações"
     },
     "blog": {
       "name": "Blog de Notícias",
-      "price": 349,
+      "price": 454,
       "description": "Área de gestão de posts e artigos otimizados para SEO",
       "isNew": true,
       "isPremium": true
     },
     "showcase": {
       "name": "Vitrine de Produtos",
-      "price": 449,
+      "price": 584,
       "description": "Catálogo online com galeria e detalhes dos produtos (sem carrinho, checkout ou sistema de compra online)",
       "isNew": true,
       "isPremium": true
@@ -59,7 +59,7 @@
   "content_addons": {
     "video_basic": {
       "name": "Vídeo Básico",
-      "price_per_unit": 35,
+      "price_per_unit": 46,
       "allowed_uploads": ["video/*"],
       "max_file_size": 52428800,
       "description": "Vídeos de até 50MB cada",
@@ -69,7 +69,7 @@
     },
     "video_pro": {
       "name": "Vídeo Pro",
-      "price_per_unit": 120,
+      "price_per_unit": 156,
       "allowed_uploads": ["video/*"],
       "max_file_size": 1073741824,
       "description": "Vídeos profissionais de até 1GB cada",
@@ -80,46 +80,46 @@
     },
     "pdf": {
       "name": "Suporte a Documentos (PDF)",
-      "price": 15,
+      "price": 20,
       "allowed_uploads": ["application/pdf"]
     }
   },
   "service_addons": {
     "specialist_onboarding": {
       "name": "Atendimento com Especialista",
-      "price": 169,
+      "price": 220,
       "description": "Onboarding personalizado com atendente humano ao invés do assistente virtual. Ideal para quem prefere uma experiência mais pessoal.",
       "isNew": true,
       "isPremium": true
     }
   },
   "custom_pages": {
-    "base_price": 134,
+    "base_price": 174,
     "description": "Páginas personalizadas com conteúdo exclusivo",
     "resources": {
       "images": {
         "name": "Imagens",
-        "price": 9,
+        "price": 12,
         "description": "Galeria de imagens para a página"
       },
       "video": {
         "name": "Vídeo",
-        "price": 12,
+        "price": 16,
         "description": "Vídeo integrado na página"
       },
       "carousel": {
         "name": "Carrossel",
-        "price": 18,
+        "price": 23,
         "description": "Carrossel de imagens ou conteúdo"
       },
       "form": {
         "name": "Formulário",
-        "price": 35,
+        "price": 46,
         "description": "Formulário de contato customizado"
       },
       "testimonials": {
         "name": "Depoimentos",
-        "price": 20,
+        "price": 26,
         "description": "Seção de depoimentos de clientes"
       }
     }

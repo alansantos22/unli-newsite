@@ -250,10 +250,10 @@
               <tr>
                 <th>Liga</th>
                 <th>Comissão</th>
-                <th>Site Vitrine (R$ 599)</th>
-                <th>Multi-páginas (R$ 926)</th>
-                <th>Pacote Autoridade (R$ 1.174)</th>
-                <th>Ecossistema Digital (R$ 1.972)</th>
+                <th>Site Vitrine (R$ 779)</th>
+                <th>Multi-páginas (R$ 1.204)</th>
+                <th>Pacote Autoridade (R$ 1.526)</th>
+                <th>Ecossistema Digital (R$ 2.564)</th>
                 <th>Consultoria (R$ 20.990)</th>
                 <th>Transformação Digital Empresarial (R$ 50.000)</th>
               </tr>
@@ -266,10 +266,10 @@
                   <span v-if="tier.key === data.affiliate?.tier" class="you-badge">Você</span>
                 </td>
                 <td class="commission-cell">{{ tier.commission }}%</td>
-                <td>R$ {{ formatNumber(599 * tier.commission / 100) }}</td>
-                <td>R$ {{ formatNumber(926 * tier.commission / 100) }}</td>
-                <td>R$ {{ formatNumber(1174 * tier.commission / 100) }}</td>
-                <td>R$ {{ formatNumber(1972 * tier.commission / 100) }}</td>
+                <td>R$ {{ formatNumber(779 * tier.commission / 100) }}</td>
+                <td>R$ {{ formatNumber(1204 * tier.commission / 100) }}</td>
+                <td>R$ {{ formatNumber(1526 * tier.commission / 100) }}</td>
+                <td>R$ {{ formatNumber(2564 * tier.commission / 100) }}</td>
                 <td>R$ {{ formatNumber(20990 * tier.commission / 100) }}</td>
                 <td>R$ {{ formatNumber(50000 * tier.commission / 100) }}</td>
               </tr>

@@ -23,8 +23,8 @@
           <div class="hero-price-highlight">
             <div class="price-box">
               <span class="price-label">Investimento Anual</span>
-              <span class="price-value">R$ 59,90<span class="price-period">/Mês</span></span>
-              <span class="price-subtext">ou R$ 599/ano à vista</span>
+              <span class="price-value">R$ 77,87<span class="price-period">/Mês</span></span>
+              <span class="price-subtext">ou R$ 779/ano à vista</span>
             </div>
           </div>
 
@@ -337,14 +337,14 @@
             <div class="pricing-header">
               <h3 class="pricing-name">Landing Page (Página Única)</h3>
               <div class="pricing-price">
-                <div class="price-original">De R$ 74,63/mês</div>
+                <div class="price-original">De R$ 97,02/mês</div>
                 <div class="price-wrapper">
                   <span class="price-currency">R$</span>
-                  <span class="price-amount">57,40</span>
+                  <span class="price-amount">74,62</span>
                   <span class="price-period">/mês</span>
                 </div>
               </div>
-              <p class="pricing-description">ou R$ 599 à vista</p>
+              <p class="pricing-description">ou R$ 779 à vista</p>
             </div>
 
             <ul class="pricing-features">
@@ -356,7 +356,7 @@
                 <li><i class="fas fa-check"></i> <strong>Área do cliente para editar seus conteúdos</strong></li>
             </ul>
 
-            <a v-if="isManualMode" :href="whatsappLink('Landing Page (Página Única) - R$ 57,40/mês')" target="_blank" class="pricing-button secondary">
+            <a v-if="isManualMode" :href="whatsappLink('Landing Page (Página Única) - R$ 74,62/mês')" target="_blank" class="pricing-button secondary">
               <i class="fab fa-whatsapp"></i>
               Quero minha Landing Page
             </a>
@@ -378,15 +378,15 @@
             <div class="pricing-header">
               <h3 class="pricing-name">Site Multi-Páginas (Expansível)</h3>
               <div class="pricing-price">
-                <div class="price-original">De R$ 77,12/mês</div>
+                <div class="price-original">De R$ 100,26/mês</div>
                 <span class="price-text">A partir de</span>
                 <div class="price-wrapper">
                   <span class="price-currency">R$</span>
-                  <span class="price-amount">59,32</span>
+                  <span class="price-amount">77,12</span>
                   <span class="price-period">/mês</span>
                 </div>
               </div>
-              <p class="pricing-description">ou R$ 619 à vista</p>
+              <p class="pricing-description">ou R$ 805 à vista</p>
             </div>
 
             <ul class="pricing-features">
@@ -398,7 +398,7 @@
               <li><i class="fas fa-check"></i> Formulários para contato</li>
             </ul>
 
-            <a v-if="isManualMode" :href="whatsappLink('Site Multi-Páginas (Expansível) - A partir de R$ 59,32/mês')" target="_blank" class="pricing-button">
+            <a v-if="isManualMode" :href="whatsappLink('Site Multi-Páginas (Expansível) - A partir de R$ 77,12/mês')" target="_blank" class="pricing-button">
               <i class="fab fa-whatsapp"></i>
               Configurar meu site
             </a>
