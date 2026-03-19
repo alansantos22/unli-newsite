@@ -828,7 +828,7 @@ $gold: #F59E0B;
   top: 80px;
   left: 0;
   width: 240px;
-  height: 100vh;
+  height: calc(100vh - 80px);
   background: rgba(0, 0, 0, 0.3);
   border-right: 1px solid $border;
   display: flex;

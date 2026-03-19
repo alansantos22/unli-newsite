@@ -162,7 +162,7 @@ export default {
       const res = await adminFetch(`/api/admin/users.php?${params}`);
       if (res.ok) {
         this.clients = res.data;
-        this.total = res.total || 0;
+        this.total = res.total || res.pagination?.total || 0;
         this.totalPages = Math.ceil(this.total / this.perPage) || 1;
         // Limpar seleções que saíram da página
         const visibleIds = this.clients.map(c => c.id);

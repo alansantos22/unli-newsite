@@ -587,18 +587,30 @@ function handle_toggle_sdr($pdo, $prefix, $admin) {
 
 function handle_list_clients($pdo, $prefix) {
     $page = max(1, (int)($_GET['page'] ?? 1));
-    $limit = min(100, max(10, (int)($_GET['limit'] ?? 25)));
+    $limit = min(100, max(10, (int)($_GET['per_page'] ?? $_GET['limit'] ?? 25)));
     $offset = ($page - 1) * $limit;
-    
+
     // Verificar se customer_email existe na tabela orders
     $colCheck = $pdo->prepare("SHOW COLUMNS FROM {$prefix}orders LIKE 'customer_email'");
     $colCheck->execute();
     $hasEmail = $colCheck->fetch() ? true : false;
-    
+
+    // Verificar se tabelas opcionais existem
+    $hasSdrTable = false;
+    $hasAffTable = false;
+    try {
+        $pdo->query("SELECT 1 FROM {$prefix}sdr_users LIMIT 0");
+        $hasSdrTable = true;
+    } catch (Exception $e) {}
+    try {
+        $pdo->query("SELECT 1 FROM {$prefix}affiliate_users LIMIT 0");
+        $hasAffTable = true;
+    } catch (Exception $e) {}
+
     $search = trim($_GET['search'] ?? '');
     $where = '';
     $params = [];
-    
+
     if ($search) {
         $searchParam = '%' . $search . '%';
         if ($hasEmail) {
@@ -609,37 +621,43 @@ function handle_list_clients($pdo, $prefix) {
             $params = [$searchParam, $searchParam];
         }
     }
-    
+
     $countStmt = $pdo->prepare("SELECT COUNT(*) as total FROM {$prefix}orders o $where");
     $countStmt->execute($params);
     $total = $countStmt->fetch()['total'];
-    
-    $emailCol = $hasEmail ? 'o.customer_email,' : '';
+
+    $emailCol  = $hasEmail   ? 'o.customer_email,' : '';
+    $sdrJoin   = $hasSdrTable ? "LEFT JOIN {$prefix}sdr_users s ON s.id = o.sdr_id" : '';
+    $affJoin   = $hasAffTable ? "LEFT JOIN {$prefix}affiliate_users a ON a.id = o.affiliate_id" : '';
+    $sdrCol    = $hasSdrTable ? 's.name as sdr_name,' : "'' as sdr_name,";
+    $affCol    = $hasAffTable ? "CONCAT(a.first_name, ' ', a.last_name) as affiliate_name" : "'' as affiliate_name";
+
     $stmt = $pdo->prepare("
-        SELECT 
+        SELECT
             o.id, o.customer_name, $emailCol o.company_name,
             o.total_amount, o.payment_status, o.payment_method_manual,
             o.sdr_id, o.affiliate_id, o.created_at,
-            s.name as sdr_name,
-            CONCAT(a.first_name, ' ', a.last_name) as affiliate_name
+            $sdrCol
+            $affCol
         FROM {$prefix}orders o
-        LEFT JOIN {$prefix}sdr_users s ON s.id = o.sdr_id
-        LEFT JOIN {$prefix}affiliate_users a ON a.id = o.affiliate_id
+        $sdrJoin
+        $affJoin
         $where
         ORDER BY o.created_at DESC
         LIMIT $limit OFFSET $offset
     ");
     $stmt->execute($params);
     $clients = $stmt->fetchAll();
-    
+
     echo json_encode([
-        'ok' => true,
-        'data' => $clients,
+        'ok'    => true,
+        'data'  => $clients,
+        'total' => (int)$total,
         'pagination' => [
-            'page' => $page,
+            'page'  => $page,
             'limit' => $limit,
             'total' => (int)$total,
-            'pages' => ceil($total / $limit)
+            'pages' => (int)ceil($total / $limit)
         ]
     ]);
 }
