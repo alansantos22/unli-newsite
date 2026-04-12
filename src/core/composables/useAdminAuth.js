@@ -103,7 +103,12 @@ export function useAdminAuth() {
       ...options,
       headers: { ...authHeaders(), ...(options.headers || {}) }
     });
-    const data = await res.json();
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      data = { ok: false, error: `Erro ${res.status}: resposta inválida do servidor` };
+    }
     if (res.status === 401) {
       clearToken();
       window.location.href = '/admin';

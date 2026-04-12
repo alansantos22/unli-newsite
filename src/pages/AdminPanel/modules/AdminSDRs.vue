@@ -43,7 +43,12 @@
               </button>
             </td>
           </tr>
-          <tr v-if="!sdrs.length">
+          <tr v-if="loadError">
+            <td colspan="8" class="empty" style="color:#f44">
+              <i class="fas fa-exclamation-circle"></i> {{ loadError }}
+            </td>
+          </tr>
+          <tr v-else-if="!sdrs.length">
             <td colspan="8" class="empty">Nenhum SDR cadastrado</td>
           </tr>
         </tbody>
@@ -129,6 +134,7 @@ export default {
     return {
       sdrs: [],
       loading: false,
+      loadError: '',
       saving: false,
       feedback: null,
       showCreateModal: false,
@@ -147,9 +153,14 @@ export default {
   methods: {
     async loadSDRs() {
       this.loading = true;
+      this.loadError = '';
       const { adminFetch } = useAdminAuth();
-      const res = await adminFetch('/api/admin/users.php?action=list_sdrs');
-      if (res.ok) this.sdrs = res.data;
+      const res = await adminFetch('/api/admin/panel-mgmt.php?action=list_sdrs');
+      if (res.ok) {
+        this.sdrs = res.data;
+      } else {
+        this.loadError = res.error || 'Erro ao carregar SDRs';
+      }
       this.loading = false;
     },
     async submitCreate() {
@@ -164,7 +175,7 @@ export default {
       }
       this.saving = true;
       const { adminFetch } = useAdminAuth();
-      const res = await adminFetch('/api/admin/users.php?action=create_sdr', {
+      const res = await adminFetch('/api/admin/panel-mgmt.php?action=create_sdr', {
         method: 'POST',
         body: JSON.stringify(this.createForm)
       });
@@ -185,7 +196,7 @@ export default {
     async submitEdit() {
       this.saving = true;
       const { adminFetch } = useAdminAuth();
-      const res = await adminFetch('/api/admin/users.php?action=update_sdr', {
+      const res = await adminFetch('/api/admin/panel-mgmt.php?action=update_sdr', {
         method: 'POST',
         body: JSON.stringify(this.editForm)
       });
@@ -205,7 +216,7 @@ export default {
       }
       this.saving = true;
       const { adminFetch } = useAdminAuth();
-      const res = await adminFetch('/api/admin/users.php?action=reset_sdr_password', {
+      const res = await adminFetch('/api/admin/panel-mgmt.php?action=reset_sdr_password', {
         method: 'POST',
         body: JSON.stringify({ id: this.passwordTarget.id, new_password: this.newPassword })
       });
@@ -218,7 +229,7 @@ export default {
       if (!confirm(`Deseja ${action} o SDR ${sdr.name}?`)) return;
 
       const { adminFetch } = useAdminAuth();
-      const res = await adminFetch('/api/admin/users.php?action=toggle_sdr', {
+      const res = await adminFetch('/api/admin/panel-mgmt.php?action=toggle_sdr', {
         method: 'POST',
         body: JSON.stringify({ id: sdr.id })
       });

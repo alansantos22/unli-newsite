@@ -159,7 +159,7 @@ export default {
         per_page: this.perPage
       });
       if (this.search) params.set('search', this.search);
-      const res = await adminFetch(`/api/admin/users.php?${params}`);
+      const res = await adminFetch(`/api/admin/panel-mgmt.php?${params}`);
       if (res.ok) {
         this.clients = res.data;
         this.total = res.total || res.pagination?.total || 0;
@@ -187,7 +187,7 @@ export default {
     async executeDelete() {
       this.deleting = true;
       const { adminFetch } = useAdminAuth();
-      const res = await adminFetch('/api/admin/users.php?action=delete_clients', {
+      const res = await adminFetch('/api/admin/panel-mgmt.php?action=delete_clients', {
         method: 'POST',
         body: JSON.stringify({ ids: this.deleteModal.ids })
       });

@@ -218,7 +218,7 @@ export default {
         tier: this.filterTier,
         search: this.search
       });
-      const res = await adminFetch(`/api/admin/users.php?${params}`);
+      const res = await adminFetch(`/api/admin/panel-mgmt.php?${params}`);
       if (res.ok) {
         this.affiliates = res.data;
         this.pagination = res.pagination;
@@ -238,7 +238,7 @@ export default {
     },
     async viewDetail(aff) {
       const { adminFetch } = useAdminAuth();
-      const res = await adminFetch(`/api/admin/users.php?action=get_affiliate&id=${aff.id}`);
+      const res = await adminFetch(`/api/admin/panel-mgmt.php?action=get_affiliate&id=${aff.id}`);
       if (res.ok) {
         this.detail = res.data;
         this.editForm = {
@@ -254,7 +254,7 @@ export default {
     async saveEdit() {
       this.saving = true;
       const { adminFetch } = useAdminAuth();
-      const res = await adminFetch('/api/admin/users.php?action=update_affiliate', {
+      const res = await adminFetch('/api/admin/panel-mgmt.php?action=update_affiliate', {
         method: 'POST',
         body: JSON.stringify(this.editForm)
       });
@@ -273,7 +273,7 @@ export default {
     async submitTierOverride() {
       this.saving = true;
       const { adminFetch } = useAdminAuth();
-      const res = await adminFetch('/api/admin/users.php?action=override_tier', {
+      const res = await adminFetch('/api/admin/panel-mgmt.php?action=override_tier', {
         method: 'POST',
         body: JSON.stringify({ id: this.tierTarget.id, ...this.tierOverride })
       });
@@ -289,7 +289,7 @@ export default {
       if (!confirm(`Deseja ${action} o afiliado ${aff.first_name} ${aff.last_name}?`)) return;
 
       const { adminFetch } = useAdminAuth();
-      const res = await adminFetch('/api/admin/users.php?action=toggle_affiliate', {
+      const res = await adminFetch('/api/admin/panel-mgmt.php?action=toggle_affiliate', {
         method: 'POST',
         body: JSON.stringify({ id: aff.id })
       });

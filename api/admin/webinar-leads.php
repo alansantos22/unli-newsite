@@ -1,0 +1,323 @@
+<?php
+/**
+ * Webinar Leads - API pública (inscrição) + Admin (listagem e exportação)
+ *
+ * Endpoints públicos:
+ *   POST ?action=register  → Cadastrar novo lead
+ *
+ * Endpoints admin (requerem JWT admin):
+ *   GET  ?action=list      → Listar leads com paginação e filtro
+ *   GET  ?action=export    → Exportar todos os leads (CSV)
+ *   GET  ?action=stats     → Totais rápidos por ramo/objetivo/país
+ */
+
+ob_start();
+ini_set('display_errors', '1');
+error_reporting(E_ALL);
+
+register_shutdown_function(function () {
+    $err = error_get_last();
+    if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        while (ob_get_level()) ob_end_clean();
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'ok'    => false,
+            'error' => $err['message'] . ' in ' . $err['file'] . ':' . $err['line']
+        ]);
+    }
+});
+
+if (!defined('SECURE_CONFIG_ACCESS')) {
+    define('SECURE_CONFIG_ACCESS', true);
+}
+$secureConfig = __DIR__ . '/../config.secure.php';
+if (file_exists($secureConfig)) {
+    require_once $secureConfig;
+}
+
+require_once __DIR__ . '/../lib/cors.php';
+if (!defined('DB_CONFIG_ACCESS')) define('DB_CONFIG_ACCESS', true);
+require_once __DIR__ . '/../db.config.php';
+require_once __DIR__ . '/../lib/database.php';
+
+$action = $_GET['action'] ?? '';
+
+// ── Rota pública ────────────────────────────────────────────────────────────
+if ($action === 'register') {
+    header('Content-Type: application/json; charset=utf-8');
+    handle_register();
+    exit;
+}
+
+// ── Rotas admin ─────────────────────────────────────────────────────────────
+require_once __DIR__ . '/middleware.php';
+$admin = require_admin_auth();
+$pdo    = get_db_connection();
+$prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+
+switch ($action) {
+    case 'list':   handle_list($pdo, $prefix);   break;
+    case 'export': handle_export($pdo, $prefix); break;
+    case 'stats':  handle_stats($pdo, $prefix);  break;
+    default:
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'error' => 'Ação inválida']);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// HANDLERS
+// ════════════════════════════════════════════════════════════════════════════
+
+function handle_register() {
+    $body = json_decode(file_get_contents('php://input'), true) ?? [];
+
+    // Validação básica
+    $nome     = trim($body['nome']     ?? '');
+    $email    = trim($body['email']    ?? '');
+    $ramo     = trim($body['ramo']     ?? '');
+    $objetivo = trim($body['objetivo'] ?? '');
+
+    if (!$nome || !$email || !$ramo || !$objetivo) {
+        http_response_code(422);
+        echo json_encode(['ok' => false, 'error' => 'Campos obrigatórios ausentes']);
+        return;
+    }
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        http_response_code(422);
+        echo json_encode(['ok' => false, 'error' => 'E-mail inválido']);
+        return;
+    }
+
+    $cidade     = trim($body['cidade']    ?? '');
+    $estado     = trim($body['estado']    ?? '');
+    $pais       = trim($body['pais']      ?? 'Brasil');
+    $mensagem   = trim($body['mensagem']  ?? '');
+
+    // IP seguro (suporte a proxies)
+    $ip = $_SERVER['HTTP_X_FORWARDED_FOR']
+        ?? $_SERVER['HTTP_CF_CONNECTING_IP']
+        ?? $_SERVER['REMOTE_ADDR']
+        ?? null;
+    if ($ip) {
+        $ip = explode(',', $ip)[0];
+        $ip = trim($ip);
+    }
+
+    $userAgent = substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500);
+
+    if (!defined('DB_CONFIG_ACCESS')) define('DB_CONFIG_ACCESS', true);
+    $pdo    = get_db_connection();
+    $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+
+    // Insere ou ignora duplicata silenciosamente
+    $stmt = $pdo->prepare("
+        INSERT IGNORE INTO {$prefix}webinar_leads
+            (nome, email, ramo, objetivo, cidade, estado, pais, mensagem, ip, user_agent)
+        VALUES
+            (:nome, :email, :ramo, :objetivo, :cidade, :estado, :pais, :mensagem, :ip, :ua)
+    ");
+    $stmt->execute([
+        ':nome'     => $nome,
+        ':email'    => $email,
+        ':ramo'     => $ramo,
+        ':objetivo' => $objetivo,
+        ':cidade'   => $cidade ?: null,
+        ':estado'   => $estado ?: null,
+        ':pais'     => $pais,
+        ':mensagem' => $mensagem ?: null,
+        ':ip'       => $ip,
+        ':ua'       => $userAgent ?: null,
+    ]);
+
+    // Envia e-mail de confirmação apenas para novos cadastros
+    if ($stmt->rowCount() > 0) {
+        send_webinar_confirmation($email, $nome);
+    }
+
+    echo json_encode(['ok' => true, 'message' => 'Inscrição realizada com sucesso!']);
+}
+
+// ── Admin: listagem paginada ─────────────────────────────────────────────────
+function handle_list($pdo, $prefix) {
+    header('Content-Type: application/json; charset=utf-8');
+
+    $page    = max(1, (int)($_GET['page']    ?? 1));
+    $perPage = min(100, max(10, (int)($_GET['per_page'] ?? 25)));
+    $search  = trim($_GET['search'] ?? '');
+    $ramo    = trim($_GET['ramo']   ?? '');
+    $offset  = ($page - 1) * $perPage;
+
+    $where  = [];
+    $params = [];
+
+    if ($search !== '') {
+        $where[]         = '(nome LIKE :s OR email LIKE :s2)';
+        $params[':s']    = "%{$search}%";
+        $params[':s2']   = "%{$search}%";
+    }
+    if ($ramo !== '') {
+        $where[]        = 'ramo = :ramo';
+        $params[':ramo'] = $ramo;
+    }
+
+    $whereSQL = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+
+    $total = $pdo->prepare("SELECT COUNT(*) FROM {$prefix}webinar_leads {$whereSQL}");
+    $total->execute($params);
+    $totalRows = (int)$total->fetchColumn();
+
+    $stmt = $pdo->prepare("
+        SELECT id, nome, email, ramo, objetivo, cidade, estado, pais, created_at
+        FROM {$prefix}webinar_leads
+        {$whereSQL}
+        ORDER BY created_at DESC
+        LIMIT {$perPage} OFFSET {$offset}
+    ");
+    $stmt->execute($params);
+    $leads = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    echo json_encode([
+        'ok'    => true,
+        'leads' => $leads,
+        'pagination' => [
+            'page'     => $page,
+            'per_page' => $perPage,
+            'total'    => $totalRows,
+            'pages'    => (int)ceil($totalRows / $perPage),
+        ],
+    ]);
+}
+
+// ── Admin: exportação CSV ────────────────────────────────────────────────────
+function handle_export($pdo, $prefix) {
+    $search = trim($_GET['search'] ?? '');
+    $ramo   = trim($_GET['ramo']   ?? '');
+
+    $where  = [];
+    $params = [];
+
+    if ($search !== '') {
+        $where[]       = '(nome LIKE :s OR email LIKE :s2)';
+        $params[':s']  = "%{$search}%";
+        $params[':s2'] = "%{$search}%";
+    }
+    if ($ramo !== '') {
+        $where[]        = 'ramo = :ramo';
+        $params[':ramo'] = $ramo;
+    }
+
+    $whereSQL = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+
+    $stmt = $pdo->prepare("
+        SELECT id, nome, email, ramo, objetivo, cidade, estado, pais, mensagem, ip, created_at
+        FROM {$prefix}webinar_leads
+        {$whereSQL}
+        ORDER BY created_at ASC
+    ");
+    $stmt->execute($params);
+    $leads = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    while (ob_get_level()) ob_end_clean();
+
+    $filename = 'webinar-leads-' . date('Y-m-d') . '.csv';
+
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+
+    // BOM para Excel reconhecer UTF-8
+    echo "\xEF\xBB\xBF";
+
+    $out = fopen('php://output', 'w');
+
+    fputcsv($out, ['ID', 'Nome', 'E-mail', 'Ramo', 'Objetivo', 'Cidade', 'Estado', 'País', 'Mensagem', 'IP', 'Data de inscrição'], ';');
+
+    foreach ($leads as $row) {
+        fputcsv($out, [
+            $row['id'],
+            $row['nome'],
+            $row['email'],
+            $row['ramo'],
+            $row['objetivo'],
+            $row['cidade'] ?? '',
+            $row['estado'] ?? '',
+            $row['pais'],
+            $row['mensagem'] ?? '',
+            $row['ip'] ?? '',
+            $row['created_at'],
+        ], ';');
+    }
+
+    fclose($out);
+    exit;
+}
+
+// ── Admin: estatísticas rápidas ──────────────────────────────────────────────
+function handle_stats($pdo, $prefix) {
+    header('Content-Type: application/json; charset=utf-8');
+
+    $total = (int)$pdo->query("SELECT COUNT(*) FROM {$prefix}webinar_leads")->fetchColumn();
+
+    $today = (int)$pdo->query("
+        SELECT COUNT(*) FROM {$prefix}webinar_leads
+        WHERE DATE(created_at) = CURDATE()
+    ")->fetchColumn();
+
+    $week = (int)$pdo->query("
+        SELECT COUNT(*) FROM {$prefix}webinar_leads
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+    ")->fetchColumn();
+
+    $byRamo = $pdo->query("
+        SELECT ramo, COUNT(*) as total
+        FROM {$prefix}webinar_leads
+        GROUP BY ramo ORDER BY total DESC LIMIT 10
+    ")->fetchAll(PDO::FETCH_ASSOC);
+
+    $byObjetivo = $pdo->query("
+        SELECT objetivo, COUNT(*) as total
+        FROM {$prefix}webinar_leads
+        GROUP BY objetivo ORDER BY total DESC LIMIT 10
+    ")->fetchAll(PDO::FETCH_ASSOC);
+
+    echo json_encode([
+        'ok'          => true,
+        'total'       => $total,
+        'today'       => $today,
+        'week'        => $week,
+        'by_ramo'     => $byRamo,
+        'by_objetivo' => $byObjetivo,
+    ]);
+}
+
+// ── E-mail de confirmação ────────────────────────────────────────────────────
+function send_webinar_confirmation(string $email, string $nome): void {
+    $templatePath = __DIR__ . '/../emails/webinar-confirmacao.html';
+
+    if (!file_exists($templatePath)) {
+        error_log('[WEBINAR] Template de e-mail não encontrado: ' . $templatePath);
+        return;
+    }
+
+    $body = file_get_contents($templatePath);
+    $body = str_replace(['{{NOME}}', '{{EMAIL}}'], [htmlspecialchars($nome), htmlspecialchars($email)], $body);
+
+    $subject = 'Sua inscrição está confirmada — Webinar IA e Automação, 25 de Abril';
+
+    $fromName  = 'Foorge por Unli Studio';
+    $fromEmail = defined('MAIL_FROM_EMAIL') ? MAIL_FROM_EMAIL : 'noreply@unli.com.br';
+
+    $headers  = "MIME-Version: 1.0\r\n";
+    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+    $headers .= "From: {$fromName} <{$fromEmail}>\r\n";
+    $headers .= "Reply-To: renatom@unli.com.br\r\n";
+    $headers .= "X-Mailer: PHP/" . phpversion();
+
+    $sent = mail($email, $subject, $body, $headers);
+
+    if (!$sent) {
+        error_log('[WEBINAR] Falha ao enviar e-mail de confirmação para: ' . $email);
+    }
+}

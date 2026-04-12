@@ -397,8 +397,8 @@ export default {
       
       alert('Solicitação de orçamento enviada! Em produção, isso enviaria para o CRM.');
       
-      // Redirecionar para página de contato
-      this.$router.push('/site-vitrine#contact');
+      // Redirecionar para página de vendas
+      this.$router.push('/site-vitrine');
     },
     
     handleClose() {

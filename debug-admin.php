@@ -318,7 +318,7 @@ try {
             'scope' => 'admin'
         ), 3600);
         
-        $usersUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/api/admin/users.php?action=list_clients';
+        $usersUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/api/admin/panel-mgmt.php?action=list_clients';
         msg('URL: ' . $usersUrl);
         msg('Token: ' . substr($token, 0, 40) . '...');
         

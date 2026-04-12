@@ -24,6 +24,50 @@ export default [
         name: "ConsultoriaGamificacao",
         component: () => import("./pages/ConsultoriaGamificacao/ConsultoriaGamificacao.vue")
     },
+    // ============================================
+    // Demo Sites Routes
+    // ============================================
+    {
+        path: "/demo/hamburgueria",
+        name: "DemoHamburgueria",
+        component: () => import("./pages/DemoSites/HamburgueriaDemo.vue"),
+        meta: { hideHeader: true, hideFooter: true, title: 'Modelo: Hamburgueria | Unli' }
+    },
+    {
+        path: "/demo/hamburgueria/cardapio",
+        name: "DemoHamburgueriaCardapio",
+        component: () => import("./pages/DemoSites/HamburgueriaCardapio.vue"),
+        meta: { hideHeader: true, hideFooter: true, title: 'Cardápio | House of Burgers' }
+    },
+    {
+        path: "/demo/loja-roupas",
+        name: "DemoLojaRoupas",
+        component: () => import("./pages/DemoSites/LojaRoupasDemo.vue"),
+        meta: { hideHeader: true, hideFooter: true, title: 'Modelo: Loja de Roupas | Unli' }
+    },
+    {
+        path: "/demo/clinica-estetica",
+        name: "DemoClinicaEstetica",
+        component: () => import("./pages/DemoSites/ClinicaEsteticaDemo.vue"),
+        meta: { hideHeader: true, hideFooter: true, title: 'Modelo: Clínica de Estética | Unli' }
+    },
+    {
+        path: "/demo/serralheria",
+        name: "DemoSerralheria",
+        component: () => import("./pages/DemoSites/SerralheriaDemo.vue"),
+        meta: { hideHeader: true, hideFooter: true, title: 'Modelo: Serralheria | Unli' }
+    },
+
+    // ============================================
+    // Webinar Landing Page
+    // ============================================
+    {
+        path: "/webinar",
+        name: "WebinarPage",
+        component: () => import("./pages/WebinarPage/WebinarPage.vue"),
+        meta: { hideHeader: true, hideFooter: true, title: 'Webinar Gratuito · IA e Automação | Foorge' }
+    },
+
     {
         path: "/site-vitrine",
         name: "SiteVitrine",

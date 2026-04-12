@@ -29,10 +29,14 @@
           </div>
 
           <div class="hero-actions">
-            <a href="#planos" class="btn-primary">
-              <i class="fas fa-rocket"></i>
+            <a v-if="isManualMode" :href="whatsappLink('Quero criar meu site')" target="_blank" class="btn-primary">
+              <i class="fab fa-whatsapp"></i>
               Criar meu site agora
             </a>
+            <router-link v-else to="/configurador?plan=site_complete" class="btn-primary">
+              <i class="fas fa-rocket"></i>
+              Criar meu site agora
+            </router-link>
             <a href="#como-funciona" class="btn-secondary">
               <i class="fas fa-play-circle"></i>
               Como Funciona
@@ -71,6 +75,188 @@
               />
             </picture>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Modelos em Destaque -->
+    <section class="demo-models-section" data-scroll>
+      <div class="section-container">
+        <div class="section-header">
+          <span class="section-badge">Modelos Prontos</span>
+          <h2 class="section-title">Veja como pode ficar o seu site</h2>
+          <p class="section-description">
+            Clique em qualquer modelo abaixo e explore um site completo e funcional — é exatamente assim que entregamos.
+          </p>
+        </div>
+
+        <div class="demo-models-grid">
+          <!-- Hamburgueria -->
+          <a href="/demo/hamburgueria" target="_blank" class="demo-model-card" data-scroll>
+            <div class="demo-model-preview hamburgueria-preview">
+              <div class="preview-browser">
+                <div class="browser-bar-icons">
+                  <i class="fas fa-globe"></i>
+                </div>
+                <div class="browser-url">demo/hamburgueria</div>
+              </div>
+              <div class="preview-content hb-preview-content">
+                <div class="preview-header-bar">🍔 House of Burgers</div>
+                <div class="preview-hero-mini hb-hero-mini">
+                  <span class="preview-emoji">🍔</span>
+                  <div class="preview-text-lines">
+                    <span class="line-title"></span>
+                    <span class="line-sub"></span>
+                    <span class="line-btn wpp"></span>
+                  </div>
+                </div>
+                <div class="preview-cards-row">
+                  <div class="preview-card-mini p1">🍔</div>
+                  <div class="preview-card-mini p2">🥤</div>
+                  <div class="preview-card-mini p3">🍟</div>
+                </div>
+              </div>
+            </div>
+            <div class="demo-model-info">
+              <div class="demo-model-tag hamburgueria-tag">
+                <i class="fas fa-utensils"></i> Cardápio Online
+              </div>
+              <h3 class="demo-model-title">Hamburgueria com Pedidos pelo WhatsApp</h3>
+              <p class="demo-model-desc">Cardápio interativo por categoria, cada item com botão direto para o WhatsApp do negócio.</p>
+              <span class="demo-model-cta">
+                <i class="fas fa-eye"></i> Ver modelo completo
+              </span>
+            </div>
+          </a>
+
+          <!-- Loja de Roupas -->
+          <a href="/demo/loja-roupas" target="_blank" class="demo-model-card" data-scroll>
+            <div class="demo-model-preview loja-preview">
+              <div class="preview-browser">
+                <div class="browser-bar-icons">
+                  <i class="fas fa-globe"></i>
+                </div>
+                <div class="browser-url">demo/loja-roupas</div>
+              </div>
+              <div class="preview-content lj-preview-content">
+                <div class="preview-header-bar lj-header-bar">👗 Estilo Carioca</div>
+                <div class="preview-hero-mini lj-hero-mini">
+                  <span class="preview-emoji">👗</span>
+                  <div class="preview-text-lines">
+                    <span class="line-title"></span>
+                    <span class="line-sub"></span>
+                    <span class="line-btn pink"></span>
+                  </div>
+                </div>
+                <div class="preview-products-row">
+                  <div class="preview-product lp1">👗<span>R$ 189</span></div>
+                  <div class="preview-product lp2">👖<span>R$ 149</span></div>
+                  <div class="preview-product lp3">👠<span>R$ 99</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="demo-model-info">
+              <div class="demo-model-tag loja-tag">
+                <i class="fas fa-tshirt"></i> Vitrine de Produtos
+              </div>
+              <h3 class="demo-model-title">Loja de Roupas com Vitrine Completa</h3>
+              <p class="demo-model-desc">Grade de produtos por categoria com preços, tamanhos e compra via WhatsApp.</p>
+              <span class="demo-model-cta">
+                <i class="fas fa-eye"></i> Ver modelo completo
+              </span>
+            </div>
+          </a>
+
+          <!-- Clínica Estética -->
+          <a href="/demo/clinica-estetica" target="_blank" class="demo-model-card" data-scroll>
+            <div class="demo-model-preview clinica-preview">
+              <div class="preview-browser">
+                <div class="browser-bar-icons">
+                  <i class="fas fa-globe"></i>
+                </div>
+                <div class="browser-url">demo/clinica-estetica</div>
+              </div>
+              <div class="preview-content cl-preview-content">
+                <div class="preview-header-bar cl-header-bar">✨ Bella Skin</div>
+                <div class="preview-hero-mini cl-hero-mini">
+                  <span class="preview-emoji">💆‍♀️</span>
+                  <div class="preview-text-lines">
+                    <span class="line-title"></span>
+                    <span class="line-sub"></span>
+                    <span class="line-btn rose"></span>
+                  </div>
+                </div>
+                <div class="preview-services-row">
+                  <div class="preview-service-mini cs1">🧴</div>
+                  <div class="preview-service-mini cs2">💆</div>
+                  <div class="preview-service-mini cs3">⭐</div>
+                </div>
+              </div>
+            </div>
+            <div class="demo-model-info">
+              <div class="demo-model-tag clinica-tag">
+                <i class="fas fa-spa"></i> Clínica / Saúde
+              </div>
+              <h3 class="demo-model-title">Clínica de Estética com Agendamento</h3>
+              <p class="demo-model-desc">Serviços com preços, resultados antes/depois, depoimentos e agendamento via WhatsApp.</p>
+              <span class="demo-model-cta">
+                <i class="fas fa-eye"></i> Ver modelo completo
+              </span>
+            </div>
+          </a>
+
+          <!-- Serralheria -->
+          <a href="/demo/serralheria" target="_blank" class="demo-model-card" data-scroll>
+            <div class="demo-model-preview serralheria-preview">
+              <div class="preview-browser">
+                <div class="browser-bar-icons">
+                  <i class="fas fa-globe"></i>
+                </div>
+                <div class="browser-url">demo/serralheria</div>
+              </div>
+              <div class="preview-content sr-preview-content">
+                <div class="preview-header-bar sr-header-bar">⚙️ Ferro & Forma</div>
+                <div class="preview-hero-mini sr-hero-mini">
+                  <span class="preview-emoji">🔧</span>
+                  <div class="preview-text-lines">
+                    <span class="line-title"></span>
+                    <span class="line-sub"></span>
+                    <span class="line-btn orange"></span>
+                  </div>
+                </div>
+                <div class="preview-services-row">
+                  <div class="preview-service-mini ss1">🚪</div>
+                  <div class="preview-service-mini ss2">🪜</div>
+                  <div class="preview-service-mini ss3">🏗️</div>
+                </div>
+              </div>
+            </div>
+            <div class="demo-model-info">
+              <div class="demo-model-tag serralheria-tag">
+                <i class="fas fa-tools"></i> Prestador de Serviços
+              </div>
+              <h3 class="demo-model-title">Serralheria com Portfólio e Orçamento</h3>
+              <p class="demo-model-desc">Serviços detalhados, portfólio filtrado por categoria e solicitação de orçamento via WhatsApp.</p>
+              <span class="demo-model-cta">
+                <i class="fas fa-eye"></i> Ver modelo completo
+              </span>
+            </div>
+          </a>
+        </div>
+
+        <div class="demo-models-footer">
+          <p class="demo-models-note">
+            <i class="fas fa-info-circle"></i>
+            Esses são modelos de demonstração. Seu site será personalizado com as cores, textos e imagens da sua empresa.
+          </p>
+          <a v-if="isManualMode" :href="whatsappLink('Quero criar meu site')" target="_blank" class="btn-primary">
+            <i class="fab fa-whatsapp"></i>
+            Quero um site profissional
+          </a>
+          <router-link v-else to="/configurador?plan=site_complete" class="btn-primary">
+            <i class="fas fa-rocket"></i>
+            Quero um site profissional
+          </router-link>
         </div>
       </div>
     </section>
@@ -435,12 +621,8 @@
 
             <p class="pricing-custom-note">* Dentro do escopo acordado em contrato</p>
 
-            <a v-if="isManualMode" :href="whatsappLink('Projeto Sob Medida - Sob Proposta')" target="_blank" class="pricing-button">
+            <a :href="whatsappLink('Projeto Sob Medida - Sob Proposta')" target="_blank" class="pricing-button">
               <i class="fab fa-whatsapp"></i>
-              Consultar Especialistas
-            </a>
-            <a v-else href="#contact" class="pricing-button">
-              <i class="fas fa-users"></i>
               Consultar Especialistas
             </a>
 
@@ -596,12 +778,16 @@
           </div>
 
           <div class="cta-actions">
-            <a href="#planos" class="btn-primary large">
-              <i class="fas fa-rocket"></i>
+            <a v-if="isManualMode" :href="whatsappLink('Quero criar meu site')" target="_blank" class="btn-primary large">
+              <i class="fab fa-whatsapp"></i>
               Quero meu site
             </a>
-            <a href="#contact" class="btn-secondary large">
-              <i class="fas fa-comments"></i>
+            <router-link v-else to="/configurador?plan=site_complete" class="btn-primary large">
+              <i class="fas fa-rocket"></i>
+              Quero meu site
+            </router-link>
+            <a :href="whatsappLink('Falar com Especialista')" target="_blank" class="btn-secondary large">
+              <i class="fab fa-whatsapp"></i>
               Falar com Especialista
             </a>
           </div>
@@ -613,137 +799,6 @@
         </div>
       </div>
     </section>
-
-
-
-    <!-- Contact Section (Reusable) -->
-    <section id="contact" class="contact-section" data-scroll>
-      <div class="section-container">
-        <div class="section-header">
-          <span class="section-badge">Contato</span>
-          <h2 class="section-title">Quer algo mais robusto? Fale Conosco</h2>
-          <p class="section-description">
-            Nossa equipe está pronta para ajudar você a ter presença online profissional.
-          </p>
-        </div>
-
-        <div class="contact-content">
-          <div class="contact-info">
-            <div class="info-card">
-              <div class="info-icon">
-                <i class="fab fa-whatsapp"></i>
-              </div>
-              <h3 class="info-title">WhatsApp</h3>
-              <p class="info-text">Atendimento rápido e direto</p>
-              <a :href="`https://wa.me/${whatsappSDR}`" class="info-link" target="_blank">
-                {{ whatsappDisplay }}
-              </a>
-            </div>
-
-            <div class="info-card">
-              <div class="info-icon">
-                <i class="fas fa-envelope"></i>
-              </div>
-              <h3 class="info-title">E-mail</h3>
-              <p class="info-text">Resposta em até 24h</p>
-              <a href="mailto:renatom@unli.com.br" class="info-link">
-                renatom@unli.com.br
-              </a>
-            </div>
-
-            <div class="info-card">
-              <div class="info-icon">
-                <i class="fas fa-clock"></i>
-              </div>
-              <h3 class="info-title">Horário</h3>
-              <p class="info-text">Seg a Sex: 9h às 18h</p>
-            </div>
-          </div>
-
-          <div class="contact-form">
-            <form @submit.prevent="handleSubmit">
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="name">Nome Completo</label>
-                  <input 
-                    type="text" 
-                    id="name" 
-                    v-model="form.name"
-                    placeholder="Seu nome"
-                    autocomplete="name"
-                    required
-                  >
-                </div>
-
-                <div class="form-group">
-                  <label for="email">E-mail</label>
-                  <input 
-                    type="email" 
-                    id="email" 
-                    v-model="form.email"
-                    placeholder="seu@email.com"
-                    autocomplete="email"
-                    required
-                  >
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="phone">Telefone / WhatsApp</label>
-                  <input 
-                    type="tel" 
-                    id="phone" 
-                    v-model="form.phone"
-                    placeholder="(00) 00000-0000"
-                    autocomplete="tel"
-                    required
-                  >
-                </div>
-
-                <div class="form-group">
-                  <label for="interest">Interesse</label>
-                  <select id="interest" v-model="form.interest" required>
-                    <option value="">Selecione...</option>
-                    <option value="site-vitrine">Site Vitrine Anual</option>
-                    <option value="pagina-extra">Página Extra</option>
-                    <option value="projeto-customizado">Projeto Customizado</option>
-                    <option value="duvida">Tenho uma Dúvida</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label for="message">Mensagem</label>
-                <textarea 
-                  id="message" 
-                  v-model="form.message"
-                  placeholder="Conte-nos sobre seu projeto..."
-                  rows="5"
-                  required
-                ></textarea>
-              </div>
-
-              <button type="submit" class="submit-button" :disabled="isSubmitting">
-                <i class="fas fa-paper-plane"></i>
-                {{ isSubmitting ? 'Enviando...' : 'Enviar Mensagem' }}
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Toast Notification -->
-    <transition name="toast-fade">
-      <div v-if="toast.show" class="toast-notification" :class="toast.type">
-        <i :class="toast.type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
-        <span>{{ toast.message }}</span>
-        <button class="toast-close" @click="toast.show = false" aria-label="Fechar notificação">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-    </transition>
 
     <!-- WhatsApp Flutuante -->
     <a :href="`https://wa.me/${whatsappSDR}?text=${encodeURIComponent('Olá! Vi a página de Site Vitrine e gostaria de saber mais sobre os planos.' + affiliateSuffix)}`" 
@@ -762,20 +817,7 @@ export default {
   name: 'SiteVitrine',
   data() {
     return {
-      form: {
-        name: '',
-        email: '',
-        phone: '',
-        interest: '',
-        message: ''
-      },
-      isSubmitting: false,
       openFaqs: [],
-      toast: {
-        show: false,
-        message: '',
-        type: 'success'
-      },
       faqs: [
         {
           question: 'Posso cancelar?',
@@ -857,8 +899,6 @@ export default {
         anchor.removeEventListener('click', this._smoothScrollHandler);
       });
     }
-    // Cleanup toast timer
-    clearTimeout(this._toastTimer);
   },
   methods: {
     whatsappLink(planName) {
@@ -889,14 +929,6 @@ export default {
       } else {
         this.openFaqs.splice(i, 1);
       }
-    },
-
-    showToast(message, type = 'success') {
-      this.toast = { show: true, message, type };
-      clearTimeout(this._toastTimer);
-      this._toastTimer = setTimeout(() => {
-        this.toast.show = false;
-      }, 5000);
     },
 
     initScrollAnimations() {
@@ -933,48 +965,6 @@ export default {
       this.$el.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', this._smoothScrollHandler);
       });
-    },
-
-    async handleSubmit() {
-      this.isSubmitting = true;
-      
-      try {
-        const response = await fetch('https://unli.com.br/phpmail.php', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
-            email: this.form.email,
-            telefone: this.form.phone || '',
-            assunto: 'Contato Site Vitrine - ' + (this.form.interest || 'Geral'),
-            mensagem: `Nome: ${this.form.name}\nInteresse: ${this.form.interest}\n\n${this.form.message}`
-          })
-        });
-
-        const result = await response.json();
-        if (result.success) {
-          this.showToast('Mensagem enviada com sucesso! Entraremos em contato em breve.', 'success');
-          this.resetForm();
-        } else {
-          throw new Error(result.error || 'Erro ao enviar');
-        }
-      } catch (error) {
-        console.error('Erro ao enviar mensagem:', error);
-        this.showToast('Erro ao enviar mensagem. Tente novamente ou entre em contato pelo WhatsApp.', 'error');
-      } finally {
-        this.isSubmitting = false;
-      }
-    },
-
-    resetForm() {
-      this.form = {
-        name: '',
-        email: '',
-        phone: '',
-        interest: '',
-        message: ''
-      };
     }
   }
 };
@@ -2422,216 +2412,6 @@ export default {
 }
 
 // ==========================================
-// CONTACT SECTION
-// ==========================================
-.contact-section {
-  padding: 100px 20px;
-  background: $gray-lightness;
-
-  .contact-content {
-    display: grid;
-    grid-template-columns: 1fr 1.5fr;
-    gap: 60px;
-    margin-top: 60px;
-
-    @media (max-width: 968px) {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .contact-info {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-
-    .info-card {
-      padding: 32px;
-      background: $white;
-      border-radius: 16px;
-      border: 2px solid $gray-light;
-      transition: all 0.3s ease;
-
-      &:hover {
-        border-color: $p-color;
-        box-shadow: $shadow-lg;
-      }
-
-      .info-icon {
-        width: 56px;
-        height: 56px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: $gradient-primary;
-        border-radius: 12px;
-        margin-bottom: 16px;
-
-        i {
-          font-size: 1.8rem;
-          color: $white;
-        }
-      }
-
-      .info-title {
-        font-size: 1.3rem;
-        font-weight: 700;
-        color: $gray-darkness;
-        margin-bottom: 8px;
-      }
-
-      .info-text {
-        font-size: 0.95rem;
-        color: $gray-medium;
-        margin-bottom: 8px;
-      }
-
-      .info-link {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: $p-color;
-        text-decoration: none;
-
-        &:hover {
-          text-decoration: underline;
-        }
-      }
-    }
-  }
-
-  .contact-form {
-    padding: 50px;
-    background: $white;
-    border-radius: 28px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-
-    @media (max-width: 768px) {
-      padding: 32px 24px;
-      border-radius: 20px;
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-
-      @media (max-width: 768px) {
-        grid-template-columns: 1fr;
-        gap: 0;
-      }
-    }
-
-    .form-group {
-      margin-bottom: 24px;
-
-      label {
-        display: block;
-        font-size: 0.9rem;
-        font-weight: 700;
-        color: #2C2C2C;
-        margin-bottom: 10px;
-        letter-spacing: 0.01em;
-      }
-
-      input,
-      select,
-      textarea {
-        width: 100%;
-        padding: 18px 20px;
-        font-size: 1rem;
-        font-family: inherit;
-        color: #2C2C2C;
-        background: #F5F5F5;
-        border: 2px solid transparent;
-        border-radius: 14px;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        appearance: none;
-
-        &::placeholder {
-          color: #999999;
-          font-size: 0.95rem;
-        }
-
-        &:hover {
-          background: #ECECEC;
-        }
-
-        &:focus {
-          outline: none;
-          background: $white;
-          border-color: #E67E22;
-          box-shadow: 0 0 0 4px rgba(#E67E22, 0.08);
-        }
-      }
-
-      select {
-        background-image: url("data:image/svg+xml,%3Csvg width='14' height='8' viewBox='0 0 14 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L7 7L13 1' stroke='%23666666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 20px center;
-        background-size: 14px;
-        padding-right: 50px;
-        cursor: pointer;
-
-        &:focus {
-          background-image: url("data:image/svg+xml,%3Csvg width='14' height='8' viewBox='0 0 14 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L7 7L13 1' stroke='%23E67E22' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-        }
-      }
-
-      textarea {
-        resize: vertical;
-        min-height: 160px;
-        line-height: 1.6;
-        font-family: inherit;
-      }
-    }
-
-    .submit-button {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      width: 100%;
-      padding: 20px;
-      background: linear-gradient(135deg, #E67E22 0%, #D35400 100%);
-      color: $white;
-      border: none;
-      border-radius: 14px;
-      font-size: 1.1rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 6px 20px rgba(#E67E22, 0.35);
-      margin-top: 8px;
-
-      i {
-        font-size: 1.15rem;
-        transition: transform 0.3s ease;
-      }
-
-      &:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 30px rgba(#E67E22, 0.45);
-
-        i {
-          transform: translateX(4px);
-        }
-      }
-
-      &:active:not(:disabled) {
-        transform: translateY(0);
-        box-shadow: 0 4px 16px rgba(#E67E22, 0.35);
-      }
-
-      &:disabled {
-        opacity: 0.65;
-        cursor: not-allowed;
-        transform: none;
-      }
-    }
-  }
-}
-
-// ==========================================
 // SECTION UTILITIES
 // ==========================================
 .section-container {
@@ -2871,73 +2651,6 @@ export default {
   60% {
     transform: translateY(-3px);
   }
-}
-
-// ==========================================
-// TOAST NOTIFICATION
-// ==========================================
-.toast-notification {
-  position: fixed;
-  top: 24px;
-  right: 24px;
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 24px;
-  border-radius: 12px;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: $white;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-  max-width: 420px;
-
-  @media (max-width: 768px) {
-    top: 16px;
-    right: 16px;
-    left: 16px;
-    max-width: none;
-  }
-
-  &.success {
-    background: linear-gradient(135deg, #27ae60 0%, #219a52 100%);
-  }
-
-  &.error {
-    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-  }
-
-  i:first-child {
-    font-size: 1.3rem;
-    flex-shrink: 0;
-  }
-
-  .toast-close {
-    background: none;
-    border: none;
-    color: rgba($white, 0.8);
-    cursor: pointer;
-    padding: 4px;
-    margin-left: 8px;
-    flex-shrink: 0;
-    font-size: 1rem;
-    transition: color 0.2s;
-
-    &:hover {
-      color: $white;
-    }
-  }
-}
-
-.toast-fade-enter-active,
-.toast-fade-leave-active {
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.toast-fade-enter-from,
-.toast-fade-leave-to {
-  opacity: 0;
-  transform: translateX(40px);
 }
 
 // Hint de carrossel – oculto no desktop
@@ -3250,4 +2963,418 @@ export default {
   }
 }
 
+// ==========================================
+// DEMO MODELS SECTION
+// ==========================================
+.demo-models-section {
+  padding: 80px 0 60px;
+  background: $gray-lightness;
+
+  .section-header {
+    margin-bottom: 48px;
+  }
+}
+
+.demo-models-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.demo-model-card {
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s, box-shadow 0.25s;
+  border: 2px solid transparent;
+
+  &:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.14);
+    border-color: rgba($p-color, 0.35);
+
+    .demo-model-cta {
+      color: $p-dark;
+      gap: 8px;
+    }
+  }
+}
+
+// ---- Mini browser frame ----
+.demo-model-preview {
+  width: 100%;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  overflow: hidden;
+}
+
+.preview-browser {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f1f3f5;
+  padding: 7px 12px;
+  border-bottom: 1px solid #e0e0e0;
+
+  .browser-bar-icons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+
+    i {
+      font-size: 11px;
+      color: $p-color;
+    }
+  }
+
+  .browser-url {
+    background: #fff;
+    border-radius: 4px;
+    padding: 2px 10px;
+    font-size: 10px;
+    color: #666;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border: 1px solid #e0e0e0;
+  }
+}
+
+.preview-content {
+  padding: 0;
+  height: 190px;
+  overflow: hidden;
+  position: relative;
+}
+
+// --- Hamburgueria preview ---
+.hb-preview-content {
+  background: linear-gradient(135deg, #1a0a00, #3d1c02);
+
+  .preview-header-bar {
+    background: rgba(0,0,0,0.4);
+    color: #f39c12;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 12px;
+  }
+
+  .preview-hero-mini {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+
+    .preview-emoji { font-size: 36px; flex-shrink: 0; }
+
+    .preview-text-lines {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex: 1;
+
+      .line-title {
+        height: 10px;
+        width: 80%;
+        background: rgba(255,255,255,0.6);
+        border-radius: 4px;
+      }
+      .line-sub {
+        height: 7px;
+        width: 60%;
+        background: rgba(255,255,255,0.3);
+        border-radius: 4px;
+      }
+      .line-btn {
+        height: 22px;
+        width: 100px;
+        border-radius: 6px;
+        &.wpp { background: #25d366; }
+      }
+    }
+  }
+
+  .preview-cards-row {
+    display: flex;
+    gap: 8px;
+    padding: 0 14px;
+
+    .preview-card-mini {
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      width: 60px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+  }
+}
+
+// --- Loja preview ---
+.lj-preview-content {
+  background: linear-gradient(135deg, #fdf2f8, #fce7f3);
+
+  .lj-header-bar {
+    background: #fff;
+    color: #c2185b;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-bottom: 1px solid rgba(233,30,140,0.1);
+  }
+
+  .lj-hero-mini {
+    background: linear-gradient(135deg, #1a0533, #4a0e5c);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+
+    .preview-emoji { font-size: 32px; flex-shrink: 0; }
+
+    .preview-text-lines {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex: 1;
+
+      .line-title { height: 10px; width: 80%; background: rgba(255,255,255,0.6); border-radius: 4px; }
+      .line-sub { height: 7px; width: 55%; background: rgba(255,255,255,0.3); border-radius: 4px; }
+      .line-btn.pink { height: 22px; width: 90px; background: #e91e8c; border-radius: 6px; }
+    }
+  }
+
+  .preview-products-row {
+    display: flex;
+    gap: 8px;
+    padding: 8px 14px;
+
+    .preview-product {
+      flex: 1;
+      background: #fff;
+      border-radius: 10px;
+      padding: 8px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+
+      span { font-size: 9px; font-weight: 700; color: #1a0533; }
+    }
+  }
+}
+
+// --- Clínica preview ---
+.cl-preview-content {
+  background: linear-gradient(135deg, #fdf9ff, #fce7f3);
+
+  .cl-header-bar {
+    background: #fff;
+    color: #be185d;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-bottom: 1px solid rgba(236,72,153,0.1);
+  }
+
+  .cl-hero-mini {
+    background: linear-gradient(135deg, #fce7f3, #f9d0e6);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+
+    .preview-emoji { font-size: 32px; flex-shrink: 0; }
+
+    .preview-text-lines {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex: 1;
+
+      .line-title { height: 10px; width: 80%; background: rgba(30,10,46,0.4); border-radius: 4px; }
+      .line-sub { height: 7px; width: 55%; background: rgba(30,10,46,0.2); border-radius: 4px; }
+      .line-btn.rose { height: 22px; width: 90px; background: #ec4899; border-radius: 6px; }
+    }
+  }
+
+  .preview-services-row {
+    display: flex;
+    gap: 8px;
+    padding: 8px 14px;
+
+    .preview-service-mini {
+      flex: 1;
+      background: #fff;
+      border-radius: 10px;
+      padding: 8px 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+  }
+}
+
+// --- Serralheria preview ---
+.sr-preview-content {
+  background: #0f0f0f;
+
+  .sr-header-bar {
+    background: rgba(255,255,255,0.05);
+    color: #f97316;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-bottom: 1px solid rgba(249,115,22,0.2);
+  }
+
+  .sr-hero-mini {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+
+    .preview-emoji { font-size: 32px; flex-shrink: 0; }
+
+    .preview-text-lines {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex: 1;
+
+      .line-title { height: 10px; width: 80%; background: rgba(255,255,255,0.6); border-radius: 4px; }
+      .line-sub { height: 7px; width: 55%; background: rgba(255,255,255,0.3); border-radius: 4px; }
+      .line-btn.orange { height: 22px; width: 100px; background: #f97316; border-radius: 6px; }
+    }
+  }
+
+  .preview-services-row {
+    display: flex;
+    gap: 8px;
+    padding: 0 14px;
+
+    .preview-service-mini {
+      flex: 1;
+      background: rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 10px 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+  }
+}
+
+// ---- Card info area ----
+.demo-model-info {
+  padding: 20px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.demo-model-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 12px;
+  border-radius: 20px;
+  width: fit-content;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &.hamburgueria-tag { background: #fff3cd; color: #92400e; }
+  &.loja-tag { background: #fce7f3; color: #be185d; }
+  &.clinica-tag { background: #ffd6eb; color: #9d174d; }
+  &.serralheria-tag { background: #fff0e6; color: #c2410c; }
+}
+
+.demo-model-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: $gray-darkness;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.demo-model-desc {
+  font-size: 13px;
+  color: $gray-medium;
+  line-height: 1.6;
+  margin: 0;
+  flex: 1;
+}
+
+.demo-model-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: $p-color;
+  margin-top: 4px;
+  transition: gap 0.2s, color 0.2s;
+
+  i { font-size: 12px; }
+}
+
+.demo-models-footer {
+  margin-top: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 24px 28px;
+  background: rgba($p-color, 0.06);
+  border-radius: 16px;
+  border: 1px solid rgba($p-color, 0.2);
+
+  .demo-models-note {
+    font-size: 14px;
+    color: $gray-medium;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    max-width: 560px;
+
+    i { color: $p-color; flex-shrink: 0; }
+  }
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    text-align: center;
+
+    .demo-models-note { justify-content: center; }
+  }
+}
+
 </style>
+

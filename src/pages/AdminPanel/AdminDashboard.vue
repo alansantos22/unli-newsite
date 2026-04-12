@@ -61,6 +61,9 @@
 
         <!-- Gamificação -->
         <AdminGamification v-if="activeTab === 'gamification'" />
+
+        <!-- Webinar Leads -->
+        <AdminWebinarLeads v-if="activeTab === 'webinar'" />
       </div>
     </main>
   </div>
@@ -74,10 +77,11 @@ import AdminSDRs from './modules/AdminSDRs.vue';
 import AdminClients from './modules/AdminClients.vue';
 import AdminFinance from './modules/AdminFinance.vue';
 import AdminGamification from './modules/AdminGamification.vue';
+import AdminWebinarLeads from './modules/AdminWebinarLeads.vue';
 
 export default {
   name: 'AdminDashboard',
-  components: { AdminOverview, AdminAffiliates, AdminSDRs, AdminClients, AdminFinance, AdminGamification },
+  components: { AdminOverview, AdminAffiliates, AdminSDRs, AdminClients, AdminFinance, AdminGamification, AdminWebinarLeads },
   data() {
     return {
       activeTab: 'overview',
@@ -89,6 +93,7 @@ export default {
         { id: 'clients',       label: 'Clientes',      icon: 'fas fa-building' },
         { id: 'finance',       label: 'Financeiro',    icon: 'fas fa-wallet' },
         { id: 'gamification',  label: 'Gamificação',   icon: 'fas fa-trophy' },
+        { id: 'webinar',       label: 'Webinar Leads', icon: 'fas fa-chalkboard-teacher' },
       ]
     };
   },
