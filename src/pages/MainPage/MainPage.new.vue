@@ -501,7 +501,7 @@ export default {
 
     // Contact Data
     const contactData = [
-      { icon: 'fas fa-envelope', label: 'Email', value: 'renatom@unli.com.br' },
+      { icon: 'fas fa-envelope', label: 'Email', value: 'contato@unli.com.br' },
       { icon: 'fab fa-whatsapp', label: 'WhatsApp', value: process.env.VUE_APP_WHATSAPP_SDR || '5511911019666' }
     ];
 

@@ -43,12 +43,12 @@
     $telefone = htmlspecialchars($telefone, ENT_QUOTES, 'UTF-8');
 
     // Destinatário fixo
-    $to = "renatom@unli.com.br";
+    $to = "contato@unli.com.br";
     $subject = mb_encode_mimeheader($assunto, "UTF-8");
     $message = $mensagem . "\n\n" . "Telefone de contato: " . $telefone . "\n" . "E-mail: " . $email;
 
     // Headers do e-mail - usar endereço fixo no From para evitar rejeição por SPF
-    $headers = "From: renatom@unli.com.br\r\n" .
+    $headers = "From: contato@unli.com.br\r\n" .
                "Reply-To: " . $email . "\r\n" .
                "X-Mailer: PHP/" . phpversion() . "\r\n" .
                "Content-Type: text/plain; charset=utf-8\r\n" .

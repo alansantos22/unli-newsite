@@ -281,6 +281,7 @@ export default {
     return {
       submitted: false,
       loading: false,
+      refCode: null,
       form: {
         nome: '',
         email: '',
@@ -298,6 +299,14 @@ export default {
         objetivo: false,
       },
     };
+  },
+
+  created() {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref && /^[a-zA-Z0-9_-]{4,64}$/.test(ref)) {
+      this.refCode = ref;
+    }
   },
 
   methods: {
@@ -318,10 +327,13 @@ export default {
 
       this.loading = true;
 
+      const payload = { ...this.form };
+      if (this.refCode) payload.ref_code = this.refCode;
+
       fetch('/api/admin/webinar-leads.php?action=register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(this.form),
+        body: JSON.stringify(payload),
       })
         .then(r => r.json())
         .then(data => {

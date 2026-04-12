@@ -293,7 +293,7 @@ function sendCompletionEmail($email, $name) {
  * Notify internal team about new completed briefing
  */
 function notifyTeam($orderId, $briefingData) {
-    $adminEmail = 'renatom@unli.com.br'; // Change to your admin email
+    $adminEmail = 'contato@unli.com.br'; // Change to your admin email
     
     $subject = '🚨 Novo Briefing Completo - Pedido #' . $orderId;
     

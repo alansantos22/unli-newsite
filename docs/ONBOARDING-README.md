@@ -395,7 +395,7 @@ while ($order = $result->fetch_assoc()) {
 ## 📞 Suporte
 
 Para dúvidas sobre implementação:
-- E-mail: renatom@unli.com.br
+- E-mail: contato@unli.com.br
 - WhatsApp: (11) 99999-9999
 
 ---

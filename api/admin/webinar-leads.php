@@ -93,6 +93,11 @@ function handle_register() {
     $estado     = trim($body['estado']    ?? '');
     $pais       = trim($body['pais']      ?? 'Brasil');
     $mensagem   = trim($body['mensagem']  ?? '');
+    $refCode    = trim($body['ref_code']  ?? '');
+    // Sanitiza: apenas alfanumérico, hífen e underscore
+    if ($refCode && !preg_match('/^[a-zA-Z0-9_-]{4,64}$/', $refCode)) {
+        $refCode = '';
+    }
 
     // IP seguro (suporte a proxies)
     $ip = $_SERVER['HTTP_X_FORWARDED_FOR']
@@ -113,9 +118,9 @@ function handle_register() {
     // Insere ou ignora duplicata silenciosamente
     $stmt = $pdo->prepare("
         INSERT IGNORE INTO {$prefix}webinar_leads
-            (nome, email, ramo, objetivo, cidade, estado, pais, mensagem, ip, user_agent)
+            (nome, email, ramo, objetivo, cidade, estado, pais, mensagem, ip, user_agent, ref_code)
         VALUES
-            (:nome, :email, :ramo, :objetivo, :cidade, :estado, :pais, :mensagem, :ip, :ua)
+            (:nome, :email, :ramo, :objetivo, :cidade, :estado, :pais, :mensagem, :ip, :ua, :ref_code)
     ");
     $stmt->execute([
         ':nome'     => $nome,
@@ -128,6 +133,7 @@ function handle_register() {
         ':mensagem' => $mensagem ?: null,
         ':ip'       => $ip,
         ':ua'       => $userAgent ?: null,
+        ':ref_code' => $refCode ?: null,
     ]);
 
     // Envia e-mail de confirmação apenas para novos cadastros
@@ -210,7 +216,7 @@ function handle_export($pdo, $prefix) {
     $whereSQL = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
     $stmt = $pdo->prepare("
-        SELECT id, nome, email, ramo, objetivo, cidade, estado, pais, mensagem, ip, created_at
+        SELECT id, nome, email, ramo, objetivo, cidade, estado, pais, mensagem, ip, ref_code, created_at
         FROM {$prefix}webinar_leads
         {$whereSQL}
         ORDER BY created_at ASC
@@ -232,7 +238,7 @@ function handle_export($pdo, $prefix) {
 
     $out = fopen('php://output', 'w');
 
-    fputcsv($out, ['ID', 'Nome', 'E-mail', 'Ramo', 'Objetivo', 'Cidade', 'Estado', 'País', 'Mensagem', 'IP', 'Data de inscrição'], ';');
+    fputcsv($out, ['ID', 'Nome', 'E-mail', 'Ramo', 'Objetivo', 'Cidade', 'Estado', 'País', 'Mensagem', 'IP', 'Afiliado (ref)', 'Data de inscrição'], ';');
 
     foreach ($leads as $row) {
         fputcsv($out, [
@@ -246,6 +252,7 @@ function handle_export($pdo, $prefix) {
             $row['pais'],
             $row['mensagem'] ?? '',
             $row['ip'] ?? '',
+            $row['ref_code'] ?? '',
             $row['created_at'],
         ], ';');
     }
@@ -312,7 +319,7 @@ function send_webinar_confirmation(string $email, string $nome): void {
     $headers  = "MIME-Version: 1.0\r\n";
     $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
     $headers .= "From: {$fromName} <{$fromEmail}>\r\n";
-    $headers .= "Reply-To: renatom@unli.com.br\r\n";
+    $headers .= "Reply-To: contato@unli.com.br\r\n";
     $headers .= "X-Mailer: PHP/" . phpversion();
 
     $sent = mail($email, $subject, $body, $headers);

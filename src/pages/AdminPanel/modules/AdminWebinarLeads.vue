@@ -135,6 +135,7 @@
 
 <script>
 import { useAdminAuth } from '@/core/composables/useAdminAuth';
+import * as XLSX from 'xlsx';
 
 const RAMO_OPTIONS = [
   'Agência de Marketing Digital',
@@ -216,29 +217,25 @@ export default {
       this.searchTimeout = setTimeout(() => this.loadLeads(1), 400);
     },
 
-    exportCSV() {
-      const { getToken } = useAdminAuth();
-      const token = getToken();
+    async exportCSV() {
       const params = new URLSearchParams({
         action: 'export',
         search: this.search,
         ramo: this.filterRamo,
       });
-      // Dispara download direto via link com token no header não é suportado nativamente.
-      // Usamos fetch + blob para manter o JWT no Authorization header.
-      fetch(`/api/admin/webinar-leads.php?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then(r => r.blob())
-        .then(blob => {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `webinar-leads-${new Date().toISOString().slice(0, 10)}.csv`;
-          a.click();
-          URL.revokeObjectURL(url);
-        })
-        .catch(() => this.showFeedback('error', 'Erro ao exportar. Tente novamente.'));
+      try {
+        const res = await fetch(`/api/admin/webinar-leads.php?${params}`, {
+          headers: { Authorization: `Bearer ${sessionStorage.getItem('admin_token')}` },
+        });
+        const csvText = await res.text();
+        // Remove BOM se presente
+        const clean = csvText.replace(/^\uFEFF/, '');
+        const wb = XLSX.read(clean, { type: 'string', FS: ';' });
+        const filename = `webinar-leads-${new Date().toISOString().slice(0, 10)}.xlsx`;
+        XLSX.writeFile(wb, filename);
+      } catch {
+        this.showFeedback('error', 'Erro ao exportar. Tente novamente.');
+      }
     },
 
     openDetail(lead) {

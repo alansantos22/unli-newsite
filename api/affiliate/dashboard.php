@@ -158,10 +158,11 @@ function handle_summary() {
     $baseUrl = defined('SITE_BASE_URL') ? SITE_BASE_URL : 'https://unli.com.br';
     $hash = $affiliate['affiliate_hash'];
     $links = [
-        ['name' => 'Página Inicial',     'url' => "{$baseUrl}/?ref={$hash}",                   'page' => 'home'],
+        ['name' => 'Página Inicial',     'url' => "{$baseUrl}/?ref={$hash}",                        'page' => 'home'],
+        ['name' => 'Webinar Gratuito',   'url' => "{$baseUrl}/webinar?ref={$hash}",                 'page' => 'webinar'],
         ['name' => 'Consultoria',         'url' => "{$baseUrl}/consultoria-gamificacao?ref={$hash}", 'page' => 'consultoria'],
-        ['name' => 'Site Vitrine',        'url' => "{$baseUrl}/site-vitrine?ref={$hash}",       'page' => 'site-vitrine'],
-        ['name' => 'Configurador',        'url' => "{$baseUrl}/configurador?ref={$hash}",       'page' => 'configurador'],
+        ['name' => 'Site Vitrine',        'url' => "{$baseUrl}/site-vitrine?ref={$hash}",            'page' => 'site-vitrine'],
+        ['name' => 'Configurador',        'url' => "{$baseUrl}/configurador?ref={$hash}",            'page' => 'configurador'],
     ];
 
     echo json_encode([

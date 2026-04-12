@@ -90,6 +90,7 @@ if (table_exists($pdo, $table)) {
               `mensagem`    TEXT          DEFAULT NULL                COMMENT 'Mensagem / dúvida opcional',
               `ip`          VARCHAR(45)   DEFAULT NULL                COMMENT 'IP de origem (IPv4 ou IPv6)',
               `user_agent`  VARCHAR(500)  DEFAULT NULL                COMMENT 'User-Agent do navegador',
+              `ref_code`    VARCHAR(64)   DEFAULT NULL                COMMENT 'Código do afiliado indicador (?ref=)',
               `created_at`  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
               PRIMARY KEY (`id`),
               UNIQUE  INDEX `idx_webinar_email`      (`email`),
@@ -101,6 +102,21 @@ if (table_exists($pdo, $table)) {
     } catch (PDOException $e) {
         log_msg("❌ Erro ao criar <strong>$table</strong>: " . $e->getMessage(), 'error');
     }
+}
+
+// ============================================
+// MIGRAÇÃO: adiciona ref_code se não existir
+// ============================================
+try {
+    $cols = $pdo->query("SHOW COLUMNS FROM `$table` LIKE 'ref_code'")->rowCount();
+    if ($cols === 0) {
+        $pdo->exec("ALTER TABLE `$table` ADD COLUMN `ref_code` VARCHAR(64) DEFAULT NULL COMMENT 'Código do afiliado indicador (?ref=)' AFTER `user_agent`");
+        log_msg("✅ Coluna <strong>ref_code</strong> adicionada à tabela <strong>$table</strong>.", 'success');
+    } else {
+        log_msg("⚠️ Coluna <strong>ref_code</strong> já existe — pulando.", 'warning');
+    }
+} catch (PDOException $e) {
+    log_msg("❌ Erro ao adicionar ref_code: " . $e->getMessage(), 'error');
 }
 
 ?>

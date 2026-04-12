@@ -17,9 +17,15 @@ CREATE TABLE IF NOT EXISTS `webinar_leads` (
   `mensagem`    TEXT          DEFAULT NULL                COMMENT 'Mensagem / dúvida opcional',
   `ip`          VARCHAR(45)   DEFAULT NULL                COMMENT 'IP de origem (IPv4 ou IPv6)',
   `user_agent`  VARCHAR(500)  DEFAULT NULL                COMMENT 'User-Agent do navegador',
+  `ref_code`    VARCHAR(64)   DEFAULT NULL                COMMENT 'Código do afiliado indicador (?ref=)',
   `created_at`  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE  INDEX `idx_webinar_email`      (`email`),
   INDEX         `idx_webinar_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   COMMENT='Inscrições para o Webinar de IA e Automação - 25/04/2026';
+
+-- Migração: adiciona coluna ref_code caso a tabela já exista sem ela
+ALTER TABLE `webinar_leads`
+  ADD COLUMN IF NOT EXISTS `ref_code` VARCHAR(64) DEFAULT NULL
+    COMMENT 'Código do afiliado indicador (?ref=)' AFTER `user_agent`;

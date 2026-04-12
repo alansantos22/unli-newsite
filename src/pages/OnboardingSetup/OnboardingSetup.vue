@@ -14,7 +14,7 @@
         <i class="fas fa-exclamation-triangle"></i>
         <h2>Ops! Algo deu errado</h2>
         <p>{{ error }}</p>
-        <a href="mailto:renatom@unli.com.br" class="btn-support">
+        <a href="mailto:contato@unli.com.br" class="btn-support">
           <i class="fas fa-envelope"></i>
           Contatar Suporte
         </a>

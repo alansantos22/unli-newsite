@@ -80,7 +80,7 @@
           <h3><i class="fas fa-question-circle"></i> Precisa de Ajuda?</h3>
           <p>Se o problema persistir, entre em contato conosco:</p>
           <div class="contact-options">
-            <a href="mailto:renatom@unli.com.br" class="contact-btn">
+            <a href="mailto:contato@unli.com.br" class="contact-btn">
               <i class="fas fa-envelope"></i>
               E-mail
             </a>

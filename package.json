@@ -26,7 +26,8 @@
     "vue": "^3.2.13",
     "vue-gtag-next": "^1.14.0",
     "vue-router": "^4.3.0",
-    "vuex": "^4.1.0"
+    "vuex": "^4.1.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",

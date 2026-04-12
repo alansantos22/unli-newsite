@@ -401,7 +401,7 @@ Ao clicar em "Finalizar Pedido" na Etapa 3
   briefing: {
     company_name: "UNLI Studio",
     whatsapp: "11999999999",
-    email: "renatom@unli.com.br",
+    email: "contato@unli.com.br",
     address: "São Paulo - SP",
     instagram: "https://instagram.com/unli",
     google_maps: "https://maps.google.com/...",
@@ -532,7 +532,7 @@ Ao submeter formulário de orçamento personalizado
 ## Suporte
 
 **Dúvidas?**  
-Entre em contato: renatom@unli.com.br
+Entre em contato: contato@unli.com.br
 
 **Documentação Relacionada:**
 - [README.md](./README.md) - Estrutura geral do projeto
