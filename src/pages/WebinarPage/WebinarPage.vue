@@ -274,6 +274,8 @@
 </template>
 
 <script>
+import { fbTrackEvent, trackEvent } from '@/plugins/analytics';
+
 export default {
   name: 'WebinarPage',
 
@@ -339,6 +341,8 @@ export default {
         .then(data => {
           if (data.ok) {
             this.submitted = true;
+            fbTrackEvent('Lead');
+            trackEvent('generate_lead', { event_category: 'webinar', event_label: 'Webinar IA e Automação' });
           } else {
             alert(data.error || 'Erro ao realizar inscrição. Tente novamente.');
           }
