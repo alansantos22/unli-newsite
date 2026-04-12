@@ -5,7 +5,7 @@
     <div class="wb-bg-glow2"></div>
 
     <nav class="wb-nav">
-      <img src="@/assets/img/logo_horizontal.png" alt="Unli Studio" class="wb-logo-img" />
+      <img src="@/assets/img/logo_horizontal.png" alt="Unli Studio" class="wb-logo-img" width="200" height="32" />
       <div class="wb-nav-badge">
         <span class="wb-dot-live"></span>
         Vagas limitadas

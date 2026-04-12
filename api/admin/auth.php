@@ -18,7 +18,7 @@ register_shutdown_function(function() {
         while (ob_get_level()) ob_end_clean();
         http_response_code(500);
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode(['ok' => false, 'error' => 'Erro interno']);
+        echo json_encode(['ok' => false, 'error' => $err['message'] . ' (' . basename($err['file']) . ':' . $err['line'] . ')']);
     }
 });
 
@@ -26,7 +26,7 @@ set_exception_handler(function($e) {
     while (ob_get_level()) ob_end_clean();
     http_response_code(500);
     header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(['ok' => false, 'error' => 'Exceção não tratada']);
+    echo json_encode(['ok' => false, 'error' => $e->getMessage() . ' (' . basename($e->getFile()) . ':' . $e->getLine() . ')']);
 });
 
 if (!defined('SECURE_CONFIG_ACCESS')) {

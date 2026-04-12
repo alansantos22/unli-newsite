@@ -60,7 +60,12 @@
               </button>
             </td>
           </tr>
-          <tr v-if="!affiliates.length && !loading">
+          <tr v-if="loadError">
+            <td colspan="8" class="empty" style="color:#f44">
+              <i class="fas fa-exclamation-circle"></i> {{ loadError }}
+            </td>
+          </tr>
+          <tr v-else-if="!affiliates.length && !loading">
             <td colspan="8" class="empty">Nenhum afiliado encontrado</td>
           </tr>
         </tbody>
@@ -183,6 +188,7 @@ export default {
       filterStatus: '',
       filterTier: '',
       loading: false,
+      loadError: '',
       saving: false,
       showDetail: false,
       detail: {},
@@ -222,6 +228,9 @@ export default {
       if (res.ok) {
         this.affiliates = res.data;
         this.pagination = res.pagination;
+        this.loadError = '';
+      } else {
+        this.loadError = res.error || 'Erro ao carregar afiliados';
       }
       this.loading = false;
     },

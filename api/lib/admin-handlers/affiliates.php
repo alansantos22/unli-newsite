@@ -6,70 +6,78 @@
  */
 
 function handle_list_affiliates($pdo, $prefix) {
-    $page = max(1, (int)($_GET['page'] ?? 1));
-    $limit = min(100, max(10, (int)($_GET['limit'] ?? 25)));
-    $offset = ($page - 1) * $limit;
-    
-    $where = [];
-    $params = [];
-    
-    // Filtro por status
-    $status = $_GET['status'] ?? '';
-    if ($status === 'active') { $where[] = 'a.is_active = 1'; }
-    elseif ($status === 'inactive') { $where[] = 'a.is_active = 0'; }
-    
-    // Filtro por liga
-    $tier = $_GET['tier'] ?? '';
-    if ($tier && preg_match('/^[a-z0-9_]+$/', $tier)) {
-        $where[] = 'a.tier = ?';
-        $params[] = $tier;
+    try {
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $limit = min(100, max(10, (int)($_GET['limit'] ?? 25)));
+        $offset = ($page - 1) * $limit;
+
+        $where = [];
+        $params = [];
+
+        // Filtro por status
+        $status = $_GET['status'] ?? '';
+        if ($status === 'active') { $where[] = 'a.is_active = 1'; }
+        elseif ($status === 'inactive') { $where[] = 'a.is_active = 0'; }
+
+        // Filtro por liga
+        $tier = $_GET['tier'] ?? '';
+        if ($tier && preg_match('/^[a-z0-9_]+$/', $tier)) {
+            $where[] = 'a.tier = ?';
+            $params[] = $tier;
+        }
+
+        // Busca por nome/email
+        $search = trim($_GET['search'] ?? '');
+        if ($search) {
+            $where[] = '(a.first_name LIKE ? OR a.last_name LIKE ? OR a.email LIKE ?)';
+            $searchParam = '%' . $search . '%';
+            $params[] = $searchParam;
+            $params[] = $searchParam;
+            $params[] = $searchParam;
+        }
+
+        $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+
+        // Contagem total
+        $countStmt = $pdo->prepare("SELECT COUNT(*) as total FROM {$prefix}affiliate_users a $whereClause");
+        $countStmt->execute($params);
+        $total = $countStmt->fetch()['total'];
+
+        // Dados paginados — GROUP BY inclui todas as colunas não-agregadas
+        $stmt = $pdo->prepare("
+            SELECT
+                a.id, a.first_name, a.last_name, a.email, a.whatsapp, a.pix_key,
+                a.affiliate_hash, a.tier, a.commission_rate, a.total_sales_amount,
+                a.is_active, a.created_at, a.last_login,
+                COUNT(r.id) as total_referrals,
+                SUM(CASE WHEN r.status IN ('closed','completed','onboarding') THEN 1 ELSE 0 END) as closed_referrals
+            FROM {$prefix}affiliate_users a
+            LEFT JOIN {$prefix}affiliate_referrals r ON r.affiliate_id = a.id
+            $whereClause
+            GROUP BY a.id, a.first_name, a.last_name, a.email, a.whatsapp, a.pix_key,
+                     a.affiliate_hash, a.tier, a.commission_rate, a.total_sales_amount,
+                     a.is_active, a.created_at, a.last_login
+            ORDER BY a.created_at DESC
+            LIMIT $limit OFFSET $offset
+        ");
+        $stmt->execute($params);
+        $affiliates = $stmt->fetchAll();
+
+        echo json_encode([
+            'ok' => true,
+            'data' => $affiliates,
+            'pagination' => [
+                'page' => $page,
+                'limit' => $limit,
+                'total' => (int)$total,
+                'pages' => ceil($total / $limit)
+            ]
+        ]);
+    } catch (\Throwable $e) {
+        error_log('[ADMIN-USERS] handle_list_affiliates error: ' . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['ok' => false, 'error' => 'Erro ao carregar afiliados: ' . $e->getMessage()]);
     }
-    
-    // Busca por nome/email
-    $search = trim($_GET['search'] ?? '');
-    if ($search) {
-        $where[] = '(a.first_name LIKE ? OR a.last_name LIKE ? OR a.email LIKE ?)';
-        $searchParam = '%' . $search . '%';
-        $params[] = $searchParam;
-        $params[] = $searchParam;
-        $params[] = $searchParam;
-    }
-    
-    $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
-    
-    // Contagem total
-    $countStmt = $pdo->prepare("SELECT COUNT(*) as total FROM {$prefix}affiliate_users a $whereClause");
-    $countStmt->execute($params);
-    $total = $countStmt->fetch()['total'];
-    
-    // Dados paginados
-    $stmt = $pdo->prepare("
-        SELECT 
-            a.id, a.first_name, a.last_name, a.email, a.whatsapp, a.pix_key,
-            a.affiliate_hash, a.tier, a.commission_rate, a.total_sales_amount,
-            a.is_active, a.created_at, a.last_login,
-            COUNT(r.id) as total_referrals,
-            SUM(CASE WHEN r.status IN ('closed','completed','onboarding') THEN 1 ELSE 0 END) as closed_referrals
-        FROM {$prefix}affiliate_users a
-        LEFT JOIN {$prefix}affiliate_referrals r ON r.affiliate_id = a.id
-        $whereClause
-        GROUP BY a.id
-        ORDER BY a.created_at DESC
-        LIMIT $limit OFFSET $offset
-    ");
-    $stmt->execute($params);
-    $affiliates = $stmt->fetchAll();
-    
-    echo json_encode([
-        'ok' => true,
-        'data' => $affiliates,
-        'pagination' => [
-            'page' => $page,
-            'limit' => $limit,
-            'total' => (int)$total,
-            'pages' => ceil($total / $limit)
-        ]
-    ]);
 }
 
 function handle_get_affiliate($pdo, $prefix) {

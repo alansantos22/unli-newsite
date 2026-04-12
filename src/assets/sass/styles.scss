@@ -2,6 +2,11 @@
 @import "./estilos/base-estilos.scss";
 @import "./icons/base_icons.scss";
 
+// font-display: swap para Font Awesome (evita FOIT dos ícones)
+@font-face { font-family: "Font Awesome 6 Free";    font-display: swap; src: local("Font Awesome 6 Free"); }
+@font-face { font-family: "Font Awesome 6 Brands";  font-display: swap; src: local("Font Awesome 6 Brands"); }
+@font-face { font-family: "FontAwesome";             font-display: swap; src: local("FontAwesome"); }
+
 *{
     margin: 0;
     padding: 0;

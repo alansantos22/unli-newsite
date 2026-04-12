@@ -61,7 +61,12 @@
               </button>
             </td>
           </tr>
-          <tr v-if="!clients.length">
+          <tr v-if="loadError">
+            <td colspan="11" class="empty-state" style="color:#f44">
+              <i class="fas fa-exclamation-circle"></i> {{ loadError }}
+            </td>
+          </tr>
+          <tr v-else-if="!clients.length">
             <td colspan="11" class="empty-state">Nenhum cliente/lead encontrado</td>
           </tr>
         </tbody>
@@ -126,6 +131,7 @@ export default {
       totalPages: 1,
       search: '',
       debounceTimer: null,
+      loadError: '',
       selected: [],
       deleting: false,
       deleteModal: {
@@ -164,9 +170,12 @@ export default {
         this.clients = res.data;
         this.total = res.total || res.pagination?.total || 0;
         this.totalPages = Math.ceil(this.total / this.perPage) || 1;
+        this.loadError = '';
         // Limpar seleções que saíram da página
         const visibleIds = this.clients.map(c => c.id);
         this.selected = this.selected.filter(id => visibleIds.includes(id));
+      } else {
+        this.loadError = res.error || 'Erro ao carregar clientes';
       }
     },
     toggleAll(e) {

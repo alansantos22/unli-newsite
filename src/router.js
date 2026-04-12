@@ -64,7 +64,7 @@ export default [
     {
         path: "/webinar",
         name: "WebinarPage",
-        component: () => import("./pages/WebinarPage/WebinarPage.vue"),
+        component: () => import(/* webpackPreload: true */ "./pages/WebinarPage/WebinarPage.vue"),
         meta: { hideHeader: true, hideFooter: true, title: 'Webinar Gratuito · IA e Automação | Foorge' }
     },
 
