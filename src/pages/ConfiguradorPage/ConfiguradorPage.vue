@@ -205,17 +205,17 @@ export default {
         version: 'fallback',
         currency: 'BRL',
         products: {
-          landing: { name: 'Landing Page', base_price: 599, description: 'Página única focada em conversão' },
-          site_complete: { name: 'Site Completo', base_price: 619, description: 'Site institucional com múltiplas páginas' }
+          landing: { name: 'Landing Page', base_price: 779, description: 'Página única focada em conversão' },
+          site_complete: { name: 'Site Completo', base_price: 805, description: 'Site institucional com múltiplas páginas' }
         },
         page_addons: {
-          about: { name: 'Sobre Nós', price: 59 },
-          services: { name: 'Serviços', price: 119 },
-          portfolio: { name: 'Portfólio', price: 159 },
-          faq: { name: 'FAQ', price: 89 },
-          contact: { name: 'Contato', price: 129 },
-          blog: { name: 'Blog de Notícias', price: 349, isPremium: true },
-          showcase: { name: 'Vitrine de Produtos', price: 449, isPremium: true }
+          about: { name: 'Sobre Nós', price: 77 },
+          services: { name: 'Serviços', price: 155 },
+          portfolio: { name: 'Portfólio', price: 207 },
+          faq: { name: 'FAQ', price: 116 },
+          contact: { name: 'Contato', price: 168 },
+          blog: { name: 'Blog de Notícias', price: 454, isPremium: true },
+          showcase: { name: 'Vitrine de Produtos', price: 584, isPremium: true }
         },
         predefined_packages: {
           essential: { 

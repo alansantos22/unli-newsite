@@ -250,15 +250,15 @@ export default {
       withSpecialist: false, // Adicionar atendimento com especialista
       // Fallback de preços caso pricingConfig não esteja disponível
       fallbackPricing: {
-        basePrice: 619,
+        basePrice: 805,
         pages: {
-          about: 59,
-          services: 119,
-          portfolio: 159,
-          faq: 89,
-          contact: 129,
-          blog: 349,
-          showcase: 449
+          about: 77,
+          services: 155,
+          portfolio: 207,
+          faq: 116,
+          contact: 168,
+          blog: 454,
+          showcase: 584
         },
         packages: {
           essential: ['about', 'services', 'contact'],

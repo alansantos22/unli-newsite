@@ -137,5 +137,15 @@ export default [
         name: "AdminDashboard",
         component: () => import("./pages/AdminPanel/AdminDashboard.vue"),
         meta: { hideHeader: true, hideFooter: true, requiresAdmin: true }
+    },
+
+    // ============================================
+    // Legal Pages
+    // ============================================
+    {
+        path: "/politica-de-privacidade",
+        name: "PrivacyPolicy",
+        component: () => import("./pages/PrivacyPolicy/PrivacyPolicy.vue"),
+        meta: { title: 'Política de Privacidade | Unli Studios' }
     }
 ]

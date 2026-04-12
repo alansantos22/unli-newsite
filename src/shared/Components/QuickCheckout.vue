@@ -322,7 +322,7 @@ export default {
       
       // Configuração local de preços (fallback)
       localPricing: {
-        basePrice: 619,
+        basePrice: 805,
         cashDiscountPercent: 15,
         installmentMarkupPercent: 15,
         promoDiscountPercent: 30
@@ -352,13 +352,13 @@ export default {
       
       // Preços das páginas (fallback)
       pagesPricing: {
-        about: 59,
-        services: 119,
-        portfolio: 159,
-        faq: 89,
-        contact: 129,
-        blog: 349,
-        showcase: 449
+        about: 77,
+        services: 155,
+        portfolio: 207,
+        faq: 116,
+        contact: 168,
+        blog: 454,
+        showcase: 584
       }
     };
   },

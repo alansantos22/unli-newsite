@@ -587,7 +587,7 @@
             </div>
             <div class="cta-feature">
               <i class="fas fa-dollar-sign"></i>
-              <span>R$ 599/ano (~R$ 49,90/mês)</span>
+              <span>R$ 779/ano (~R$ 64,92/mês)</span>
             </div>
             <div class="cta-feature">
               <i class="fas fa-building"></i>
