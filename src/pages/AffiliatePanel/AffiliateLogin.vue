@@ -52,6 +52,10 @@
             {{ errorMsg }}
           </p>
 
+          <div class="forgot-link">
+            <router-link to="/afiliados/esqueci-senha">Esqueci minha senha</router-link>
+          </div>
+
           <button type="submit" class="btn-login" :disabled="loading">
             <template v-if="loading">
               <svg class="spin" width="16" height="16" viewBox="0 0 512 512" fill="currentColor"><path d="M304 48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 416a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM48 304a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm464-48a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM142.9 437A48 48 0 1 0 75 369.1 48 48 0 1 0 142.9 437zm0-294.2A48 48 0 1 0 75 75a48 48 0 1 0 67.9 67.9zM369.1 437A48 48 0 1 0 437 369.1 48 48 0 1 0 369.1 437z"/></svg>
@@ -286,6 +290,20 @@ export default {
 
       &:hover { text-decoration: underline; }
     }
+  }
+}
+
+.forgot-link {
+  text-align: right;
+  margin-top: -8px;
+
+  a {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 12px;
+    text-decoration: none;
+    transition: color 0.2s;
+
+    &:hover { color: rgba(255, 255, 255, 0.75); }
   }
 }
 

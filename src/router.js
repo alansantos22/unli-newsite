@@ -161,6 +161,18 @@ export default [
         meta: { hideFooter: true }
     },
     {
+        path: "/afiliados/esqueci-senha",
+        name: "AffiliateForgotPassword",
+        component: () => import("./pages/AffiliatePanel/AffiliateForgotPassword.vue"),
+        meta: { hideFooter: true }
+    },
+    {
+        path: "/afiliados/redefinir-senha",
+        name: "AffiliateResetPassword",
+        component: () => import("./pages/AffiliatePanel/AffiliateResetPassword.vue"),
+        meta: { hideFooter: true }
+    },
+    {
         path: "/afiliados/dashboard",
         name: "AffiliateDashboard",
         component: () => import("./pages/AffiliatePanel/AffiliateDashboard.vue"),

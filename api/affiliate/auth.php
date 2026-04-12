@@ -39,6 +39,15 @@ switch ($action) {
     case 'validate':
         handle_validate();
         break;
+    case 'forgot_password':
+        handle_forgot_password();
+        break;
+    case 'validate_reset_token':
+        handle_validate_reset_token();
+        break;
+    case 'reset_password':
+        handle_reset_password();
+        break;
     default:
         http_response_code(400);
         echo json_encode(['ok' => false, 'error' => 'Ação inválida']);
@@ -301,4 +310,209 @@ function handle_validate() {
             'total_sales_amount' => $affiliate['total_sales_amount']
         ]
     ], JSON_UNESCAPED_UNICODE);
+}
+
+// ============================================
+// ESQUECI A SENHA
+// ============================================
+
+function handle_forgot_password() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        echo json_encode(['ok' => false, 'error' => 'Método não permitido']);
+        return;
+    }
+
+    if (!check_login_rate_limit()) {
+        http_response_code(429);
+        echo json_encode(['ok' => false, 'error' => 'Muitas tentativas. Aguarde 15 minutos.']);
+        return;
+    }
+
+    $body = json_decode(file_get_contents('php://input'), true) ?: [];
+    $email = trim($body['email'] ?? '');
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'error' => 'E-mail inválido']);
+        return;
+    }
+
+    $pdo = get_db_connection();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['ok' => false, 'error' => 'Erro de conexão com banco']);
+        return;
+    }
+
+    $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+    $stmt = $pdo->prepare("SELECT id, first_name, email, is_active FROM {$prefix}affiliate_users WHERE email = ?");
+    $stmt->execute([$email]);
+    $affiliate = $stmt->fetch();
+
+    // Resposta genérica para não revelar se o e-mail existe ou não (segurança)
+    if (!$affiliate || !$affiliate['is_active']) {
+        echo json_encode(['ok' => true, 'message' => 'Se este e-mail estiver cadastrado, você receberá o link em breve.']);
+        return;
+    }
+
+    // Gerar token seguro (64 hex chars = 32 bytes)
+    $token = bin2hex(random_bytes(32));
+
+    // Usar NOW() do MySQL para evitar divergência de fuso horário entre PHP e banco
+    $stmt = $pdo->prepare("UPDATE {$prefix}affiliate_users SET reset_token = ?, reset_token_expires = NOW() + INTERVAL 1 HOUR WHERE id = ?");
+    $stmt->execute([$token, $affiliate['id']]);
+
+    // Montar link
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'unli.com.br';
+    $resetLink = "{$protocol}://{$host}/afiliados/redefinir-senha?token={$token}";
+
+    // Enviar e-mail
+    $emailSent = send_affiliate_reset_email($affiliate['email'], $affiliate['first_name'], $resetLink);
+
+    if (!$emailSent) {
+        error_log("Falha ao enviar e-mail de reset para: {$affiliate['email']}");
+    }
+
+    echo json_encode(['ok' => true, 'message' => 'Se este e-mail estiver cadastrado, você receberá o link em breve.'], JSON_UNESCAPED_UNICODE);
+}
+
+// ============================================
+// VALIDAR TOKEN DE RESET
+// ============================================
+
+function handle_validate_reset_token() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        echo json_encode(['ok' => false, 'error' => 'Método não permitido']);
+        return;
+    }
+
+    $body = json_decode(file_get_contents('php://input'), true) ?: [];
+    $token = trim($body['token'] ?? '');
+
+    if (!preg_match('/^[a-f0-9]{64}$/', $token)) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'error' => 'Token inválido']);
+        return;
+    }
+
+    $pdo = get_db_connection();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['ok' => false, 'error' => 'Erro de conexão com banco']);
+        return;
+    }
+
+    $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+    $stmt = $pdo->prepare("
+        SELECT id, first_name FROM {$prefix}affiliate_users
+        WHERE reset_token = ? AND reset_token_expires > NOW() AND is_active = 1
+    ");
+    $stmt->execute([$token]);
+    $affiliate = $stmt->fetch();
+
+    if (!$affiliate) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'error' => 'Link inválido ou expirado. Solicite um novo.']);
+        return;
+    }
+
+    echo json_encode(['ok' => true, 'first_name' => $affiliate['first_name']], JSON_UNESCAPED_UNICODE);
+}
+
+// ============================================
+// RESETAR SENHA
+// ============================================
+
+function handle_reset_password() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        echo json_encode(['ok' => false, 'error' => 'Método não permitido']);
+        return;
+    }
+
+    $body = json_decode(file_get_contents('php://input'), true) ?: [];
+    $token    = trim($body['token'] ?? '');
+    $password = $body['password'] ?? '';
+
+    if (!preg_match('/^[a-f0-9]{64}$/', $token)) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'error' => 'Token inválido']);
+        return;
+    }
+
+    if (mb_strlen($password) < 6) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'error' => 'A senha deve ter pelo menos 6 caracteres']);
+        return;
+    }
+
+    $pdo = get_db_connection();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['ok' => false, 'error' => 'Erro de conexão com banco']);
+        return;
+    }
+
+    $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+    $stmt = $pdo->prepare("
+        SELECT id, email FROM {$prefix}affiliate_users
+        WHERE reset_token = ? AND reset_token_expires > NOW() AND is_active = 1
+    ");
+    $stmt->execute([$token]);
+    $affiliate = $stmt->fetch();
+
+    if (!$affiliate) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'error' => 'Link inválido ou expirado. Solicite um novo.']);
+        return;
+    }
+
+    $newHash = password_hash($password, PASSWORD_BCRYPT);
+
+    $stmt = $pdo->prepare("
+        UPDATE {$prefix}affiliate_users
+        SET password_hash = ?, reset_token = NULL, reset_token_expires = NULL
+        WHERE id = ?
+    ");
+    $stmt->execute([$newHash, $affiliate['id']]);
+
+    echo json_encode(['ok' => true, 'message' => 'Senha redefinida com sucesso!'], JSON_UNESCAPED_UNICODE);
+}
+
+// ============================================
+// ENVIO DO E-MAIL DE RESET
+// ============================================
+
+function send_affiliate_reset_email($email, $firstName, $resetLink) {
+    $templatePath = __DIR__ . '/../emails/affiliate-reset-password.html';
+
+    if (!file_exists($templatePath)) {
+        error_log("Template de reset não encontrado: {$templatePath}");
+        return false;
+    }
+
+    $template = file_get_contents($templatePath);
+    $emailBody = str_replace(
+        ['{{FIRST_NAME}}', '{{RESET_LINK}}'],
+        [htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8'), $resetLink],
+        $template
+    );
+
+    $subject = '🔑 Redefinição de senha — Painel de Afiliados Unli';
+
+    $headers  = "MIME-Version: 1.0\r\n";
+    $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+    $headers .= "From: Unli Sites <noreply@unli.com.br>\r\n";
+    $headers .= "Reply-To: contato@unli.com.br\r\n";
+
+    $sent = mail($email, $subject, $emailBody, $headers);
+
+    if (!$sent) {
+        error_log("Falha ao enviar e-mail de reset para: {$email}");
+    }
+
+    return $sent;
 }
