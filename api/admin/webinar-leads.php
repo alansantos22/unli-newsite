@@ -43,10 +43,16 @@ require_once __DIR__ . '/../lib/database.php';
 
 $action = $_GET['action'] ?? '';
 
-// ── Rota pública ────────────────────────────────────────────────────────────
+// ── Rotas públicas ──────────────────────────────────────────────────────────
 if ($action === 'register') {
     header('Content-Type: application/json; charset=utf-8');
     handle_register();
+    exit;
+}
+
+if ($action === 'save_partial') {
+    header('Content-Type: application/json; charset=utf-8');
+    handle_save_partial();
     exit;
 }
 
@@ -89,6 +95,7 @@ function handle_register() {
         return;
     }
 
+    $contato    = trim($body['contato']   ?? '');
     $cidade     = trim($body['cidade']    ?? '');
     $estado     = trim($body['estado']    ?? '');
     $pais       = trim($body['pais']      ?? 'Brasil');
@@ -115,16 +122,38 @@ function handle_register() {
     $pdo    = get_db_connection();
     $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
 
-    // Insere ou ignora duplicata silenciosamente
+    // Verifica se já completou antes (para não reenviar e-mail)
+    $check = $pdo->prepare("SELECT completed FROM {$prefix}webinar_leads WHERE email = :email");
+    $check->execute([':email' => $email]);
+    $existing = $check->fetch(PDO::FETCH_ASSOC);
+
+    // Se já estava completo, retorna sucesso sem fazer nada
+    if ($existing && $existing['completed']) {
+        echo json_encode(['ok' => true, 'message' => 'Inscrição realizada com sucesso!']);
+        return;
+    }
+
+    // Upsert: insere lead novo ou atualiza lead parcial existente
     $stmt = $pdo->prepare("
-        INSERT IGNORE INTO {$prefix}webinar_leads
-            (nome, email, ramo, objetivo, cidade, estado, pais, mensagem, ip, user_agent, ref_code)
+        INSERT INTO {$prefix}webinar_leads
+            (nome, email, contato, ramo, objetivo, cidade, estado, pais, mensagem, ip, user_agent, ref_code, completed)
         VALUES
-            (:nome, :email, :ramo, :objetivo, :cidade, :estado, :pais, :mensagem, :ip, :ua, :ref_code)
+            (:nome, :email, :contato, :ramo, :objetivo, :cidade, :estado, :pais, :mensagem, :ip, :ua, :ref_code, 1)
+        ON DUPLICATE KEY UPDATE
+            nome      = VALUES(nome),
+            contato   = VALUES(contato),
+            ramo      = VALUES(ramo),
+            objetivo  = VALUES(objetivo),
+            cidade    = VALUES(cidade),
+            estado    = VALUES(estado),
+            pais      = VALUES(pais),
+            mensagem  = VALUES(mensagem),
+            completed = 1
     ");
     $stmt->execute([
         ':nome'     => $nome,
         ':email'    => $email,
+        ':contato'  => $contato ?: null,
         ':ramo'     => $ramo,
         ':objetivo' => $objetivo,
         ':cidade'   => $cidade ?: null,
@@ -136,12 +165,76 @@ function handle_register() {
         ':ref_code' => $refCode ?: null,
     ]);
 
-    // Envia e-mail de confirmação apenas para novos cadastros
-    if ($stmt->rowCount() > 0) {
-        send_webinar_confirmation($email, $nome);
-    }
+    // Envia e-mail de confirmação (lead novo ou que estava incompleto)
+    send_webinar_confirmation($email, $nome);
 
     echo json_encode(['ok' => true, 'message' => 'Inscrição realizada com sucesso!']);
+}
+
+// ── Salvar lead parcial (fire-and-forget pelo frontend a cada etapa) ─────────
+function handle_save_partial() {
+    $body = json_decode(file_get_contents('php://input'), true) ?? [];
+
+    $nome  = trim($body['nome']  ?? '');
+    $email = trim($body['email'] ?? '');
+
+    if (!$nome || !$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        http_response_code(422);
+        echo json_encode(['ok' => false, 'error' => 'Nome e e-mail são obrigatórios']);
+        return;
+    }
+
+    $contato = trim($body['contato'] ?? '');
+    $ramo    = trim($body['ramo']    ?? '');
+    $cidade  = trim($body['cidade']  ?? '');
+    $estado  = trim($body['estado']  ?? '');
+    $pais    = trim($body['pais']    ?? 'Brasil');
+    $refCode = trim($body['ref_code'] ?? '');
+    if ($refCode && !preg_match('/^[a-zA-Z0-9_-]{4,64}$/', $refCode)) {
+        $refCode = '';
+    }
+
+    $ip = $_SERVER['HTTP_X_FORWARDED_FOR']
+        ?? $_SERVER['HTTP_CF_CONNECTING_IP']
+        ?? $_SERVER['REMOTE_ADDR']
+        ?? null;
+    if ($ip) {
+        $ip = trim(explode(',', $ip)[0]);
+    }
+    $userAgent = substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500);
+
+    if (!defined('DB_CONFIG_ACCESS')) define('DB_CONFIG_ACCESS', true);
+    $pdo    = get_db_connection();
+    $prefix = defined('DB_PREFIX') ? DB_PREFIX : '';
+
+    // Upsert parcial: não sobrescreve lead já completo
+    $stmt = $pdo->prepare("
+        INSERT INTO {$prefix}webinar_leads
+            (nome, email, contato, ramo, cidade, estado, pais, ip, user_agent, ref_code, completed)
+        VALUES
+            (:nome, :email, :contato, :ramo, :cidade, :estado, :pais, :ip, :ua, :ref_code, 0)
+        ON DUPLICATE KEY UPDATE
+            nome    = IF(completed = 0, VALUES(nome),    nome),
+            contato = IF(completed = 0, VALUES(contato), contato),
+            ramo    = IF(completed = 0 AND VALUES(ramo)   != '', VALUES(ramo),   ramo),
+            cidade  = IF(completed = 0 AND VALUES(cidade) != '', VALUES(cidade), cidade),
+            estado  = IF(completed = 0 AND VALUES(estado) != '', VALUES(estado), estado),
+            pais    = IF(completed = 0, VALUES(pais), pais)
+    ");
+    $stmt->execute([
+        ':nome'     => $nome,
+        ':email'    => $email,
+        ':contato'  => $contato ?: null,
+        ':ramo'     => $ramo ?: null,
+        ':cidade'   => $cidade ?: null,
+        ':estado'   => $estado ?: null,
+        ':pais'     => $pais,
+        ':ip'       => $ip,
+        ':ua'       => $userAgent ?: null,
+        ':ref_code' => $refCode ?: null,
+    ]);
+
+    echo json_encode(['ok' => true]);
 }
 
 // ── Admin: listagem paginada ─────────────────────────────────────────────────
@@ -174,7 +267,7 @@ function handle_list($pdo, $prefix) {
     $totalRows = (int)$total->fetchColumn();
 
     $stmt = $pdo->prepare("
-        SELECT id, nome, email, ramo, objetivo, cidade, estado, pais, created_at
+        SELECT id, nome, email, contato, ramo, objetivo, cidade, estado, pais, ref_code, created_at
         FROM {$prefix}webinar_leads
         {$whereSQL}
         ORDER BY created_at DESC
@@ -216,7 +309,7 @@ function handle_export($pdo, $prefix) {
     $whereSQL = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
     $stmt = $pdo->prepare("
-        SELECT id, nome, email, ramo, objetivo, cidade, estado, pais, mensagem, ip, ref_code, created_at
+        SELECT id, nome, email, contato, ramo, objetivo, cidade, estado, pais, mensagem, ip, ref_code, created_at
         FROM {$prefix}webinar_leads
         {$whereSQL}
         ORDER BY created_at ASC
@@ -238,13 +331,14 @@ function handle_export($pdo, $prefix) {
 
     $out = fopen('php://output', 'w');
 
-    fputcsv($out, ['ID', 'Nome', 'E-mail', 'Ramo', 'Objetivo', 'Cidade', 'Estado', 'País', 'Mensagem', 'IP', 'Afiliado (ref)', 'Data de inscrição'], ';');
+    fputcsv($out, ['ID', 'Nome', 'E-mail', 'WhatsApp', 'Ramo', 'Objetivo', 'Cidade', 'Estado', 'País', 'Mensagem', 'IP', 'Afiliado (ref)', 'Data de inscrição'], ';');
 
     foreach ($leads as $row) {
         fputcsv($out, [
             $row['id'],
             $row['nome'],
             $row['email'],
+            $row['contato'] ?? '',
             $row['ramo'],
             $row['objetivo'],
             $row['cidade'] ?? '',

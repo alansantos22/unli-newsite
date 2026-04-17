@@ -53,9 +53,11 @@
             <th>#</th>
             <th>Nome</th>
             <th>E-mail</th>
+            <th>WhatsApp</th>
             <th>Ramo</th>
             <th>Objetivo</th>
             <th>Localidade</th>
+            <th>Afiliado</th>
             <th>Inscrição</th>
             <th></th>
           </tr>
@@ -67,12 +69,22 @@
             <td>
               <a :href="`mailto:${lead.email}`" class="email-link">{{ lead.email }}</a>
             </td>
+            <td class="contato-cell">
+              <a v-if="lead.contato" :href="`https://wa.me/55${lead.contato.replace(/\D/g, '')}`" class="whatsapp-link" target="_blank" rel="noopener noreferrer">
+                <i class="fab fa-whatsapp"></i> {{ lead.contato }}
+              </a>
+              <span v-else class="muted">—</span>
+            </td>
             <td><span class="ramo-badge">{{ lead.ramo }}</span></td>
             <td class="objetivo-cell">{{ lead.objetivo }}</td>
             <td class="loc-cell">
               <span v-if="lead.cidade">{{ lead.cidade }}{{ lead.estado ? ` / ${lead.estado}` : '' }}</span>
               <span v-else class="muted">—</span>
               <span class="country-flag">{{ flagFor(lead.pais) }}</span>
+            </td>
+            <td class="ref-cell">
+              <span v-if="lead.ref_code" class="ref-badge">{{ lead.ref_code }}</span>
+              <span v-else class="muted">—</span>
             </td>
             <td class="date-cell">{{ formatDate(lead.created_at) }}</td>
             <td>
@@ -82,7 +94,7 @@
             </td>
           </tr>
           <tr v-if="!leads.length && !loading">
-            <td colspan="8" class="empty">Nenhum inscrito encontrado</td>
+            <td colspan="10" class="empty">Nenhum inscrito encontrado</td>
           </tr>
         </tbody>
       </table>
@@ -111,10 +123,18 @@
         <div class="modal-body" v-if="selected">
           <div class="detail-grid">
             <div><strong>E-mail:</strong> <a :href="`mailto:${selected.email}`">{{ selected.email }}</a></div>
+            <div>
+              <strong>WhatsApp:</strong>
+              <a v-if="selected.contato" :href="`https://wa.me/55${selected.contato.replace(/\D/g, '')}`" class="whatsapp-link" target="_blank" rel="noopener noreferrer">
+                {{ selected.contato }}
+              </a>
+              <span v-else class="muted">—</span>
+            </div>
             <div><strong>Ramo:</strong> {{ selected.ramo }}</div>
             <div><strong>Objetivo:</strong> {{ selected.objetivo }}</div>
             <div><strong>País:</strong> {{ flagFor(selected.pais) }} {{ selected.pais }}</div>
             <div v-if="selected.cidade"><strong>Cidade:</strong> {{ selected.cidade }}{{ selected.estado ? ` / ${selected.estado}` : '' }}</div>
+            <div v-if="selected.ref_code"><strong>Afiliado (ref):</strong> <span class="ref-badge">{{ selected.ref_code }}</span></div>
             <div><strong>Inscrição:</strong> {{ formatDate(selected.created_at) }}</div>
           </div>
           <div v-if="selected.mensagem" class="mensagem-block">
@@ -414,6 +434,32 @@ export default {
   text-decoration: none;
   &:hover { text-decoration: underline; }
 }
+
+.whatsapp-link {
+  color: #4ade80;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  &:hover { text-decoration: underline; }
+  i { font-size: 14px; }
+}
+
+.ref-badge {
+  display: inline-block;
+  padding: 2px 9px;
+  background: rgba(245,158,11,0.12);
+  border: 1px solid rgba(245,158,11,0.25);
+  border-radius: 20px;
+  font-size: 12px;
+  color: #fbbf24;
+  font-family: monospace;
+  white-space: nowrap;
+}
+
+.contato-cell { font-size: 13px; white-space: nowrap; }
+.ref-cell     { white-space: nowrap; }
 
 .ramo-badge {
   display: inline-block;

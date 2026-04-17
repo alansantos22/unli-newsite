@@ -29,3 +29,10 @@ CREATE TABLE IF NOT EXISTS `webinar_leads` (
 ALTER TABLE `webinar_leads`
   ADD COLUMN IF NOT EXISTS `ref_code` VARCHAR(64) DEFAULT NULL
     COMMENT 'Código do afiliado indicador (?ref=)' AFTER `user_agent`;
+
+-- Migração: salvar lead progressivo (lead pode ser salvo parcialmente antes de completar)
+ALTER TABLE `webinar_leads`
+  MODIFY COLUMN `ramo`     VARCHAR(100) DEFAULT NULL COMMENT 'Ramo / segmento da empresa',
+  MODIFY COLUMN `objetivo` VARCHAR(200) DEFAULT NULL COMMENT 'Principal objetivo com IA',
+  ADD COLUMN IF NOT EXISTS `completed` TINYINT(1) NOT NULL DEFAULT 0
+    COMMENT '1 = preencheu todas as etapas; 0 = lead parcial' AFTER `ref_code`;

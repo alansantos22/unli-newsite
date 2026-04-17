@@ -82,8 +82,9 @@ if (table_exists($pdo, $table)) {
               `id`          INT(11)       NOT NULL AUTO_INCREMENT,
               `nome`        VARCHAR(200)  NOT NULL                    COMMENT 'Nome completo do inscrito',
               `email`       VARCHAR(150)  NOT NULL                    COMMENT 'E-mail do inscrito',
-              `ramo`        VARCHAR(100)  NOT NULL                    COMMENT 'Ramo / segmento da empresa',
-              `objetivo`    VARCHAR(200)  NOT NULL                    COMMENT 'Principal objetivo com IA',
+              `contato`     VARCHAR(30)   DEFAULT NULL                COMMENT 'WhatsApp / telefone de contato',
+              `ramo`        VARCHAR(100)  DEFAULT NULL                COMMENT 'Ramo / segmento da empresa',
+              `objetivo`    VARCHAR(200)  DEFAULT NULL                COMMENT 'Principal objetivo com IA',
               `cidade`      VARCHAR(100)  DEFAULT NULL                COMMENT 'Cidade',
               `estado`      VARCHAR(10)   DEFAULT NULL                COMMENT 'UF / estado',
               `pais`        VARCHAR(50)   NOT NULL DEFAULT 'Brasil'   COMMENT 'País',
@@ -91,6 +92,7 @@ if (table_exists($pdo, $table)) {
               `ip`          VARCHAR(45)   DEFAULT NULL                COMMENT 'IP de origem (IPv4 ou IPv6)',
               `user_agent`  VARCHAR(500)  DEFAULT NULL                COMMENT 'User-Agent do navegador',
               `ref_code`    VARCHAR(64)   DEFAULT NULL                COMMENT 'Código do afiliado indicador (?ref=)',
+              `completed`   TINYINT(1)   NOT NULL DEFAULT 0          COMMENT '1 = preencheu todas as etapas; 0 = lead parcial',
               `created_at`  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
               PRIMARY KEY (`id`),
               UNIQUE  INDEX `idx_webinar_email`      (`email`),
@@ -102,6 +104,21 @@ if (table_exists($pdo, $table)) {
     } catch (PDOException $e) {
         log_msg("❌ Erro ao criar <strong>$table</strong>: " . $e->getMessage(), 'error');
     }
+}
+
+// ============================================
+// MIGRAÇÃO: adiciona contato se não existir
+// ============================================
+try {
+    $cols = $pdo->query("SHOW COLUMNS FROM `$table` LIKE 'contato'")->rowCount();
+    if ($cols === 0) {
+        $pdo->exec("ALTER TABLE `$table` ADD COLUMN `contato` VARCHAR(30) DEFAULT NULL COMMENT 'WhatsApp / telefone de contato' AFTER `email`");
+        log_msg("✅ Coluna <strong>contato</strong> adicionada à tabela <strong>$table</strong>.", 'success');
+    } else {
+        log_msg("⚠️ Coluna <strong>contato</strong> já existe — pulando.", 'warning');
+    }
+} catch (PDOException $e) {
+    log_msg("❌ Erro ao adicionar contato: " . $e->getMessage(), 'error');
 }
 
 // ============================================
@@ -117,6 +134,49 @@ try {
     }
 } catch (PDOException $e) {
     log_msg("❌ Erro ao adicionar ref_code: " . $e->getMessage(), 'error');
+}
+
+// ============================================
+// MIGRAÇÃO: torna ramo e objetivo nullable
+// (necessário para salvar leads parciais)
+// ============================================
+try {
+    $ramoInfo = $pdo->query("SHOW COLUMNS FROM `$table` LIKE 'ramo'")->fetch(PDO::FETCH_ASSOC);
+    if ($ramoInfo && $ramoInfo['Null'] === 'NO') {
+        $pdo->exec("ALTER TABLE `$table` MODIFY COLUMN `ramo` VARCHAR(100) DEFAULT NULL COMMENT 'Ramo / segmento da empresa'");
+        log_msg("✅ Coluna <strong>ramo</strong> alterada para nullable.", 'success');
+    } else {
+        log_msg("⚠️ Coluna <strong>ramo</strong> já é nullable — pulando.", 'warning');
+    }
+} catch (PDOException $e) {
+    log_msg("❌ Erro ao modificar ramo: " . $e->getMessage(), 'error');
+}
+
+try {
+    $objInfo = $pdo->query("SHOW COLUMNS FROM `$table` LIKE 'objetivo'")->fetch(PDO::FETCH_ASSOC);
+    if ($objInfo && $objInfo['Null'] === 'NO') {
+        $pdo->exec("ALTER TABLE `$table` MODIFY COLUMN `objetivo` VARCHAR(200) DEFAULT NULL COMMENT 'Principal objetivo com IA'");
+        log_msg("✅ Coluna <strong>objetivo</strong> alterada para nullable.", 'success');
+    } else {
+        log_msg("⚠️ Coluna <strong>objetivo</strong> já é nullable — pulando.", 'warning');
+    }
+} catch (PDOException $e) {
+    log_msg("❌ Erro ao modificar objetivo: " . $e->getMessage(), 'error');
+}
+
+// ============================================
+// MIGRAÇÃO: adiciona completed se não existir
+// ============================================
+try {
+    $cols = $pdo->query("SHOW COLUMNS FROM `$table` LIKE 'completed'")->rowCount();
+    if ($cols === 0) {
+        $pdo->exec("ALTER TABLE `$table` ADD COLUMN `completed` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '1 = preencheu todas as etapas; 0 = lead parcial' AFTER `ref_code`");
+        log_msg("✅ Coluna <strong>completed</strong> adicionada à tabela <strong>$table</strong>.", 'success');
+    } else {
+        log_msg("⚠️ Coluna <strong>completed</strong> já existe — pulando.", 'warning');
+    }
+} catch (PDOException $e) {
+    log_msg("❌ Erro ao adicionar completed: " . $e->getMessage(), 'error');
 }
 
 ?>
